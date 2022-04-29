@@ -290,6 +290,12 @@ class NaturalGradICA(GradICAbase):
             step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
         )
 
+    def __repr__(self) -> str:
+        s = "NaturalGradICA("
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def update_once(self) -> None:
         """Update demixing filters once using natural gradient descent.
         """
