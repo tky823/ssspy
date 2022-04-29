@@ -1,0 +1,7 @@
+-r ./install.txt
+
+scipy
+soundfile
+
+pytest
+pytest-cov
