@@ -15,6 +15,14 @@ class GradICAbase:
             List[Callable[[GradICAbase], None]]]]``):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Contrast function corresponds to -log(y).
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
+        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Score function corresponds to partial derivative of contrast function.
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -23,12 +31,24 @@ class GradICAbase:
     def __init__(
         self,
         step_size: float = 1e-1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["GradICAbase"], None], List[Callable[["GradICAbase"], None]]]
         ] = None,
         should_record_loss: bool = True,
     ) -> None:
         self.step_size = step_size
+
+        if contrast_fn is None:
+            raise ValueError("Specify contrast function.")
+        else:
+            self.contrast_fn = contrast_fn
+
+        if score_fn is None:
+            raise ValueError("Specify score_fn function.")
+        else:
+            self.score_fn = score_fn
 
         if callbacks is not None:
             if callable(callbacks):
@@ -141,36 +161,6 @@ class GradICAbase:
 
         return output
 
-    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
-        """Contrast function.
-
-        Contrast function corresponds to -log(y).
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of contrast function.
-        """
-        raise NotImplementedError("Implement 'contrast_fn' method.")
-
-    def score_fn(self, input: np.ndarray) -> np.ndarray:
-        """Score function.
-
-        Score function corresponds to partial derivative of contrast function.
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of score function.
-        """
-        raise NotImplementedError("Implement 'score_fn' method.")
-
     def compute_negative_loglikelihood(self) -> float:
         """Compute negative log-likelihood.
 
@@ -188,7 +178,7 @@ class GradICAbase:
 
 
 class GradICA(GradICAbase):
-    """Independent component analysis (ICA) using gradient descent
+    """Independent component analysis (ICA) using gradient descent.
 
     Args:
         step_size (``float``):
@@ -197,6 +187,14 @@ class GradICA(GradICAbase):
             List[Callable[[GradICA], None]]]]``):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Contrast function corresponds to -log(y).
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
+        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Score function corresponds to partial derivative of contrast function.
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -205,13 +203,19 @@ class GradICA(GradICAbase):
     def __init__(
         self,
         step_size: float = 1e-1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
-        should_record_loss=True,
+        should_record_loss: bool = True,
     ) -> None:
         super().__init__(
-            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            callbacks=callbacks,
+            should_record_loss=should_record_loss,
         )
 
     def update_once(self) -> None:
@@ -241,10 +245,18 @@ class NaturalGradICA(GradICAbase):
     Args:
         step_size (``float``):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[NaturalGradICA], None], \
-            List[Callable[[NaturalGradICA], None]]]]``):
+        callbacks (``Optional[Union[Callable[[GradICA], None], \
+            List[Callable[[GradICA], None]]]]``):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Contrast function corresponds to -log(y).
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
+        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+            Score function corresponds to partial derivative of contrast function.
+            This function is expected to recieve (n_channels, n_samples) \
+            and return (n_channels, n_samples).
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -253,13 +265,19 @@ class NaturalGradICA(GradICAbase):
     def __init__(
         self,
         step_size: float = 1e-1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
-        should_record_loss=True,
+        should_record_loss: bool = True,
     ) -> None:
         super().__init__(
-            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            callbacks=callbacks,
+            should_record_loss=should_record_loss,
         )
 
     def __repr__(self) -> str:
@@ -312,8 +330,18 @@ class GradLaplaceICA(GradICA):
         ] = None,
         should_record_loss=True,
     ) -> None:
+        def contrast_fn(input):
+            return np.abs(input)
+
+        def score_fn(input):
+            return np.sign(input)
+
         super().__init__(
-            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            callbacks=callbacks,
+            should_record_loss=should_record_loss,
         )
 
     def __repr__(self) -> str:
@@ -323,36 +351,6 @@ class GradLaplaceICA(GradICA):
         s += ")"
 
         return s.format(**self.__dict__)
-
-    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
-        """Contrast function.
-
-        Contrast function corresponds to -log(y).
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of contrast function.
-        """
-        return np.abs(input)
-
-    def score_fn(self, input: np.ndarray) -> np.ndarray:
-        """Score function.
-
-        Score function corresponds to partial derivative of contrast function.
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of score function.
-        """
-        return np.sign(input)
 
 
 class NaturalGradLaplaceICA(NaturalGradICA):
@@ -381,8 +379,18 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         ] = None,
         should_record_loss=True,
     ) -> None:
+        def contrast_fn(input):
+            return np.abs(input)
+
+        def score_fn(input):
+            return np.sign(input)
+
         super().__init__(
-            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            callbacks=callbacks,
+            should_record_loss=should_record_loss,
         )
 
     def __repr__(self) -> str:
@@ -392,33 +400,3 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         s += ")"
 
         return s.format(**self.__dict__)
-
-    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
-        """Contrast function.
-
-        Contrast function corresponds to -log(y).
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of contrast function.
-        """
-        return np.abs(input)
-
-    def score_fn(self, input: np.ndarray) -> np.ndarray:
-        """Score function.
-
-        Score function corresponds to partial derivative of contrast function.
-
-        Args:
-            input (``:class:numpy.ndarray``):
-                Separated signal in time-domain. (n_channels, n_samples)
-
-        Returns:
-            ``:class:numpy.ndarray``:
-                Result of computation of score function.
-        """
-        return np.sign(input)

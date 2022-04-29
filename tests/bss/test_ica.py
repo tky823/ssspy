@@ -46,9 +46,13 @@ def test_grad_ica(
     waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
     waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
 
-    ica = GradICA(callbacks=callbacks)
-    ica.contrast_fn = lambda x: np.log(1 + np.exp(x))
-    ica.score_fn = lambda x: 1 / (1 + np.exp(-x))
+    def contrast_fn(x):
+        return np.log(1 + np.exp(x))
+
+    def score_fn(x):
+        return 1 / (1 + np.exp(-x))
+
+    ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
 
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
@@ -73,9 +77,13 @@ def test_natural_grad_ica(
     waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
     waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
 
-    ica = NaturalGradICA(callbacks=callbacks)
-    ica.contrast_fn = lambda x: np.log(1 + np.exp(x))
-    ica.score_fn = lambda x: 1 / (1 + np.exp(-x))
+    def contrast_fn(x):
+        return np.log(1 + np.exp(x))
+
+    def score_fn(x):
+        return 1 / (1 + np.exp(-x))
+
+    ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
 
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
