@@ -118,6 +118,8 @@ class GradICAbase:
         self.output = self.separate(X, demix_filter=W)
 
     def update_once(self) -> None:
+        """Update demixing filters once.
+        """
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
@@ -137,14 +139,50 @@ class GradICAbase:
 
         return output
 
-    def compute_negative_loglikelihood(self):
+    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
+        """Contrast function.
+
+        Contrast function corresponds to -log(y).
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
+
+        Returns:
+            ``:class:numpy.ndarray``:
+                Result of computation of contrast function.
+        """
+        raise NotImplementedError("Implement 'contrast_fn' method.")
+
+    def score_fn(self, input: np.ndarray) -> np.ndarray:
+        """Score function.
+
+        Score function corresponds to partial derivative of contrast function.
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
+
+        Returns:
+            ``:class:numpy.ndarray``:
+                Result of computation of score function.
+        """
+        raise NotImplementedError("Implement 'score_fn' method.")
+
+    def compute_negative_loglikelihood(self) -> float:
         """Compute negative log-likelihood.
 
         Returns:
             ``float``:
                 Computed negative log-likelihood.
         """
-        raise NotImplementedError("Implement 'compute_negative_loglikelihood' method.")
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)  # (n_channels, n_samples)
+        logdet = np.log(np.abs(np.linalg.det(W)))
+        G = self.contrast_fn(Y)
+        loss = np.sum(np.mean(G, axis=1)) - logdet
+
+        return loss
 
 
 class GradICA(GradICAbase):
@@ -175,13 +213,12 @@ class GradICA(GradICAbase):
         )
 
     def update_once(self) -> None:
-        def score_fn(input):
-            return np.sign(input)
-
+        """Update demixing filters once using gradient descent.
+        """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
-        phi = score_fn(Y)
+        phi = self.score_fn(Y)
         phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         W_inv = np.linalg.inv(W)
         W_inv_trans = W_inv.transpose(1, 0)
@@ -195,19 +232,35 @@ class GradICA(GradICAbase):
         self.demix_filter = W
         self.output = Y
 
-    def compute_negative_loglikelihood(self) -> float:
-        """Compute negative log-likelihood.
+    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
+        """Contrast function.
+
+        Contrast function corresponds to -log(y).
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
 
         Returns:
-            ``float``:
-                Computed negative log-likelihood.
+            ``:class:numpy.ndarray``:
+                Result of computation of contrast function.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_channels, n_samples)
-        logdet = np.log(np.abs(np.linalg.det(W)))
-        loss = np.sum(np.mean(np.abs(Y), axis=1)) - logdet
+        return np.abs(input)
 
-        return loss
+    def score_fn(self, input: np.ndarray) -> np.ndarray:
+        """Score function.
+
+        Score function corresponds to partial derivative of contrast function.
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
+
+        Returns:
+            ``:class:numpy.ndarray``:
+                Result of computation of score function.
+        """
+        return np.sign(input)
 
 
 class NaturalGradICA(GradICAbase):
@@ -238,13 +291,12 @@ class NaturalGradICA(GradICAbase):
         )
 
     def update_once(self) -> None:
-        def score_fn(input):
-            return np.sign(input)
-
+        """Update demixing filters once using natural gradient descent.
+        """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
-        phi = score_fn(Y)
+        phi = self.score_fn(Y)
         phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         eye = np.eye(self.n_sources)
 
@@ -256,16 +308,32 @@ class NaturalGradICA(GradICAbase):
         self.demix_filter = W
         self.output = Y
 
-    def compute_negative_loglikelihood(self) -> float:
-        """Compute negative log-likelihood.
+    def contrast_fn(self, input: np.ndarray) -> np.ndarray:
+        """Contrast function.
+
+        Contrast function corresponds to -log(y).
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
 
         Returns:
-            ``float``:
-                Computed negative log-likelihood.
+            ``:class:numpy.ndarray``:
+                Result of computation of contrast function.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_channels, n_samples)
-        logdet = np.log(np.abs(np.linalg.det(W)))
-        loss = np.sum(np.mean(np.abs(Y), axis=1)) - logdet
+        return np.abs(input)
 
-        return loss
+    def score_fn(self, input: np.ndarray) -> np.ndarray:
+        """Score function.
+
+        Score function corresponds to partial derivative of contrast function.
+
+        Args:
+            input (``:class:numpy.ndarray``):
+                Separated signal in time-domain. (n_channels, n_samples)
+
+        Returns:
+            ``:class:numpy.ndarray``:
+                Result of computation of score function.
+        """
+        return np.sign(input)
