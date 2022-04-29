@@ -2,11 +2,11 @@ from typing import Optional, Union, List, Callable
 
 import numpy as np
 
-__all__ = ["GradICA", "NaturalGradICA"]
+__all__ = ["GradICA", "NaturalGradICA", "GradLaplaceICA", "NaturalGradLaplaceICA"]
 
 
 class GradICAbase:
-    """Base class of independent component analysis (ICA) using gradient descent
+    """Base class of independent component analysis (ICA) using gradient descent.
 
     Args:
         step_size (``float``):
@@ -17,7 +17,7 @@ class GradICAbase:
             Default: ``None``.
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
-            Default: True.
+            Default: ``True``.
     """
 
     def __init__(
@@ -84,6 +84,8 @@ class GradICAbase:
 
     def __repr__(self) -> str:
         s = "GradICA("
+        s += "step_size={step_size}"
+        s += ", should_record_loss={should_record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -197,7 +199,7 @@ class GradICA(GradICAbase):
             Default: ``None``.
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
-            Default: True.
+            Default: ``True``.
     """
 
     def __init__(
@@ -232,6 +234,96 @@ class GradICA(GradICAbase):
         self.demix_filter = W
         self.output = Y
 
+
+class NaturalGradICA(GradICAbase):
+    """Independent component analysis (ICA) using natural gradient descent.
+
+    Args:
+        step_size (``float``):
+            Step size of gradient descent. Default: ``1e-1``.
+        callbacks (``Optional[Union[Callable[[NaturalGradICA], None], \
+            List[Callable[[NaturalGradICA], None]]]]``):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_record_loss (``bool``):
+            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Default: ``True``.
+    """
+
+    def __init__(
+        self,
+        step_size: float = 1e-1,
+        callbacks: Optional[
+            Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
+        ] = None,
+        should_record_loss=True,
+    ) -> None:
+        super().__init__(
+            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+        )
+
+    def __repr__(self) -> str:
+        s = "NaturalGradICA("
+        s += "step_size={step_size}"
+        s += ", should_record_loss={should_record_loss}"
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        """Update demixing filters once using natural gradient descent.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        phi = self.score_fn(Y)
+        phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
+        eye = np.eye(self.n_sources)
+
+        delta = (phi_Y - eye) @ W
+        W = W - self.step_size * delta
+
+        Y = self.separate(X, demix_filter=W)
+
+        self.demix_filter = W
+        self.output = Y
+
+
+class GradLaplaceICA(GradICA):
+    """Independent component analysis (ICA) using gradient descent on Laplacian distribution.
+
+    Args:
+        step_size (``float``):
+            Step size of gradient descent. Default: ``1e-1``.
+        callbacks (``Optional[Union[Callable[[GradLaplaceICA], None], \
+            List[Callable[[GradLaplaceICA], None]]]]``):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_record_loss (``bool``):
+            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Default: ``True``.
+    """
+
+    def __init__(
+        self,
+        step_size: float = 0.1,
+        callbacks: Optional[
+            Union[Callable[["GradLaplaceICA"], None], List[Callable[["GradLaplaceICA"], None]]]
+        ] = None,
+        should_record_loss=True,
+    ) -> None:
+        super().__init__(
+            step_size=step_size, callbacks=callbacks, should_record_loss=should_record_loss
+        )
+
+    def __repr__(self) -> str:
+        s = "GradLaplaceICA("
+        s += "step_size={step_size}"
+        s += ", should_record_loss={should_record_loss}"
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def contrast_fn(self, input: np.ndarray) -> np.ndarray:
         """Contrast function.
 
@@ -263,26 +355,29 @@ class GradICA(GradICAbase):
         return np.sign(input)
 
 
-class NaturalGradICA(GradICAbase):
-    """Independent component analysis (ICA) using natural gradient descent
+class NaturalGradLaplaceICA(NaturalGradICA):
+    """Independent component analysis (ICA) using natural gradient descent on Laplacian distribution.
 
     Args:
         step_size (``float``):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[NaturalGradICA], None], \
-            List[Callable[[NaturalGradICA], None]]]]``):
+        callbacks (``Optional[Union[Callable[[NaturalGradLaplaceICA], None], \
+            List[Callable[[NaturalGradLaplaceICA], None]]]]``):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (``bool``):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
-            Default: True.
+            Default: ``True``.
     """
 
     def __init__(
         self,
         step_size: float = 1e-1,
         callbacks: Optional[
-            Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
+            Union[
+                Callable[["NaturalGradLaplaceICA"], None],
+                List[Callable[["NaturalGradLaplaceICA"], None]],
+            ]
         ] = None,
         should_record_loss=True,
     ) -> None:
@@ -291,28 +386,12 @@ class NaturalGradICA(GradICAbase):
         )
 
     def __repr__(self) -> str:
-        s = "NaturalGradICA("
+        s = "NaturalGradLaplaceICA("
+        s += "step_size={step_size}"
+        s += ", should_record_loss={should_record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
-
-    def update_once(self) -> None:
-        """Update demixing filters once using natural gradient descent.
-        """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
-
-        phi = self.score_fn(Y)
-        phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
-        eye = np.eye(self.n_sources)
-
-        delta = (phi_Y - eye) @ W
-        W = W - self.step_size * delta
-
-        Y = self.separate(X, demix_filter=W)
-
-        self.demix_filter = W
-        self.output = Y
 
     def contrast_fn(self, input: np.ndarray) -> np.ndarray:
         """Contrast function.
