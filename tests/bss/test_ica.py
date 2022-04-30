@@ -22,16 +22,17 @@ class DummyCallback:
 
 
 parameters = [
-    (2, None),
-    (3, dummy_function),
-    (2, [DummyCallback(), dummy_function]),
+    (2, None, True),
+    (3, dummy_function, False),
+    (2, [DummyCallback(), dummy_function], False),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks", parameters)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters)
 def test_grad_ica(
     n_sources: str,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
+    is_holonomic: bool,
 ):
     np.random.seed(111)
 
@@ -52,17 +53,20 @@ def test_grad_ica(
     def score_fn(x):
         return 1 / (1 + np.exp(-x))
 
-    ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+    ica = GradICA(
+        contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
+    )
 
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks", parameters)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters)
 def test_natural_grad_ica(
     n_sources: str,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
+    is_holonomic: bool,
 ):
     np.random.seed(111)
 
@@ -83,17 +87,20 @@ def test_natural_grad_ica(
     def score_fn(x):
         return 1 / (1 + np.exp(-x))
 
-    ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+    ica = NaturalGradICA(
+        contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
+    )
 
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks", parameters)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters)
 def test_grad_laplace_ica(
     n_sources: str,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
+    is_holonomic: bool,
 ):
     np.random.seed(111)
 
@@ -108,16 +115,17 @@ def test_grad_laplace_ica(
     waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
     waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
 
-    ica = GradLaplaceICA(callbacks=callbacks)
+    ica = GradLaplaceICA(callbacks=callbacks, is_holonomic=is_holonomic)
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks", parameters)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters)
 def test_natural_grad_laplace_ica(
     n_sources: str,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
+    is_holonomic: bool,
 ):
     np.random.seed(111)
 
@@ -132,7 +140,7 @@ def test_natural_grad_laplace_ica(
     waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
     waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
 
-    ica = NaturalGradLaplaceICA(callbacks=callbacks)
+    ica = NaturalGradLaplaceICA(callbacks=callbacks, is_holonomic=is_holonomic)
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
