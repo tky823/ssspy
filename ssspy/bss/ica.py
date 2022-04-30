@@ -9,21 +9,21 @@ class GradICAbase:
     """Base class of independent component analysis (ICA) using gradient descent.
 
     Args:
-        step_size (``float``):
+        step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[GradICAbase], None], \
-            List[Callable[[GradICAbase], None]]]]``):
+        callbacks (Optional[Union[Callable[[GradICAbase], None], \
+        List[Callable[[GradICAbase], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        should_record_loss (``bool``):
+        should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
@@ -69,11 +69,14 @@ class GradICAbase:
         """Separate multichannel time-domain signal.
 
         Args:
-            input (``:class:numpy.ndarray``):
-                Mixture signal in time-domain. (n_channels, n_samples)
+            input (numpy.ndarray):
+                Mixture signal in time-domain. Shape is (n_channels, n_samples).
+            n_iter (int):
+                Number of iterations of demixing filter updates.
+                Default: 100.
         Returns:
-            ``:class:numpy.ndarray``:
-                Separated signal in time-domain. (n_sources, n_samples)
+            numpy.ndarray:
+                Separated signal in time-domain. Shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
@@ -148,13 +151,13 @@ class GradICAbase:
         """Separate ``input`` using ``demixing_filter``.
 
         Args:
-            input (``:class:numpy.ndarray``):
+            input (numpy.ndarray):
                 Mixture signal in time-domain. (n_channels, n_samples)
-            demix_filter (``:class:numpy.ndarray``):
+            demix_filter (numpy.ndarray):
                 Demixing filters to separate signal. (n_sources, n_channels)
 
         Returns:
-            ``:class:numpy.ndarray``:
+            numpy.ndarray:
                 Separated signal in time-domain.
         """
         output = demix_filter @ input
@@ -165,7 +168,7 @@ class GradICAbase:
         """Compute negative log-likelihood.
 
         Returns:
-            ``float``:
+            float:
                 Computed negative log-likelihood.
         """
         X, W = self.input, self.demix_filter
@@ -181,21 +184,21 @@ class GradICA(GradICAbase):
     """Independent component analysis (ICA) using gradient descent.
 
     Args:
-        step_size (``float``):
+        step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[GradICA], None], \
-            List[Callable[[GradICA], None]]]]``):
+        callbacks (Optional[Union[Callable[[GradICA], None], \
+        List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        should_record_loss (``bool``):
+        should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
@@ -224,13 +227,13 @@ class GradICA(GradICAbase):
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
-        phi = self.score_fn(Y)
-        phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
+        Phi = self.score_fn(Y)
+        Phi_Y = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         W_inv = np.linalg.inv(W)
         W_inv_trans = W_inv.transpose(1, 0)
         eye = np.eye(self.n_sources)
 
-        delta = (phi_Y - eye) @ W_inv_trans
+        delta = (Phi_Y - eye) @ W_inv_trans
         W = W - self.step_size * delta
 
         Y = self.separate(X, demix_filter=W)
@@ -243,21 +246,21 @@ class NaturalGradICA(GradICAbase):
     """Independent component analysis (ICA) using natural gradient descent.
 
     Args:
-        step_size (``float``):
+        step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[GradICA], None], \
-            List[Callable[[GradICA], None]]]]``):
+        callbacks (Optional[Union[Callable[[GradICA], None], \
+        List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        contrast_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
             This function is expected to recieve (n_channels, n_samples) \
             and return (n_channels, n_samples).
-        score_fn (``Callable[[:class:numpy.ndarray], :class:numpy.ndarray]``):
+        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples) \
             and return (n_channels, n_samples).
-        should_record_loss (``bool``):
+        should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
@@ -294,11 +297,11 @@ class NaturalGradICA(GradICAbase):
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
-        phi = self.score_fn(Y)
-        phi_Y = np.mean(phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
+        Phi = self.score_fn(Y)
+        Phi_Y = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         eye = np.eye(self.n_sources)
 
-        delta = (phi_Y - eye) @ W
+        delta = (Phi_Y - eye) @ W
         W = W - self.step_size * delta
 
         Y = self.separate(X, demix_filter=W)
@@ -311,13 +314,13 @@ class GradLaplaceICA(GradICA):
     """Independent component analysis (ICA) using gradient descent on Laplacian distribution.
 
     Args:
-        step_size (``float``):
+        step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[GradLaplaceICA], None], \
-            List[Callable[[GradLaplaceICA], None]]]]``):
+        callbacks (Optional[Union[Callable[[GradLaplaceICA], None], \
+        List[Callable[[GradLaplaceICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (``bool``):
+        should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
@@ -357,13 +360,13 @@ class NaturalGradLaplaceICA(NaturalGradICA):
     """Independent component analysis (ICA) using natural gradient descent on Laplacian distribution.
 
     Args:
-        step_size (``float``):
+        step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (``Optional[Union[Callable[[NaturalGradLaplaceICA], None], \
-            List[Callable[[NaturalGradLaplaceICA], None]]]]``):
+        callbacks (Optional[Union[Callable[[NaturalGradLaplaceICA], None], \
+        List[Callable[[NaturalGradLaplaceICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (``bool``):
+        should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
