@@ -11,10 +11,6 @@ class GradICAbase:
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[GradICAbase], None], \
-        List[Callable[[GradICAbase], None]]]]):
-            Callback functions. Each function is called before separation and at each iteration.
-            Default: ``None``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
             This function is expected to recieve (n_channels, n_samples)
@@ -23,6 +19,10 @@ class GradICAbase:
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
+        callbacks (Optional[Union[Callable[[GradICAbase], None], \
+        List[Callable[[GradICAbase], None]]]]):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -186,10 +186,6 @@ class GradICA(GradICAbase):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[GradICA], None], \
-        List[Callable[[GradICA], None]]]]):
-            Callback functions. Each function is called before separation and at each iteration.
-            Default: ``None``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
             This function is expected to recieve (n_channels, n_samples)
@@ -198,6 +194,10 @@ class GradICA(GradICAbase):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
+        callbacks (Optional[Union[Callable[[GradICA], None], \
+        List[Callable[[GradICA], None]]]]):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -248,10 +248,6 @@ class NaturalGradICA(GradICAbase):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[GradICA], None], \
-        List[Callable[[GradICA], None]]]]):
-            Callback functions. Each function is called before separation and at each iteration.
-            Default: ``None``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to -log(y).
             This function is expected to recieve (n_channels, n_samples) \
@@ -260,6 +256,10 @@ class NaturalGradICA(GradICAbase):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples) \
             and return (n_channels, n_samples).
+        callbacks (Optional[Union[Callable[[GradICA], None], \
+        List[Callable[[GradICA], None]]]]):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
