@@ -46,7 +46,7 @@ class GradICAbase:
             self.contrast_fn = contrast_fn
 
         if score_fn is None:
-            raise ValueError("Specify score_fn function.")
+            raise ValueError("Specify score function.")
         else:
             self.score_fn = score_fn
 
