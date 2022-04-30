@@ -198,6 +198,9 @@ class GradICA(GradICAbase):
         List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -211,6 +214,7 @@ class GradICA(GradICAbase):
         callbacks: Optional[
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
+        is_holonomic: bool = False,
         should_record_loss: bool = True,
     ) -> None:
         super().__init__(
@@ -221,6 +225,17 @@ class GradICA(GradICAbase):
             should_record_loss=should_record_loss,
         )
 
+        self.is_holonomic = is_holonomic
+
+    def __repr__(self) -> str:
+        s = "GradICA("
+        s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
+        s += ", should_record_loss={should_record_loss}"
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def update_once(self) -> None:
         """Update demixing filters once using gradient descent.
         """
@@ -228,12 +243,16 @@ class GradICA(GradICAbase):
         Y = self.separate(X, demix_filter=W)
 
         Phi = self.score_fn(Y)
-        Phi_Y = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
+        PhiY = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         W_inv = np.linalg.inv(W)
         W_inv_trans = W_inv.transpose(1, 0)
         eye = np.eye(self.n_sources)
 
-        delta = (Phi_Y - eye) @ W_inv_trans
+        if self.is_holonomic:
+            delta = (PhiY - eye) @ W_inv_trans
+        else:
+            delta = ((1 - eye) * PhiY) @ W_inv_trans
+
         W = W - self.step_size * delta
 
         Y = self.separate(X, demix_filter=W)
@@ -260,6 +279,9 @@ class NaturalGradICA(GradICAbase):
         List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -273,6 +295,7 @@ class NaturalGradICA(GradICAbase):
         callbacks: Optional[
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
+        is_holonomic: bool = False,
         should_record_loss: bool = True,
     ) -> None:
         super().__init__(
@@ -283,9 +306,12 @@ class NaturalGradICA(GradICAbase):
             should_record_loss=should_record_loss,
         )
 
+        self.is_holonomic = is_holonomic
+
     def __repr__(self) -> str:
         s = "NaturalGradICA("
         s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
         s += ", should_record_loss={should_record_loss}"
         s += ")"
 
@@ -298,10 +324,14 @@ class NaturalGradICA(GradICAbase):
         Y = self.separate(X, demix_filter=W)
 
         Phi = self.score_fn(Y)
-        Phi_Y = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
+        PhiY = np.mean(Phi[:, np.newaxis, :] * Y[np.newaxis, :, :], axis=-1)
         eye = np.eye(self.n_sources)
 
-        delta = (Phi_Y - eye) @ W
+        if self.is_holonomic:
+            delta = (PhiY - eye) @ W
+        else:
+            delta = ((1 - eye) * PhiY) @ W
+
         W = W - self.step_size * delta
 
         Y = self.separate(X, demix_filter=W)
@@ -320,6 +350,9 @@ class GradLaplaceICA(GradICA):
         List[Callable[[GradLaplaceICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -331,7 +364,8 @@ class GradLaplaceICA(GradICA):
         callbacks: Optional[
             Union[Callable[["GradLaplaceICA"], None], List[Callable[["GradLaplaceICA"], None]]]
         ] = None,
-        should_record_loss=True,
+        is_holonomic: bool = False,
+        should_record_loss: bool = True,
     ) -> None:
         def contrast_fn(input):
             return np.abs(input)
@@ -344,12 +378,14 @@ class GradLaplaceICA(GradICA):
             contrast_fn=contrast_fn,
             score_fn=score_fn,
             callbacks=callbacks,
+            is_holonomic=is_holonomic,
             should_record_loss=should_record_loss,
         )
 
     def __repr__(self) -> str:
         s = "GradLaplaceICA("
         s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
         s += ", should_record_loss={should_record_loss}"
         s += ")"
 
@@ -366,6 +402,9 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         List[Callable[[NaturalGradLaplaceICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
@@ -380,7 +419,8 @@ class NaturalGradLaplaceICA(NaturalGradICA):
                 List[Callable[["NaturalGradLaplaceICA"], None]],
             ]
         ] = None,
-        should_record_loss=True,
+        is_holonomic: bool = False,
+        should_record_loss: bool = True,
     ) -> None:
         def contrast_fn(input):
             return np.abs(input)
@@ -393,12 +433,14 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             contrast_fn=contrast_fn,
             score_fn=score_fn,
             callbacks=callbacks,
+            is_holonomic=is_holonomic,
             should_record_loss=should_record_loss,
         )
 
     def __repr__(self) -> str:
         s = "NaturalGradLaplaceICA("
         s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
         s += ", should_record_loss={should_record_loss}"
         s += ")"
 
