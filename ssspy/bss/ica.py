@@ -6,7 +6,7 @@ __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGra
 
 
 class GradICAbase:
-    """Base class of independent component analysis (ICA) using gradient descent.
+    r"""Base class of independent component analysis (ICA) using gradient descent.
 
     Args:
         step_size (float):
@@ -19,8 +19,7 @@ class GradICAbase:
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICAbase], None], \
-        List[Callable[[GradICAbase], None]]]]):
+        callbacks (Optional[Union[Callable[[GradICAbase], None], List[Callable[[GradICAbase], None]]]]):  # noqa: E501
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -66,7 +65,7 @@ class GradICAbase:
             self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        """Separate multichannel time-domain signal.
+        r"""Separate multichannel time-domain signal.
 
         Args:
             input (numpy.ndarray):
@@ -74,6 +73,7 @@ class GradICAbase:
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: 100.
+
         Returns:
             numpy.ndarray:
                 Separated signal in time-domain. Shape is (n_sources, n_samples).
@@ -114,7 +114,7 @@ class GradICAbase:
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        """Reset attributes following on given keyword arguments.
+        r"""Reset attributes following on given keyword arguments.
 
         Args:
             kwargs:
@@ -143,12 +143,12 @@ class GradICAbase:
         self.output = self.separate(X, demix_filter=W)
 
     def update_once(self) -> None:
-        """Update demixing filters once.
+        r"""Update demixing filters once.
         """
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
-        """Separate ``input`` using ``demixing_filter``.
+        r"""Separate ``input`` using ``demixing_filter``.
 
         Args:
             input (numpy.ndarray):
@@ -165,7 +165,16 @@ class GradICAbase:
         return output
 
     def compute_negative_loglikelihood(self) -> float:
-        """Compute negative log-likelihood.
+        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            &= \frac{1}{T}\sum_{t,n}G(y_{tn}) \
+                - \log|\det\boldsymbol{W}| \\
+            G(y_{tn}) \
+            &= - \log p(y_{tn})
 
         Returns:
             float:
@@ -181,7 +190,7 @@ class GradICAbase:
 
 
 class FastICAbase:
-    """Base class of fast independent component analysis (FastICA).
+    r"""Base class of fast independent component analysis (FastICA).
 
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -195,8 +204,7 @@ class FastICAbase:
         d_score_fn (Callable[[np.ndarray], np.ndarray]):
             Partial derivative of score function.
             This function is expected to return same shape tensor as the input.
-        callbacks (Optional[Union[Callable[[GradICAbase], None], \
-        List[Callable[[GradICAbase], None]]]]):
+        callbacks (Optional[Union[Callable[[GradICAbase], None], List[Callable[[GradICAbase], None]]]]):  # noqa: E501
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -245,7 +253,7 @@ class FastICAbase:
             self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        """Separate multichannel time-domain signal.
+        r"""Separate multichannel time-domain signal.
 
         Args:
             input (numpy.ndarray):
@@ -253,6 +261,7 @@ class FastICAbase:
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: 100.
+
         Returns:
             numpy.ndarray:
                 Separated signal in time-domain. Shape is (n_sources, n_samples).
@@ -287,7 +296,7 @@ class FastICAbase:
         return self.output
 
     def _reset(self, **kwargs) -> None:
-        """Reset attributes following on given keyword arguments.
+        r"""Reset attributes following on given keyword arguments.
 
         Args:
             kwargs:
@@ -325,14 +334,14 @@ class FastICAbase:
         self.output = self.separate(Z, demix_filter=W)
 
     def update_once(self) -> None:
-        """Update demixing filters once.
+        r"""Update demixing filters once.
         """
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(
         self, input: np.ndarray, demix_filter: np.ndarray, should_whiten=True
     ) -> np.ndarray:
-        """Separate ``input`` using ``demixing_filter``.
+        r"""Separate ``input`` using ``demixing_filter``.
 
         Args:
             input (numpy.ndarray):
@@ -362,7 +371,15 @@ class FastICAbase:
         return output
 
     def compute_negative_loglikelihood(self) -> float:
-        """Compute negative log-likelihood.
+        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            &= \frac{1}{T}\sum_{t,n}G(y_{tn}) \\
+            G(y_{tn}) \
+            &= - \log p(y_{tn})
 
         Returns:
             float:
@@ -378,7 +395,7 @@ class FastICAbase:
 
 
 class GradICA(GradICAbase):
-    """Independent component analysis (ICA) using gradient descent.
+    r"""Independent component analysis (ICA) using gradient descent.
 
     Args:
         step_size (float):
@@ -391,8 +408,7 @@ class GradICA(GradICAbase):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICA], None], \
-        List[Callable[[GradICA], None]]]]):
+        callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -434,7 +450,7 @@ class GradICA(GradICAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        """Update demixing filters once using gradient descent.
+        r"""Update demixing filters once using gradient descent.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -459,7 +475,7 @@ class GradICA(GradICAbase):
 
 
 class NaturalGradICA(GradICAbase):
-    """Independent component analysis (ICA) using natural gradient descent.
+    r"""Independent component analysis (ICA) using natural gradient descent.
 
     Args:
         step_size (float):
@@ -472,8 +488,7 @@ class NaturalGradICA(GradICAbase):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to recieve (n_channels, n_samples) \
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICA], None], \
-        List[Callable[[GradICA], None]]]]):
+        callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -515,7 +530,7 @@ class NaturalGradICA(GradICAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        """Update demixing filters once using natural gradient descent.
+        r"""Update demixing filters once using natural gradient descent.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -538,7 +553,7 @@ class NaturalGradICA(GradICAbase):
 
 
 class FastICA(FastICAbase):
-    """Fast independent component analysis (FastICA).
+    r"""Fast independent component analysis (FastICA).
 
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -579,7 +594,7 @@ class FastICA(FastICAbase):
         )
 
     def update_once(self) -> None:
-        """Update demixing filters once using fixed-point iteration algorithm.
+        r"""Update demixing filters once using fixed-point iteration algorithm.
         """
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, should_whiten=False)
@@ -606,13 +621,12 @@ class FastICA(FastICAbase):
 
 
 class GradLaplaceICA(GradICA):
-    """Independent component analysis (ICA) using gradient descent on Laplacian distribution.
+    r"""Independent component analysis (ICA) using gradient descent on Laplacian distribution.
 
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[GradLaplaceICA], None], \
-        List[Callable[[GradLaplaceICA], None]]]]):
+        callbacks (Optional[Union[Callable[[GradLaplaceICA], None], List[Callable[[GradLaplaceICA], None]]]]):  # noqa: E501
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -658,13 +672,12 @@ class GradLaplaceICA(GradICA):
 
 
 class NaturalGradLaplaceICA(NaturalGradICA):
-    """Independent component analysis (ICA) using natural gradient descent on Laplacian distribution.
+    r"""Independent component analysis (ICA) using natural gradient descent on Laplacian distribution.
 
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[NaturalGradLaplaceICA], None], \
-        List[Callable[[NaturalGradLaplaceICA], None]]]]):
+        callbacks (Optional[Union[Callable[[NaturalGradLaplaceICA], None], List[Callable[[NaturalGradLaplaceICA], None]]]]):  # noqa: E501
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
