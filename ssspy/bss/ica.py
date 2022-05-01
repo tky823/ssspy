@@ -424,6 +424,24 @@ class GradICA(GradICAbase):
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(x):
+                return np.abs(x)
+
+            def score_fn(x):
+                return np.sign(x)
+
+            ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+
+            n_channels, n_samples = 2, 160000
+            waveform_mix = np.random.randn(n_channels, n_samples)
+
+            waveform_est = ica(waveform_mix, n_iter=1000)
+            print(waveform_mix.shape, waveform_est.shape)
+            >>> (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -504,6 +522,24 @@ class NaturalGradICA(GradICAbase):
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(x):
+                return np.abs(x)
+
+            def score_fn(x):
+                return np.sign(x)
+
+            ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+
+            n_channels, n_samples = 2, 160000
+            waveform_mix = np.random.randn(n_channels, n_samples)
+
+            waveform_est = ica(waveform_mix, n_iter=100)
+            print(waveform_mix.shape, waveform_est.shape)
+            >>> (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -580,6 +616,24 @@ class FastICA(FastICAbase):
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(x):
+                return np.abs(x)
+
+            def score_fn(x):
+                return np.sign(x)
+
+            ica = FastICA(contrast_fn=contrast_fn, score_fn=score_fn)
+
+            n_channels, n_samples = 2, 160000
+            waveform_mix = np.random.randn(n_channels, n_samples)
+
+            waveform_est = ica(waveform_mix, n_iter=10)
+            print(waveform_mix.shape, waveform_est.shape)
+            >>> (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -642,6 +696,18 @@ class GradLaplaceICA(GradICA):
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
+
+    Examples:
+        .. code-block:: python
+
+            ica = GradLaplaceICA()
+
+            n_channels, n_samples = 2, 160000
+            waveform_mix = np.random.randn(n_channels, n_samples)
+
+            waveform_est = ica(waveform_mix, n_iter=1000)
+            print(waveform_mix.shape, waveform_est.shape)
+            >>> (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -693,6 +759,18 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         should_record_loss (bool):
             Record loss at each iteration of gradient descent if ``should_record_loss=True``.
             Default: ``True``.
+
+    Examples:
+        .. code-block:: python
+
+            ica = NaturalGradLaplaceICA()
+
+            n_channels, n_samples = 2, 160000
+            waveform_mix = np.random.randn(n_channels, n_samples)
+
+            waveform_est = ica(waveform_mix, n_iter=100)
+            print(waveform_mix.shape, waveform_est.shape)
+            >>> (2, 160000), (2, 160000)
     """
 
     def __init__(
