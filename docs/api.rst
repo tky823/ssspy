@@ -11,10 +11,11 @@ Introduction
    from ssspy.bss.ica import NaturalGradLaplaceICA
 
    waveform_mix, _ = sf.read("sample-2ch.wav")
-   print(waveform_mix.shape) # (160000, 2)
+   waveform_mix = waveform_mix.T
+   print(waveform_mix.shape) # (2, 160000)
    ica = NaturalGradLaplaceICA()
    waveform_est = ica(waveform_mix)
-   print(waveform_mix.shape, waveform_est.shape) # (2, 160000)
+   print(waveform_mix.shape, waveform_est.shape) # (2, 160000), (2, 160000)
 
 Submodules
 ----------
