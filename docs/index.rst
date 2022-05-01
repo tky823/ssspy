@@ -6,6 +6,9 @@
 Welcome to ssspy's documentation!
 =================================
 
+.. image:: https://readthedocs.org/projects/sound-source-separation-python/badge/?version=latest
+   :target: https://sound-source-separation-python.readthedocs.io/en/latest/?badge=latest
+
 .. image:: https://github.com/tky823/ssspy/actions/workflows/lint.yaml/badge.svg
    :target: https://github.com/tky823/ssspy/actions/workflows/lint.yaml
 
