@@ -594,7 +594,8 @@ class FastICA(FastICAbase):
 
             if src_idx > 0:
                 W_n = W[:src_idx]  # (src_idx - 1, n_channels)
-                w_n = w_n - np.sum(W_n * w_n, axis=-1, keepdims=True) * W_n
+                scale = np.sum(W_n * w_n, axis=-1, keepdims=True)
+                w_n = w_n - np.sum(scale * W_n, axis=0)
 
             norm = np.linalg.norm(w_n)
             W[src_idx] = w_n / norm
