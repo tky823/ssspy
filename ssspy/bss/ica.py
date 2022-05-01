@@ -12,7 +12,7 @@ class GradICAbase:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
-            Contrast function corresponds to -log(y).
+            Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -185,7 +185,7 @@ class FastICAbase:
 
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
-            Contrast function corresponds to -log(y).
+            Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -384,7 +384,7 @@ class GradICA(GradICAbase):
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
-            Contrast function corresponds to -log(y).
+            Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -465,7 +465,7 @@ class NaturalGradICA(GradICAbase):
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
-            Contrast function corresponds to -log(y).
+            Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to recieve (n_channels, n_samples) \
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
@@ -542,7 +542,7 @@ class FastICA(FastICAbase):
 
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
-            Contrast function corresponds to -log(y).
+            Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to recieve (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
