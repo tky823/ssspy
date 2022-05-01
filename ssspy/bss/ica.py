@@ -11,15 +11,15 @@ class GradICAbase:
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        contrast_fn (callable):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        score_fn (callable):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICAbase], None], List[Callable[[GradICAbase], None]]]]):  # noqa: E501
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -193,18 +193,18 @@ class FastICAbase:
     r"""Base class of fast independent component analysis (FastICA).
 
     Args:
-        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        contrast_fn (callable):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        score_fn (callable):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        d_score_fn (Callable[[np.ndarray], np.ndarray]):
+        d_score_fn (callable):
             Partial derivative of score function.
             This function is expected to return same shape tensor as the input.
-        callbacks (Optional[Union[Callable[[GradICAbase], None], List[Callable[[GradICAbase], None]]]]):  # noqa: E501
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -400,15 +400,15 @@ class GradICA(GradICAbase):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        contrast_fn (callable):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        score_fn (callable):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -480,15 +480,15 @@ class NaturalGradICA(GradICAbase):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        contrast_fn (callable):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
-        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        score_fn (callable):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
-        callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -556,18 +556,18 @@ class FastICA(FastICAbase):
     r"""Fast independent component analysis (FastICA).
 
     Args:
-        contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        contrast_fn (callable):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
+        score_fn (callable):
             Score function corresponds to partial derivative of contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
-        d_score_fn (Callable[[np.ndarray], np.ndarray]):
+        d_score_fn (callable):
             Partial derivative of score function.
             This function is expected to return same shape tensor as the input.
-        callbacks (Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]]):
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -626,7 +626,7 @@ class GradLaplaceICA(GradICA):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[GradLaplaceICA], None], List[Callable[[GradLaplaceICA], None]]]]):  # noqa: E501
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
@@ -677,7 +677,7 @@ class NaturalGradLaplaceICA(NaturalGradICA):
     Args:
         step_size (float):
             Step size of gradient descent. Default: ``1e-1``.
-        callbacks (Optional[Union[Callable[[NaturalGradLaplaceICA], None], List[Callable[[NaturalGradLaplaceICA], None]]]]):  # noqa: E501
+        callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
