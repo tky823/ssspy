@@ -295,6 +295,13 @@ class FastICAbase:
 
         return self.output
 
+    def __repr__(self) -> str:
+        s = "FastICA("
+        s += ", should_record_loss={should_record_loss}"
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def _reset(self, **kwargs) -> None:
         r"""Reset attributes following on given keyword arguments.
 
