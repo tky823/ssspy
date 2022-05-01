@@ -552,8 +552,7 @@ class FastICA(FastICAbase):
         d_score_fn (Callable[[np.ndarray], np.ndarray]):
             Partial derivative of score function.
             This function is expected to return same shape tensor as the input.
-        callbacks (Optional[Union[Callable[[GradICAbase], None], \
-        List[Callable[[GradICAbase], None]]]]):
+        callbacks (Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
@@ -567,7 +566,7 @@ class FastICA(FastICAbase):
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
         d_score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
-            Union[Callable[["FastICAbase"], None], List[Callable[["FastICAbase"], None]]]
+            Union[Callable[["FastICA"], None], List[Callable[["FastICA"], None]]]
         ] = None,
         should_record_loss: bool = True,
     ) -> None:
