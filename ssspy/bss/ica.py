@@ -13,11 +13,11 @@ class GradICAbase:
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (Optional[Union[Callable[[GradICAbase], None], List[Callable[[GradICAbase], None]]]]):  # noqa: E501
             Callback functions. Each function is called before separation and at each iteration.
@@ -195,11 +195,11 @@ class FastICAbase:
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (Callable[[np.ndarray], np.ndarray]):
             Partial derivative of score function.
@@ -402,11 +402,11 @@ class GradICA(GradICAbase):
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
@@ -482,11 +482,11 @@ class NaturalGradICA(GradICAbase):
             Step size of gradient descent. Default: ``1e-1``.
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples) \
+            This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
         callbacks (Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]]):
             Callback functions. Each function is called before separation and at each iteration.
@@ -558,11 +558,11 @@ class FastICA(FastICAbase):
     Args:
         contrast_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Contrast function corresponds to :math:`-\log(y_{nt})`.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (Callable[[numpy.ndarray], numpy.ndarray]):
             Score function corresponds to partial derivative of contrast function.
-            This function is expected to recieve (n_channels, n_samples)
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (Callable[[np.ndarray], np.ndarray]):
             Partial derivative of score function.
