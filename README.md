@@ -4,7 +4,19 @@
 [![tests](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
 [![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G)](https://codecov.io/gh/tky823/ssspy)
 
-A Python library for source separation.
+A Python library for sound source separation.
+
+## Installation
+You can install by pip.
+```shell
+pip install git+https://github.com/tky823/ssspy.git
+```
+or clone this repository.
+```shell
+git clone https://github.com/tky823/ssspy.git
+cd ssspy
+pip install -e .
+```
 
 ## LICENSE
 MIT License

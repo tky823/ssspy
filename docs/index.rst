@@ -18,10 +18,27 @@ Welcome to ssspy's documentation!
 .. image:: https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G
    :target: https://codecov.io/gh/tky823/ssspy
 
+Installation
+------------
+
+You can install ``ssspy`` by pip.
+
+.. code-block:: shell
+
+    pip install git+https://github.com/tky823/ssspy.git
+
+or clone this repository.
+
+.. code-block:: shell
+
+    git clone https://github.com/tky823/ssspy.git
+    cd ssspy
+    pip install -e .
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
+   :hidden:
 
    api
 
