@@ -6,24 +6,24 @@ __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGra
 
 
 class GradICAbase:
-    r"""Base class of independent component analysis (ICA) using gradient descent.
+    r"""Base class of independent component analysis (ICA) using the gradient descent.
 
     Args:
         step_size (float):
-            Step size of gradient descent. Default: ``1e-1``.
+            A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            Contrast function corresponds to :math:`-\log(y_{nt})`.
+            A contrast function corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            Score function corresponds to partial derivative of contrast function.
+            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
 
@@ -65,7 +65,7 @@ class GradICAbase:
             self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate multichannel time-domain signal.
+        r"""Separate a time-domain multichannel signal.
 
         Args:
             input (numpy.ndarray):
@@ -76,7 +76,7 @@ class GradICAbase:
 
         Returns:
             numpy.ndarray:
-                Separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain. Shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
@@ -150,15 +150,19 @@ class GradICAbase:
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
+        .. math::
+            \boldsymbol{y}_{t}
+            = \boldsymbol{W}\boldsymbol{x}_{t}
+
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. (n_channels, n_samples)
+                Mixture signal in time-domain. Shape is (n_channels, n_samples).
             demix_filter (numpy.ndarray):
-                Demixing filters to separate signal. (n_sources, n_channels)
+                Demixing filters to separate signal. Shape is (n_sources, n_channels).
 
         Returns:
             numpy.ndarray:
-                Separated signal in time-domain.
+                The separated signal in time-domain. Shape is (n_sources, n_samples).
         """
         output = demix_filter @ input
 
@@ -194,21 +198,21 @@ class FastICAbase:
 
     Args:
         contrast_fn (callable):
-            Contrast function corresponds to :math:`-\log(y_{nt})`.
+            A contrast function corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            Score function corresponds to partial derivative of contrast function.
+            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (callable):
-            Partial derivative of score function.
-            This function is expected to return same shape tensor as the input.
+            A partial derivative of the score function.
+            This function is expected to return the same shape tensor as the input.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
     """
 
@@ -253,7 +257,7 @@ class FastICAbase:
             self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate multichannel time-domain signal.
+        r"""Separate a time-domain multichannel signal.
 
         Args:
             input (numpy.ndarray):
@@ -264,7 +268,7 @@ class FastICAbase:
 
         Returns:
             numpy.ndarray:
-                Separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain. Shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
@@ -350,18 +354,22 @@ class FastICAbase:
     ) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
+        .. math::
+            \boldsymbol{y}_{t}
+            = \boldsymbol{W}\boldsymbol{x}_{t}
+
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. (n_channels, n_samples)
+                Mixture signal in time-domain. Shape is (n_channels, n_samples).
             demix_filter (numpy.ndarray):
-                Demixing filters to separate signal. (n_sources, n_channels)
+                Demixing filters to separate signal. Shape is (n_sources, n_channels).
             should_whiten (bool):
                 If ``should_whiten=True``, whitening (sphering) is applied to ``input``.
                 Default: True.
 
         Returns:
             numpy.ndarray:
-                Separated signal in time-domain.
+                The separated signal in time-domain. Shape is (n_sources, n_samples).
         """
         if should_whiten:
             X = input
@@ -402,17 +410,17 @@ class FastICAbase:
 
 
 class GradICA(GradICAbase):
-    r"""Independent component analysis (ICA) using gradient descent.
+    r"""Independent component analysis (ICA) using the gradient descent.
 
     Args:
         step_size (float):
-            Step size of gradient descent. Default: ``1e-1``.
+            A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            Contrast function corresponds to :math:`-\log(y_{nt})`.
+            A contrast function corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            Score function corresponds to partial derivative of contrast function.
+            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (callable or list[callable], optional):
@@ -422,17 +430,17 @@ class GradICA(GradICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
         .. code-block:: python
 
-            def contrast_fn(x):
-                return np.abs(x)
+            def contrast_fn(y):
+                return np.abs(y)
 
-            def score_fn(x):
-                return np.sign(x)
+            def score_fn(y):
+                return np.sign(y)
 
             ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn)
 
@@ -475,7 +483,33 @@ class GradICA(GradICAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once using gradient descent.
+        r"""Update demixing filters once using the gradient descent.
+
+        If ``is_holonomic=True``, demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}} \
+            -\boldsymbol{I}\right)\boldsymbol{W}^{-\mathsf{T}},
+
+        where
+
+        .. math::
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})
+            &= \left(\phi(y_{t1}),\ldots,\phi(y_{tN})\right)^{\mathsf{T}}\in\mathbb{R}^{N}, \\
+            \phi(y_{tn})
+            &= \frac{\partial G(y_{tn})}{\partial y_{tn}}, \\
+            G(y_{tn})
+            &= -\log p(y_{tn}).
+
+        Otherwise (``is_holonomic=False``),
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\cdot\mathrm{offdiag}\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}}\right) \
+            \boldsymbol{W}^{-\mathsf{T}}.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -500,17 +534,17 @@ class GradICA(GradICAbase):
 
 
 class NaturalGradICA(GradICAbase):
-    r"""Independent component analysis (ICA) using natural gradient descent.
+    r"""Independent component analysis (ICA) using the natural gradient descent [#amari1995new]_.
 
     Args:
         step_size (float):
-            Step size of gradient descent. Default: ``1e-1``.
+            A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            Contrast function corresponds to :math:`-\log(y_{nt})`.
+            A contrast function corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
         score_fn (callable):
-            Score function corresponds to partial derivative of contrast function.
+            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples) \
             and return (n_channels, n_samples).
         callbacks (callable or list[callable], optional):
@@ -520,17 +554,17 @@ class NaturalGradICA(GradICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
         .. code-block:: python
 
-            def contrast_fn(x):
-                return np.abs(x)
+            def contrast_fn(y):
+                return np.abs(y)
 
-            def score_fn(x):
-                return np.sign(x)
+            def score_fn(y):
+                return np.sign(y)
 
             ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn)
 
@@ -540,6 +574,10 @@ class NaturalGradICA(GradICAbase):
             waveform_est = ica(waveform_mix, n_iter=100)
             print(waveform_mix.shape, waveform_est.shape)
             >>> (2, 160000), (2, 160000)
+
+    .. [#amari1995new] S. Amari, A. Cichocki, and H. H. Yang,
+        "A new learning algorithm for blind signal separation,"
+        in *Proc. NIPS.*, pp. 757-763, 1996.
     """
 
     def __init__(
@@ -573,7 +611,33 @@ class NaturalGradICA(GradICAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once using natural gradient descent.
+        r"""Update demixing filters once using the natural gradient descent.
+
+        If ``is_holonomic=True``, demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}} \
+            -\boldsymbol{I}\right)\boldsymbol{W},
+
+        where
+
+        .. math::
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})
+            &= \left(\phi(y_{t1}),\ldots,\phi(y_{tN})\right)^{\mathsf{T}}\in\mathbb{R}^{N}, \\
+            \phi(y_{tn})
+            &= \frac{\partial G(y_{tn})}{\partial y_{tn}}, \\
+            G(y_{tn})
+            &= -\log p(y_{tn}).
+
+        Otherwise (``is_holonomic=False``),
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\cdot\mathrm{offdiag}\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}}\right) \
+            \boldsymbol{W}.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -596,37 +660,66 @@ class NaturalGradICA(GradICAbase):
 
 
 class FastICA(FastICAbase):
-    r"""Fast independent component analysis (FastICA).
+    r"""Fast independent component analysis (FastICA) [#hyvarinen1999fast]_.
+
+    In FastICA, a whitening (sphering) is applied to input signal.
+
+    .. math::
+        \boldsymbol{z}_{t}
+        &= \boldsymbol{\Lambda}^{-\frac{1}{2}} \
+        \boldsymbol{\Gamma}^{\mathsf{T}}\boldsymbol{x}_{t}, \\
+        \boldsymbol{\Lambda}
+        &:= \mathrm{diag}(\lambda_{1},\ldots,\lambda_{m},\ldots,\lambda_{M}) \
+        \in\mathbb{R}^{M\times M}, \\
+        \boldsymbol{\Gamma}
+        &:= (\boldsymbol{\gamma}_{1}, \ldots,
+        \boldsymbol{\gamma}_{m}, \ldots, \boldsymbol{\gamma}_{M}) \
+        \in\mathbb{R}^{M\times M},
+
+    where :math:`\lambda_{m}` and :math:`\boldsymbol{\gamma}_{m}` are
+    an eigenvalue and eigenvector of
+    :math:`\sum_{t}\boldsymbol{x}_{t}\boldsymbol{x}_{t}^{\mathsf{T}}`,
+    respectively.
+
+    Furthermore, :math:`\boldsymbol{W}` is constrained to be orthogonal.
+
+    .. math::
+        \boldsymbol{W}\boldsymbol{W}^{\mathsf{T}}
+        = \boldsymbol{I}
 
     Args:
         contrast_fn (callable):
-            Contrast function corresponds to :math:`-\log(y_{nt})`.
+            A contrast function corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            Score function corresponds to partial derivative of contrast function.
+            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (callable):
             Partial derivative of score function.
-            This function is expected to return same shape tensor as the input.
+            This function is expected to return the same shape tensor as the input.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
         .. code-block:: python
 
-            def contrast_fn(x):
-                return np.abs(x)
+            def contrast_fn(y):
+                return np.log(1 + np.exp(y))
 
-            def score_fn(x):
-                return np.sign(x)
+            def score_fn(y):
+                return 1 / (1 + np.exp(-y))
 
-            ica = FastICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            def d_score_fn(y):
+                sigmoid_y = 1 / (1 + np.exp(-y))
+                return sigmoid_y * (1 - sigmoid_y)
+
+            ica = FastICA(contrast_fn=contrast_fn, score_fn=score_fn, d_score_fn=d_score_fn)
 
             n_channels, n_samples = 2, 160000
             waveform_mix = np.random.randn(n_channels, n_samples)
@@ -634,6 +727,10 @@ class FastICA(FastICAbase):
             waveform_est = ica(waveform_mix, n_iter=10)
             print(waveform_mix.shape, waveform_est.shape)
             >>> (2, 160000), (2, 160000)
+
+    .. [#hyvarinen1999fast] A. Hyvärinen,
+        "Fast and Robust Fixed-Point Algorithms for Independent Component Analysis,"
+        *IEEE Trans. on Neural Netw.*, vol. 10, no. 3, pp. 626-634, 1999.
     """
 
     def __init__(
@@ -656,9 +753,25 @@ class FastICA(FastICAbase):
 
     def update_once(self) -> None:
         r"""Update demixing filters once using fixed-point iteration algorithm.
+
+        For :math:`n=1,\dots,N`, the demixing flter :math:`\boldsymbol{w}_{n}`
+        is updated sequentially,
+
+        .. math::
+            y_{tn}
+            &=\boldsymbol{w}_{n}^{\mathsf{T}}\boldsymbol{z}_{t}, \\
+            \boldsymbol{w}_{n}^{+}
+            &\leftarrow \frac{1}{T}\sum_{t}\phi(y_{tn})\boldsymbol{z}_{tn} \
+            - \frac{1}{T}\sum_{t}\frac{\partial\phi(y_{tn})}{\partial y_{tn}} \
+            \boldsymbol{w}_{n}, \\
+            \boldsymbol{w}_{n}^{+}
+            &\leftarrow\boldsymbol{w}_{n}^{+} \
+            - \sum_{n'=1}^{n-1}\boldsymbol{w}_{n'}^{\mathsf{T}}\boldsymbol{w}_{n}^{+} \
+            \boldsymbol{w}_{n}^{+}, \\
+            \boldsymbol{w}_{n}
+            &\leftarrow \frac{\boldsymbol{w}_{n}^{+}}{\|\boldsymbol{w}_{n}^{+}\|}.
         """
         Z, W = self.whitened_input, self.demix_filter
-        Y = self.separate(Z, demix_filter=W, should_whiten=False)
 
         for src_idx in range(self.n_sources):
             w_n = W[src_idx]  # (n_channels,)
@@ -682,11 +795,16 @@ class FastICA(FastICAbase):
 
 
 class GradLaplaceICA(GradICA):
-    r"""Independent component analysis (ICA) using gradient descent on Laplacian distribution.
+    r"""Independent component analysis (ICA) using the gradient descent on Laplacian distribution.
+
+    We assume :math:`y_{ijn}` follows an Laplacian distribution.
+
+    .. math::
+        p(y_{ijn})\propto\exp(|y_{ijn}|)
 
     Args:
         step_size (float):
-            Step size of gradient descent. Default: ``1e-1``.
+            A step size of the gradient descent. Default: ``1e-1``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -694,7 +812,7 @@ class GradLaplaceICA(GradICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -712,7 +830,7 @@ class GradLaplaceICA(GradICA):
 
     def __init__(
         self,
-        step_size: float = 0.1,
+        step_size: float = 1e-1,
         callbacks: Optional[
             Union[Callable[["GradLaplaceICA"], None], List[Callable[["GradLaplaceICA"], None]]]
         ] = None,
@@ -743,13 +861,63 @@ class GradLaplaceICA(GradICA):
 
         return s.format(**self.__dict__)
 
+    def update_once(self) -> None:
+        r"""Update demixing filters once using the gradient descent.
+
+        If ``is_holonomic=True``, demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}} \
+            -\boldsymbol{I}\right)\boldsymbol{W}^{-\mathsf{T}},
+
+        where
+
+        .. math::
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})
+            = \left(\mathrm{sign}(y_{t1}),\ldots,\mathrm{sign}(y_{tN})\right)^{\mathsf{T}} \
+            \in\mathbb{R}^{N}.
+
+        Otherwise (``is_holonomic=False``),
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\cdot\mathrm{offdiag}\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}}\right) \
+            \boldsymbol{W}^{-\mathsf{T}}.
+        """
+        super().update_once()
+
+    def compute_negative_loglikelihood(self) -> float:
+        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            &= \frac{1}{T}\sum_{t,n}|y_{tn}| \
+                - \log|\det\boldsymbol{W}| \\
+
+        Returns:
+            float:
+                Computed negative log-likelihood.
+        """
+        return super().compute_negative_loglikelihood()
+
 
 class NaturalGradLaplaceICA(NaturalGradICA):
-    r"""Independent component analysis (ICA) using natural gradient descent on Laplacian distribution.
+    r"""Independent component analysis (ICA) using the natural gradient descent \
+    on Laplacian distribution.
+
+    We assume :math:`y_{ijn}` follows an Laplacian distribution.
+
+    .. math::
+        p(y_{ijn})\propto\exp(|y_{ijn}|)
 
     Args:
         step_size (float):
-            Step size of gradient descent. Default: ``1e-1``.
+            A step size of the gradient descent. Default: ``1e-1``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -757,7 +925,7 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of gradient descent if ``should_record_loss=True``.
+            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -808,3 +976,47 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         s += ")"
 
         return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once using the natural gradient descent.
+
+        If ``is_holonomic=True``, demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}} \
+            -\boldsymbol{I}\right)\boldsymbol{W},
+
+        where
+
+        .. math::
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})
+            = \left(\mathrm{sign}(y_{t1}),\ldots,\mathrm{sign}(y_{tN})\right)^{\mathsf{T}} \
+            \in\mathbb{R}^{N}.
+
+        Otherwise (``is_holonomic=False``),
+
+        .. math::
+            \boldsymbol{W}
+            \leftarrow\boldsymbol{W} - \eta\cdot\mathrm{offdiag}\left(\frac{1}{T}\sum_{t} \
+            \boldsymbol{\phi}(\boldsymbol{y}_{t})\boldsymbol{y}_{t}^{\mathsf{T}}\right) \
+            \boldsymbol{W}.
+        """
+        super().update_once()
+
+    def compute_negative_loglikelihood(self) -> float:
+        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            &= \frac{1}{T}\sum_{t,n}|y_{tn}| \
+                - \log|\det\boldsymbol{W}| \\
+
+        Returns:
+            float:
+                Computed negative log-likelihood.
+        """
+        return super().compute_negative_loglikelihood()

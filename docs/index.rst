@@ -25,15 +25,15 @@ You can install ``ssspy`` by pip.
 
 .. code-block:: shell
 
-    pip install git+https://github.com/tky823/ssspy.git
+   pip install git+https://github.com/tky823/ssspy.git
 
 or clone this repository.
 
 .. code-block:: shell
 
-    git clone https://github.com/tky823/ssspy.git
-    cd ssspy
-    pip install -e .
+   git clone https://github.com/tky823/ssspy.git
+   cd ssspy
+   pip install -e .
 
 .. toctree::
    :maxdepth: 1
