@@ -23,7 +23,8 @@ class GradICAbase:
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
             Default: ``True``.
     """
 
@@ -69,14 +70,16 @@ class GradICAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. Shape is (n_channels, n_samples).
+                Mixture signal in time-domain.
+                The shape is (n_channels, n_samples).
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: 100.
 
         Returns:
             numpy.ndarray:
-                The separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain.
+                The shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
@@ -156,13 +159,16 @@ class GradICAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. Shape is (n_channels, n_samples).
+                The mixture signal in time-domain.
+                The shape is (n_channels, n_samples).
             demix_filter (numpy.ndarray):
-                Demixing filters to separate signal. Shape is (n_sources, n_channels).
+                The demixing filters to separate ``input``.
+                The shape is (n_sources, n_channels).
 
         Returns:
             numpy.ndarray:
-                The separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain.
+                The shape is (n_sources, n_samples).
         """
         output = demix_filter @ input
 
@@ -212,7 +218,8 @@ class FastICAbase:
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each of the fixed-point iteration \
+            if ``should_record_loss=True``.
             Default: ``True``.
     """
 
@@ -261,14 +268,16 @@ class FastICAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. Shape is (n_channels, n_samples).
+                Mixture signal in time-domain.
+                The shape is (n_channels, n_samples).
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: 100.
 
         Returns:
             numpy.ndarray:
-                The separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain.
+                The shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
@@ -354,22 +363,48 @@ class FastICAbase:
     ) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
+        If ``should_whiten=True``,
+
+        .. math::
+            \boldsymbol{y}_{t}
+            &= \boldsymbol{W}\boldsymbol{z}_{t}, \\
+            \boldsymbol{z}_{t}
+            &= \boldsymbol{\Lambda}^{-\frac{1}{2}} \
+            \boldsymbol{\Gamma}^{\mathsf{T}}\boldsymbol{x}_{t}, \\
+            \boldsymbol{\Lambda}
+            &:= \mathrm{diag}(\lambda_{1},\ldots,\lambda_{m},\ldots,\lambda_{M}) \
+            \in\mathbb{R}^{M\times M}, \\
+            \boldsymbol{\Gamma}
+            &:= (\boldsymbol{\gamma}_{1}, \ldots,
+            \boldsymbol{\gamma}_{m}, \ldots, \boldsymbol{\gamma}_{M}) \
+            \in\mathbb{R}^{M\times M},
+
+        where :math:`\lambda_{m}` and :math:`\boldsymbol{\gamma}_{m}` are
+        an eigenvalue and eigenvector of
+        :math:`\sum_{t}\boldsymbol{x}_{t}\boldsymbol{x}_{t}^{\mathsf{T}}`,
+        respectively.
+
+        Otherwise (``should_whiten=False``),
+
         .. math::
             \boldsymbol{y}_{t}
             = \boldsymbol{W}\boldsymbol{x}_{t}
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain. Shape is (n_channels, n_samples).
+                The mixture signal in time-domain.
+                The shape is (n_channels, n_samples).
             demix_filter (numpy.ndarray):
-                Demixing filters to separate signal. Shape is (n_sources, n_channels).
+                The demixing filters to separate ``input``.
+                The shape is (n_sources, n_channels).
             should_whiten (bool):
                 If ``should_whiten=True``, whitening (sphering) is applied to ``input``.
                 Default: True.
 
         Returns:
             numpy.ndarray:
-                The separated signal in time-domain. Shape is (n_sources, n_samples).
+                The separated signal in time-domain.
+                The shape is (n_sources, n_samples).
         """
         if should_whiten:
             X = input
@@ -430,7 +465,8 @@ class GradICA(GradICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -554,7 +590,8 @@ class NaturalGradICA(GradICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -697,13 +734,14 @@ class FastICA(FastICAbase):
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (callable):
-            Partial derivative of score function.
+            A Partial derivative of the score function.
             This function is expected to return the same shape tensor as the input.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each of the fixed-point iteration \
+            if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -752,7 +790,7 @@ class FastICA(FastICAbase):
         )
 
     def update_once(self) -> None:
-        r"""Update demixing filters once using fixed-point iteration algorithm.
+        r"""Update demixing filters once using the fixed-point iteration algorithm.
 
         For :math:`n=1,\dots,N`, the demixing flter :math:`\boldsymbol{w}_{n}`
         is updated sequentially,
@@ -795,9 +833,9 @@ class FastICA(FastICAbase):
 
 
 class GradLaplaceICA(GradICA):
-    r"""Independent component analysis (ICA) using the gradient descent on Laplacian distribution.
+    r"""Independent component analysis (ICA) using the gradient descent on a Laplacian distribution.
 
-    We assume :math:`y_{ijn}` follows an Laplacian distribution.
+    We assume :math:`y_{ijn}` follows a Laplacian distribution.
 
     .. math::
         p(y_{ijn})\propto\exp(|y_{ijn}|)
@@ -812,7 +850,8 @@ class GradLaplaceICA(GradICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -908,9 +947,9 @@ class GradLaplaceICA(GradICA):
 
 class NaturalGradLaplaceICA(NaturalGradICA):
     r"""Independent component analysis (ICA) using the natural gradient descent \
-    on Laplacian distribution.
+    on a Laplacian distribution.
 
-    We assume :math:`y_{ijn}` follows an Laplacian distribution.
+    We assume :math:`y_{ijn}` follows a Laplacian distribution.
 
     .. math::
         p(y_{ijn})\propto\exp(|y_{ijn}|)
@@ -925,7 +964,8 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         should_record_loss (bool):
-            Record loss at each iteration of the gradient descent if ``should_record_loss=True``.
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
             Default: ``True``.
 
     Examples:
