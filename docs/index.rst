@@ -18,7 +18,7 @@ Welcome to ssspy's documentation!
 .. image:: https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G
    :target: https://codecov.io/gh/tky823/ssspy
 
-``ssspy`` is a python toolkit for sound source separation.
+``ssspy`` is a Python toolkit for sound source separation.
 
 Installation
 ------------

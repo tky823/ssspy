@@ -4,7 +4,7 @@
 [![tests](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
 [![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G)](https://codecov.io/gh/tky823/ssspy)
 
-A Python library for sound source separation.
+A Python toolkit for sound source separation.
 
 ## Installation
 You can install by pip.
