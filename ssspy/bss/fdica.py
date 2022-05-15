@@ -1,6 +1,6 @@
 from typing import Optional, Union, List, Callable
 import itertools
-from functools import partial
+import functools
 
 import numpy as np
 
@@ -53,7 +53,9 @@ class FDICAbase:
         self,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = partial(max_flooring, eps=EPS),
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[Callable[["FDICAbase"], None], List[Callable[["FDICAbase"], None]]]
         ] = None,
@@ -101,21 +103,25 @@ class FDICAbase:
             self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate a time-domain multichannel signal.
+        r"""Separate a frequency-domain multichannel signal.
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in time-domain.
-                The shape is (n_channels, n_samples).
+                Mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: 100.
 
         Returns:
             numpy.ndarray:
-                The separated signal in time-domain.
-                The shape is (n_sources, n_samples).
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
         """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
         raise NotImplementedError("Implement '__call__' method.")
 
     def __repr__(self) -> str:
@@ -206,9 +212,9 @@ class FDICAbase:
                 Computed negative log-likelihood.
         """
         X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_channels, n_bins, n_frames)
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
         logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
-        G = self.contrast_fn(Y)  # (n_channels, n_bins, n_frames)
+        G = self.contrast_fn(Y)  # (n_sources, n_bins, n_frames)
         loss = np.sum(np.mean(G, axis=2), axis=0) - 2 * logdet
         loss = loss.sum(axis=0)
 
@@ -267,9 +273,9 @@ class FDICAbase:
 
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
-        output = self.separate(X, demix_filter=W_scaled)
+        Y_scaled = self.separate(X, demix_filter=W_scaled)
 
-        self.output = output
+        self.output, self.demix_filter = Y_scaled, W_scaled
 
 
 class GradFDICAbase(FDICAbase):
@@ -317,7 +323,9 @@ class GradFDICAbase(FDICAbase):
         step_size: float = 1e-1,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = partial(max_flooring, eps=EPS),
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[Callable[["GradFDICAbase"], None], List[Callable[["GradFDICAbase"], None]]]
         ] = None,
@@ -476,7 +484,9 @@ class GradFDICA(GradFDICAbase):
         step_size: float = 1e-1,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = partial(max_flooring, eps=EPS),
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[Callable[["GradFDICA"], None], List[Callable[["GradFDICA"], None]]]
         ] = None,
@@ -550,7 +560,8 @@ class GradFDICA(GradFDICAbase):
         Y = self.separate(X, demix_filter=W)
 
         Phi = self.score_fn(Y)
-        PhiY = np.mean(Phi[:, np.newaxis, :, :] * Y[np.newaxis, :, :, :], axis=-1)
+        Y_conj = Y.conj()
+        PhiY = np.mean(Phi[:, np.newaxis, :, :] * Y_conj[np.newaxis, :, :, :], axis=-1)
         PhiY = PhiY.transpose(2, 0, 1)  # (n_bins, n_sources, n_sources)
         W_inv = np.linalg.inv(W)
         W_inv_Hermite = W_inv.transpose(0, 2, 1).conj()
@@ -637,9 +648,11 @@ class NaturalGradFDICA(GradFDICAbase):
         step_size: float = 1e-1,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = partial(max_flooring, eps=EPS),
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
-            Union[Callable[["GradFDICA"], None], List[Callable[["GradFDICA"], None]]]
+            Union[Callable[["NaturalGradFDICA"], None], List[Callable[["NaturalGradFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
@@ -711,16 +724,15 @@ class NaturalGradFDICA(GradFDICAbase):
         Y = self.separate(X, demix_filter=W)
 
         Phi = self.score_fn(Y)
-        PhiY = np.mean(Phi[:, np.newaxis, :, :] * Y[np.newaxis, :, :, :], axis=-1)
+        Y_conj = Y.conj()
+        PhiY = np.mean(Phi[:, np.newaxis, :, :] * Y_conj[np.newaxis, :, :, :], axis=-1)
         PhiY = PhiY.transpose(2, 0, 1)  # (n_bins, n_sources, n_sources)
-        W_inv = np.linalg.inv(W)
-        W_inv_Hermite = W_inv.transpose(0, 2, 1).conj()
         eye = np.eye(self.n_sources)
 
         if self.is_holonomic:
-            delta = (PhiY - eye) @ W_inv_Hermite
+            delta = (PhiY - eye) @ W
         else:
-            delta = ((1 - eye) * PhiY) @ W_inv_Hermite
+            delta = ((1 - eye) * PhiY) @ W
 
         W = W - self.step_size * delta
 
