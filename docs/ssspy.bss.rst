@@ -10,3 +10,4 @@ Submodules
    :maxdepth: 1
 
    ssspy.bss.ica
+   ssspy.bss.fdica
