@@ -713,12 +713,12 @@ class GradLaplaceIVA(GradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                np.ndarray:
+                numpy.ndarray:
                     The shape is (n_sources, n_frames).
             """
             return 2 * np.linalg.norm(y, axis=1)
 
-        def score_fn(y):
+        def score_fn(y: np.ndarray) -> np.ndarray:
             r"""Score function.
 
             Args:
@@ -726,7 +726,7 @@ class GradLaplaceIVA(GradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                np.ndarray:
+                numpy.ndarray:
                     The shape is (n_sources, n_bins, n_frames).
             """
             norm = np.linalg.norm(y, axis=1, keepdims=True)
@@ -868,12 +868,12 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                np.ndarray:
+                numpy.ndarray:
                     The shape is (n_sources, n_frames).
             """
             return 2 * np.linalg.norm(y, axis=1)
 
-        def score_fn(y):
+        def score_fn(y: np.ndarray) -> np.ndarray:
             r"""Score function.
 
             Args:
@@ -881,7 +881,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                np.ndarray:
+                numpy.ndarray:
                     The shape is (n_sources, n_bins, n_frames).
             """
             norm = np.linalg.norm(y, axis=1, keepdims=True)
