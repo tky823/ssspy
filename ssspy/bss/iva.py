@@ -555,7 +555,7 @@ class NaturalGradIVA(GradIVAbase):
             spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
                 + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = NaturalGradIVA()
+            iva = NaturalGradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
             spectrogram_est = iva(spectrogram_mix, n_iter=500)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
