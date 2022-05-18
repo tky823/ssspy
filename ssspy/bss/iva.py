@@ -398,6 +398,25 @@ class GradIVA(GradIVAbase):
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(y):
+                return 2 * np.linalg.norm(y, axis=1)
+
+            def score_fn(y):
+                norm = np.linalg.norm(y, axis=1, keepdims=True)
+                return y / np.maximum(norm, 1e-12)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = GradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
+            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -521,6 +540,25 @@ class NaturalGradIVA(GradIVAbase):
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(y):
+                return 2 * np.linalg.norm(y, axis=1)
+
+            def score_fn(y):
+                norm = np.linalg.norm(y, axis=1, keepdims=True)
+                return y / np.maximum(norm, 1e-12)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = NaturalGradIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -639,6 +677,18 @@ class GradLaplaceIVA(GradIVA):
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = GradLaplaceIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -779,6 +829,18 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = NaturalGradLaplaceIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
