@@ -9,6 +9,7 @@ from ..algorithm import projection_back
 
 __all__ = ["GradFDICA", "NaturalGradFDICA"]
 
+algorithms_spatial = ["IP", "IP1", "IP2"]
 EPS = 1e-12
 
 
@@ -18,10 +19,6 @@ class FDICAbase:
     Args:
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
-            and return (n_channels, n_bins, n_frames).
-        score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
@@ -52,7 +49,6 @@ class FDICAbase:
     def __init__(
         self,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
-        score_fn: Callable[[np.ndarray], np.ndarray] = None,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
@@ -68,11 +64,6 @@ class FDICAbase:
             raise ValueError("Specify contrast function.")
         else:
             self.contrast_fn = contrast_fn
-
-        if score_fn is None:
-            raise ValueError("Specify score function.")
-        else:
-            self.score_fn = score_fn
 
         if flooring_fn is None:
             self.flooring_fn = lambda x: x
@@ -336,7 +327,6 @@ class GradFDICAbase(FDICAbase):
     ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
-            score_fn=score_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
@@ -346,6 +336,11 @@ class GradFDICAbase(FDICAbase):
         )
 
         self.step_size = step_size
+
+        if score_fn is None:
+            raise ValueError("Specify score function.")
+        else:
+            self.score_fn = score_fn
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -740,3 +735,259 @@ class NaturalGradFDICA(GradFDICAbase):
 
         self.demix_filter = W
         self.output = Y
+
+
+class AuxFDICA(FDICAbase):
+    r"""Auxiliary-function-based frequency-domain independent component analysis \
+    (AuxFDICA) [#ono2010auxiliary]_.
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm to update demixing filters.
+            Choose from "IP", "IP1", "IP2".
+            Default: "IP".
+        contrast_fn (callable):
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+        d_contrast_fn (callable):
+            A partial derivative of the real contrast function.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-12)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_solve_permutation (bool):
+            If ``should_solve_permutation=True``, a permutation solver is used to align \
+            estimated spectrograms. Default: ``True``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    .. [#ono2010auxiliary]
+        Ono, Nobutaka and Miyabe, Shigeki,
+        "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
+        in *Proc. LVA/ICA*, 2010, pp.165-172.
+    """
+
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP",
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
+        ] = None,
+        should_solve_permutation: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            contrast_fn=contrast_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_solve_permutation=should_solve_permutation,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+
+        self.algorithm_spatial = algorithm_spatial
+        self.d_contrast_fn = d_contrast_fn
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_negative_loglikelihood()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_negative_loglikelihood()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_solve_permutation:
+            self.solve_permutation()
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def __repr__(self) -> str:
+        s = "AuxFDICA("
+        s += "algorithm_spatial={algorithm_spatial}"
+        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_once_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_once_ip1(self):
+        r"""Update demixing filters once using iterative projection.
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        Y_abs = np.abs(Y)
+        denominator = self.flooring_fn(2 * Y_abs)
+        weight = self.d_contrast_fn(Y_abs) / denominator  # (n_sources, n_bins, n_frames)
+        weight = weight.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
+        GXX = weight[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
+        eps = self.flooring_fn(np.zeros(1))
+        U = U + eps * np.eye(n_channels)
+
+        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]  # (n_bins, n_n_channels)
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denominator = np.sqrt(wUw)
+            denominator = self.flooring_fn(denominator)
+            w_n_Hermite = w_n.conj() / denominator
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+
+class AuxLaplaceFDICA(AuxFDICA):
+    r"""Auxiliary-function-based frequency-domain independent component analysis \
+    (AuxFDICA)[#ono2010auxiliary]_ on a Laplacian distribution.
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm to update demixing filters.
+            Choose from "IP", "IP1", "IP2".
+            Default: "IP".
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-12)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_solve_permutation (bool):
+            If ``should_solve_permutation=True``, a permutation solver is used to align \
+            estimated spectrograms. Default: ``True``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+    """
+
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
+        ] = None,
+        should_solve_permutation: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray):
+            return 2 * y
+
+        def d_contrast_fn(y: np.ndarray):
+            return np.ones_like(y)
+
+        super().__init__(
+            algorithm_spatial=algorithm_spatial,
+            contrast_fn=contrast_fn,
+            d_contrast_fn=d_contrast_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_solve_permutation=should_solve_permutation,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
