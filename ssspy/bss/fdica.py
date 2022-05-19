@@ -10,7 +10,6 @@ from ..algorithm import projection_back
 __all__ = ["GradFDICA", "NaturalGradFDICA"]
 
 algorithms_spatial = ["IP", "IP1", "IP2"]
-
 EPS = 1e-10
 
 
