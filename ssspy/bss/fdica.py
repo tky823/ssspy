@@ -887,6 +887,27 @@ class AuxFDICA(FDICAbase):
 
     def update_once_ip1(self):
         r"""Update demixing filters once using iterative projection.
+
+        If ``is_holonomic=True``, demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{i}\boldsymbol{U}_{in}\right)^{-1}
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in} \
+            &\leftarrow
+            \frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &= \frac{1}{J}\sum_{j} \
+            \frac{G'_{\mathbb{R}}(|y_{ijn}|)}{2|y_{ijn}|} \
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}} \\
+            G_{\mathbb{R}}(|y_{ijn}|)
+            &= G(y_{ijn})
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
