@@ -68,3 +68,8 @@ Algorithms
    :special-members: __call__
    :members:
    :undoc-members:
+
+.. autoclass:: ssspy.bss.fdica.AuxFDICA
+   :special-members: __call__
+   :members:
+   :undoc-members:
