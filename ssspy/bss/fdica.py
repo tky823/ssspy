@@ -37,13 +37,13 @@ class FDICAbase:
         should_apply_projection_back (bool):
             If ``should_apply_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``should_record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
     """
 
     def __init__(
@@ -57,8 +57,8 @@ class FDICAbase:
         ] = None,
         should_solve_permutation: bool = True,
         should_apply_projection_back: bool = True,
-        reference_id: int = 0,
         should_record_loss: bool = True,
+        reference_id: int = 0,
     ) -> None:
         if contrast_fn is None:
             raise ValueError("Specify contrast function.")
@@ -300,13 +300,13 @@ class GradFDICAbase(FDICAbase):
         should_apply_projection_back (bool):
             If ``should_apply_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``should_record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
     """
 
     def __init__(
@@ -322,8 +322,8 @@ class GradFDICAbase(FDICAbase):
         ] = None,
         should_solve_permutation: bool = True,
         should_apply_projection_back: bool = True,
-        reference_id: int = 0,
         should_record_loss: bool = True,
+        reference_id: int = 0,
     ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
@@ -331,8 +331,8 @@ class GradFDICAbase(FDICAbase):
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
             should_apply_projection_back=should_apply_projection_back,
-            reference_id=reference_id,
             should_record_loss=should_record_loss,
+            reference_id=reference_id,
         )
 
         self.step_size = step_size
@@ -445,13 +445,13 @@ class GradFDICA(GradFDICAbase):
         should_apply_projection_back (bool):
             If ``should_apply_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``should_record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -488,8 +488,8 @@ class GradFDICA(GradFDICAbase):
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
         should_apply_projection_back: bool = True,
-        reference_id: int = 0,
         should_record_loss: bool = True,
+        reference_id: int = 0,
     ) -> None:
         super().__init__(
             step_size=step_size,
@@ -499,8 +499,8 @@ class GradFDICA(GradFDICAbase):
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
             should_apply_projection_back=should_apply_projection_back,
-            reference_id=reference_id,
             should_record_loss=should_record_loss,
+            reference_id=reference_id,
         )
 
         self.is_holonomic = is_holonomic
@@ -609,13 +609,13 @@ class NaturalGradFDICA(GradFDICAbase):
         should_apply_projection_back (bool):
             If ``should_apply_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``should_record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -652,8 +652,8 @@ class NaturalGradFDICA(GradFDICAbase):
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
         should_apply_projection_back: bool = True,
-        reference_id: int = 0,
         should_record_loss: bool = True,
+        reference_id: int = 0,
     ) -> None:
         super().__init__(
             step_size=step_size,
@@ -663,8 +663,8 @@ class NaturalGradFDICA(GradFDICAbase):
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
             should_apply_projection_back=should_apply_projection_back,
-            reference_id=reference_id,
             should_record_loss=should_record_loss,
+            reference_id=reference_id,
         )
 
         self.is_holonomic = is_holonomic
