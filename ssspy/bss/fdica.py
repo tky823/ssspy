@@ -991,3 +991,17 @@ class AuxLaplaceFDICA(AuxFDICA):
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
+
+    def __repr__(self) -> str:
+        s = "AuxLaplaceFDICA("
+        s += "algorithm_spatial={algorithm_spatial}"
+        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
