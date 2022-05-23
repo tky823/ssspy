@@ -8,6 +8,7 @@ from ..algorithm import projection_back
 
 __all__ = ["GradIVA", "NaturalGradIVA", "GradLaplaceIVA", "NaturalGradLaplaceIVA"]
 
+algorithms_spatial = ["IP", "IP1", "IP2"]
 EPS = 1e-12
 
 
@@ -188,7 +189,13 @@ class IVAbase:
             float:
                 Computed negative log-likelihood.
         """
-        raise NotImplementedError("Implement 'compute_negative_loglikelihood' method.")
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
+        G = self.contrast_fn(Y)  # (n_sources, n_frames)
+        loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
+
+        return loss
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
@@ -200,6 +207,87 @@ class IVAbase:
         Y_scaled = self.separate(X, demix_filter=W_scaled)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
+
+
+class AuxIVAbase(IVAbase):
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP1",
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxIVAbase"], None], List[Callable[["AuxIVAbase"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+
+        self.algorithm_spatial = algorithm_spatial
+        self.contrast_fn = contrast_fn
+        self.d_contrast_fn = d_contrast_fn
+
+        if algorithm_spatial in ["IP2"]:
+            self.updating_pair = 0, 1
+        else:
+            self.updating_pair = None
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_negative_loglikelihood()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_negative_loglikelihood()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
 
 class GradIVAbase(IVAbase):
@@ -336,30 +424,6 @@ class GradIVAbase(IVAbase):
         s += ")"
 
         return s.format(**self.__dict__)
-
-    def compute_negative_loglikelihood(self) -> float:
-        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
-
-        :math:`\mathcal{L}` is given as follows:
-
-        .. math::
-            \mathcal{L} \
-            &= \frac{1}{J}\sum_{j,n}G(\vec{\boldsymbol{y}}_{jn}) \
-            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|, \\
-            G(\vec{\boldsymbol{y}}_{jn}) \
-            &= - \log p(\vec{\boldsymbol{y}}_{jn})
-
-        Returns:
-            float:
-                Computed negative log-likelihood.
-        """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
-        G = self.contrast_fn(Y)  # (n_sources, n_frames)
-        loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
-
-        return loss
 
 
 class GradIVA(GradIVAbase):
