@@ -9,7 +9,7 @@ from ..algorithm import projection_back
 __all__ = ["GradIVA", "NaturalGradIVA", "GradLaplaceIVA", "NaturalGradLaplaceIVA"]
 
 algorithms_spatial = ["IP", "IP1", "IP2"]
-EPS = 1e-12
+EPS = 1e-10
 
 
 class IVAbase:
