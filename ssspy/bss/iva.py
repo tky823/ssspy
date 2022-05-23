@@ -708,6 +708,81 @@ class NaturalGradIVA(GradIVAbase):
         self.output = Y
 
 
+class AuxIVA(AuxIVAbase):
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP",
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxIVA"], None], List[Callable[["AuxIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ):
+        super().__init__(
+            algorithm_spatial=algorithm_spatial,
+            contrast_fn=contrast_fn,
+            d_contrast_fn=d_contrast_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_once_ip1()
+        elif self.algorithm_spatial in ["IP2"]:
+            self.update_once_ip2()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_once_ip1(self):
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        norm = np.linalg.norm(Y, axis=1)
+        denominator = self.flooring_fn(2 * norm)
+        weight = self.d_contrast_fn(Y) / denominator  # (n_sources, n_frames)
+        GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
+        eps = self.flooring_fn(np.zeros(1))
+        U = U + eps * np.eye(n_channels)
+
+        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]  # (n_bins, n_n_channels)
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denominator = np.sqrt(wUw)
+            denominator = self.flooring_fn(denominator)
+            w_n_Hermite = w_n.conj() / denominator
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+
 class GradLaplaceIVA(GradIVA):
     r"""Independent vector analysis (IVA) using the gradient descent on a Laplacian distribution.
 
