@@ -877,37 +877,29 @@ class AuxFDICA(FDICAbase):
 
         return s.format(**self.__dict__)
 
+    def _eigh(self, A, B):
+        import scipy.linalg as splinalg
+
+        h = []
+
+        for A_i, B_i in zip(A, B):
+            _, h_i = splinalg.eigh(A_i, B_i)  # (n_bins, 2, 2)
+            h.append(h_i)
+
+        return np.stack(h, axis=0)
+
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_once_ip1()
+        elif self.algorithm_spatial in ["IP2"]:
+            self.update_once_ip2()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
     def update_once_ip1(self):
         r"""Update demixing filters once using iterative projection.
-
-        If ``is_holonomic=True``, demixing filters are updated as follows:
-
-        .. math::
-            \boldsymbol{w}_{in}
-            &\leftarrow\left(\boldsymbol{W}_{i}\boldsymbol{U}_{in}\right)^{-1}
-            \boldsymbol{e}_{n}, \\
-            \boldsymbol{w}_{in} \
-            &\leftarrow
-            \frac{\boldsymbol{w}_{in}}
-            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}
-
-        where
-
-        .. math::
-            \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j} \
-            \frac{G'_{\mathbb{R}}(|y_{ijn}|)}{2|y_{ijn}|} \
-            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}} \\
-            G_{\mathbb{R}}(|y_{ijn}|)
-            &= G(y_{ijn})
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
@@ -943,6 +935,52 @@ class AuxFDICA(FDICAbase):
             denominator = self.flooring_fn(denominator)
             w_n_Hermite = w_n.conj() / denominator
             W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+    def update_once_ip2(self):
+        r"""Update demixing filters once using pairwise iterative projection.
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+
+        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+
+        eps = self.flooring_fn(np.zeros(1))
+        eps_eye = eps * np.eye(2)
+
+        for m, n in itertools.combinations(range(n_sources), 2):
+            W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
+            Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
+
+            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
+            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+
+            Y_mn_abs = np.abs(Y_mn)  # (2, n_bins, n_frames)
+            denom_mn = self.flooring_fn(2 * Y_mn_abs)
+            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
+
+            G_mn_YY = weight_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
+            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
+            U_mn = U_mn + eps_eye
+
+            U_m, U_n = U_mn
+            H_mn = self._eigh(U_m, U_n)  # (n_bins, 2, 2)
+            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
+            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
+            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
+            hUh_mn = np.real(hUh_mn)
+            hUh_mn = np.maximum(hUh_mn, 0)
+            denom_mn = np.sqrt(hUh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            h_mn = h_mn / denom_mn
+            H_mn = h_mn.transpose(1, 2, 0)
+            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
+
+            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
 
         self.demix_filter = W
 
@@ -999,7 +1037,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             return 2 * y
 
         def d_contrast_fn(y: np.ndarray):
-            return np.ones_like(y)
+            return 2 * np.ones_like(y)
 
         super().__init__(
             algorithm_spatial=algorithm_spatial,
