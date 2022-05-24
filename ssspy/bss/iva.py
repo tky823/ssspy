@@ -756,7 +756,7 @@ class AuxIVA(AuxIVAbase):
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         norm = np.linalg.norm(Y, axis=1)
         denominator = self.flooring_fn(2 * norm)
-        weight = self.d_contrast_fn(Y) / denominator  # (n_sources, n_frames)
+        weight = self.d_contrast_fn(norm) / denominator  # (n_sources, n_frames)
         GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
         eps = self.flooring_fn(np.zeros(1))
