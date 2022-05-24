@@ -832,7 +832,7 @@ class AuxIVA(AuxIVAbase):
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
-    def update_once_ip1(self):
+    def update_once_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
         """
         n_sources, n_channels = self.n_sources, self.n_channels
@@ -917,7 +917,7 @@ class AuxIVA(AuxIVAbase):
 
         self.demix_filter = W
 
-    def _eigh(self, A, B):
+    def _eigh(self, A, B) -> np.ndarray:
         r"""Generalized eigendecomposition.
         """
         import scipy.linalg as splinalg
