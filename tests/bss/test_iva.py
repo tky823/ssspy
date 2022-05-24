@@ -4,7 +4,14 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
-from ssspy.bss.iva import AuxIVA, GradIVA, NaturalGradIVA, GradLaplaceIVA, NaturalGradLaplaceIVA
+from ssspy.bss.iva import (
+    GradIVA,
+    NaturalGradIVA,
+    AuxIVA,
+    GradLaplaceIVA,
+    NaturalGradLaplaceIVA,
+    AuxLaplaceIVA,
+)
 from tests.bss.create_dataset import (
     create_sisec2011_dataset,
     create_mird_dataset,
@@ -345,6 +352,52 @@ def test_natural_grad_laplace_iva(
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
 
     iva = NaturalGradLaplaceIVA(callbacks=callbacks, is_holonomic=is_holonomic)
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_iva)
+def test_aux_laplace_iva(
+    n_sources: str,
+    algorithm_spatial: str,
+    callbacks: Optional[
+        Union[
+            Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
+        ]
+    ],
+):
+    np.random.seed(111)
+
+    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
+    mird_npz_path = create_mird_dataset(n_sources=n_sources)
+
+    sisec2011_npz = np.load(sisec2011_npz_path)
+    mird_npz = np.load(mird_npz_path)
+
+    waveform_src_img = []
+
+    for src_idx in range(n_sources):
+        key = "src_{}".format(src_idx + 1)
+        waveform_src = sisec2011_npz[key][:max_samples]
+        n_samples = len(waveform_src)
+        _waveform_src_img = []
+
+        for waveform_rir in mird_npz[key]:
+            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
+            _waveform_src_img.append(waveform_conv)
+
+        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
+        waveform_src_img.append(_waveform_src_img)
+
+    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+
+    iva = AuxLaplaceIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
