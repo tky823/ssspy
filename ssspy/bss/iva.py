@@ -347,6 +347,40 @@ class GradIVAbase(IVAbase):
 
 
 class AuxIVAbase(IVAbase):
+    r"""Base class of auxiliary-function-based independent vector analysis (IVA).
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose from "IP", "IP1", or "IP2". Default: "IP".
+        contrast_fn (callable):
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_frames).
+        d_contrast_fn (callable):
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
+            and return (n_channels, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+    """
+
     def __init__(
         self,
         algorithm_spatial: str = "IP",
@@ -710,6 +744,58 @@ class NaturalGradIVA(GradIVAbase):
 
 
 class AuxIVA(AuxIVAbase):
+    r"""Auxiliary-function-based independent vector analysis (IVA).
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose from "IP", "IP1", or "IP2". Default: "IP".
+        contrast_fn (callable):
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_frames).
+        d_contrast_fn (callable):
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
+            and return (n_channels, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(y):
+                return 2 * np.linalg.norm(y, axis=1)
+
+            def d_contrast_fn(y):
+                return 2 * np.ones_like(y)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = AuxIVA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
     def __init__(
         self,
         algorithm_spatial: str = "IP",
@@ -747,6 +833,8 @@ class AuxIVA(AuxIVAbase):
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
     def update_once_ip1(self):
+        r"""Update demixing filters once using iterative projection.
+        """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
@@ -784,6 +872,8 @@ class AuxIVA(AuxIVAbase):
         self.demix_filter = W
 
     def update_once_ip2(self) -> None:
+        r"""Update demixing filters once using pairwise iterative projection.
+        """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
@@ -828,6 +918,8 @@ class AuxIVA(AuxIVAbase):
         self.demix_filter = W
 
     def _eigh(self, A, B):
+        r"""Generalized eigendecomposition.
+        """
         import scipy.linalg as splinalg
 
         h = []
