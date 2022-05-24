@@ -409,11 +409,6 @@ class AuxIVAbase(IVAbase):
         self.contrast_fn = contrast_fn
         self.d_contrast_fn = d_contrast_fn
 
-        if algorithm_spatial in ["IP2"]:
-            self.updating_pair = 0, 1
-        else:
-            self.updating_pair = None
-
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
