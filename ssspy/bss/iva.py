@@ -460,6 +460,19 @@ class AuxIVAbase(IVAbase):
 
         return self.output
 
+    def __repr__(self) -> str:
+        s = "AuxIVA("
+        s += "algorithm_spatial={algorithm_spatial}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
 
 class GradIVA(GradIVAbase):
     r"""Independent vector analysis (IVA) using gradient descent.
