@@ -845,6 +845,21 @@ class AuxIVA(AuxIVAbase):
 
         return s.format(**self.__dict__)
 
+    def _eigh(self, A, B) -> np.ndarray:
+        r"""Generalized eigendecomposition.
+        """
+        import scipy.linalg as splinalg
+
+        h = []
+
+        for A_i, B_i in zip(A, B):
+            _, h_i = splinalg.eigh(A_i, B_i)  # (n_bins, 2, 2)
+            h.append(h_i)
+
+        h = np.stack(h, axis=0)
+
+        return h
+
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
@@ -1037,21 +1052,6 @@ class AuxIVA(AuxIVAbase):
             W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
 
         self.demix_filter = W
-
-    def _eigh(self, A, B) -> np.ndarray:
-        r"""Generalized eigendecomposition.
-        """
-        import scipy.linalg as splinalg
-
-        h = []
-
-        for A_i, B_i in zip(A, B):
-            _, h_i = splinalg.eigh(A_i, B_i)  # (n_bins, 2, 2)
-            h.append(h_i)
-
-        h = np.stack(h, axis=0)
-
-        return h
 
 
 class GradLaplaceIVA(GradIVA):
