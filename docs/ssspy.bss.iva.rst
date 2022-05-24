@@ -91,3 +91,9 @@ Algorithms
    :members:
    :undoc-members:
    :inherited-members:
+
+.. autoclass:: ssspy.bss.iva.AuxLaplaceIVA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+   :inherited-members:
