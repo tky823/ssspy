@@ -103,7 +103,7 @@ class IVAbase:
 
     def __repr__(self) -> str:
         s = "IVA("
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += "should_apply_projection_back={should_apply_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
         if self.should_apply_projection_back:
@@ -450,7 +450,7 @@ class AuxIVAbase(IVAbase):
 
     def __repr__(self) -> str:
         s = "AuxIVA("
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += "should_apply_projection_back={should_apply_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
         if self.should_apply_projection_back:
