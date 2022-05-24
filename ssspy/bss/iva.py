@@ -1,6 +1,6 @@
-import itertools
 from typing import Optional, Union, List, Callable
 import functools
+import itertools
 
 import numpy as np
 
