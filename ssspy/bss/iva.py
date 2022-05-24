@@ -350,9 +350,6 @@ class AuxIVAbase(IVAbase):
     r"""Base class of auxiliary-function-based independent vector analysis (IVA).
 
     Args:
-        algorithm_spatial (str):
-            Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
             This function is expected to receive (n_channels, n_bins, n_frames)
@@ -383,7 +380,6 @@ class AuxIVAbase(IVAbase):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -403,9 +399,6 @@ class AuxIVAbase(IVAbase):
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
-
-        self.algorithm_spatial = algorithm_spatial
         self.contrast_fn = contrast_fn
         self.d_contrast_fn = d_contrast_fn
 
@@ -457,7 +450,6 @@ class AuxIVAbase(IVAbase):
 
     def __repr__(self) -> str:
         s = "AuxIVA("
-        s += "algorithm_spatial={algorithm_spatial}"
         s += ", should_apply_projection_back={should_apply_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
@@ -820,7 +812,6 @@ class AuxIVA(AuxIVAbase):
         reference_id: int = 0,
     ):
         super().__init__(
-            algorithm_spatial=algorithm_spatial,
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
@@ -829,6 +820,23 @@ class AuxIVA(AuxIVAbase):
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
+
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+
+        self.algorithm_spatial = algorithm_spatial
+
+    def __repr__(self) -> str:
+        s = "AuxIVA("
+        s += "algorithm_spatial={algorithm_spatial}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
 
     def update_once(self) -> None:
         r"""Update demixing filters once.
