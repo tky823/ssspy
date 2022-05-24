@@ -86,7 +86,7 @@ def test_grad_iva(
         """
         return 2 * np.linalg.norm(y, axis=1)
 
-    def score_fn(y):
+    def score_fn(y) -> np.ndarray:
         r"""Score function.
 
         Args:
