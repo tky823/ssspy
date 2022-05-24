@@ -1351,3 +1351,79 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
                 Computed negative log-likelihood.
         """
         return super().compute_negative_loglikelihood()
+
+
+class AuxLaplaceIVA(AuxIVA):
+    r"""Auxiliary-function-based independent vector analysis (IVA) \
+    on a Laplacian distribution.
+
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplacian distribution.
+
+    .. math::
+        p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose from "IP", "IP1", or "IP2". Default: "IP".
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = AuxLaplaceIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxLaplaceIVA"], None], List[Callable[["AuxLaplaceIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ):
+        def contrast_fn(y):
+            return 2 * np.linalg.norm(y, axis=1)
+
+        def d_contrast_fn(y):
+            return 2 * np.ones_like(y)
+
+        super().__init__(
+            algorithm_spatial=algorithm_spatial,
+            contrast_fn=contrast_fn,
+            d_contrast_fn=d_contrast_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
