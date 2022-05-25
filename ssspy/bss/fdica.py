@@ -27,7 +27,7 @@ class FDICAbase:
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -290,7 +290,7 @@ class GradFDICAbase(FDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -432,7 +432,7 @@ class GradFDICA(GradFDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -460,7 +460,7 @@ class GradFDICA(GradFDICAbase):
                 return 2 * np.abs(y)
 
             def score_fn(y):
-                denominator = np.maximum(np.abs(y), 1e-12)
+                denominator = np.maximum(np.abs(y), 1e-10)
                 return y / denominator
 
             n_channels, n_bins, n_frames = 2, 2049, 128
@@ -596,7 +596,7 @@ class NaturalGradFDICA(GradFDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -624,7 +624,7 @@ class NaturalGradFDICA(GradFDICAbase):
                 return 2 * np.abs(y)
 
             def score_fn(y):
-                denominator = np.maximum(np.abs(y), 1e-12)
+                denominator = np.maximum(np.abs(y), 1e-10)
                 return y / denominator
 
             n_channels, n_bins, n_frames = 2, 2049, 128
@@ -760,7 +760,7 @@ class AuxFDICA(FDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1000,7 +1000,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
