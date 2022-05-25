@@ -1,4 +1,4 @@
-from . import ica, fdica
+from . import ica, fdica, iva
 
 
-__all__ = ["ica", "fdica"]
+__all__ = ["ica", "fdica", "iva"]
