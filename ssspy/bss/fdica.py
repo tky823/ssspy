@@ -7,7 +7,7 @@ import numpy as np
 from ._flooring import max_flooring
 from ..algorithm import projection_back
 
-__all__ = ["GradFDICA", "NaturalGradFDICA"]
+__all__ = ["GradFDICA", "NaturalGradFDICA", "AuxFDICA", "AuxLaplaceFDICA"]
 
 algorithms_spatial = ["IP", "IP1", "IP2"]
 EPS = 1e-10
