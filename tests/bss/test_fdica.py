@@ -178,7 +178,7 @@ def test_aux_fdica(
         return 2 * np.abs(y)
 
     def d_contrast_fn(y):
-        return np.ones_like(y)
+        return 2 * np.ones_like(y)
 
     fdica = AuxFDICA(
         algorithm_spatial=algorithm_spatial,
