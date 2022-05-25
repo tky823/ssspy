@@ -1106,7 +1106,7 @@ class AuxLaplaceFDICA(AuxFDICA):
     Args:
         algorithm_spatial (str):
             Algorithm to update demixing filters.
-            Choose from "IP", "IP1", "IP2".
+            Choose from "IP", "IP1", or "IP2".
             Default: "IP".
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
