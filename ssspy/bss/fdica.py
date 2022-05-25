@@ -7,7 +7,14 @@ import numpy as np
 from ._flooring import max_flooring
 from ..algorithm import projection_back
 
-__all__ = ["GradFDICA", "NaturalGradFDICA", "AuxFDICA", "AuxLaplaceFDICA"]
+__all__ = [
+    "GradFDICA",
+    "NaturalGradFDICA",
+    "AuxFDICA",
+    "GradLaplaceFDICA",
+    "NaturalGradLaplaceFDICA",
+    "AuxLaplaceFDICA",
+]
 
 algorithms_spatial = ["IP", "IP1", "IP2"]
 EPS = 1e-10
@@ -1097,6 +1104,247 @@ class AuxFDICA(FDICAbase):
             W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
 
         self.demix_filter = W
+
+
+class GradLaplaceFDICA(GradFDICA):
+    r"""Frequency-domain independent component analysis (FDICA) \
+    using the gradient descent on a Laplace distribution.
+
+    Args:
+        step_size (float):
+            A step size of the gradient descent. Default: ``1e-1``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
+        should_solve_permutation (bool):
+            If ``should_solve_permutation=True``, a permutation solver is used to align \
+            estimated spectrograms. Default: ``True``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = \
+                np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            fdica = GradLaplaceFDICA()
+            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
+    def __init__(
+        self,
+        step_size: float = 1e-1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["GradLaplaceFDICA"], None], List[Callable[["GradLaplaceFDICA"], None]]]
+        ] = None,
+        is_holonomic: bool = False,
+        should_solve_permutation: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""Contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    The shape is (n_sources, n_bins, n_frames).
+            """
+            return 2 * np.abs(y)
+
+        def score_fn(y: np.ndarray) -> np.ndarray:
+            r"""Score function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    The shape is (n_sources, n_bins, n_frames).
+            """
+            denom = self.flooring_fn(np.abs(y))
+            return y / denom
+
+        super().__init__(
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            is_holonomic=is_holonomic,
+            should_solve_permutation=should_solve_permutation,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def __repr__(self) -> str:
+        s = "GradLaplaceFDICA("
+        s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
+        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+
+class NaturalGradLaplaceFDICA(GradFDICA):
+    r"""Frequency-domain independent component analysis (FDICA) \
+    using the natural gradient descent on a Laplace distribution.
+
+    Args:
+        step_size (float):
+            A step size of the gradient descent. Default: ``1e-1``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used.
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
+        should_solve_permutation (bool):
+            If ``should_solve_permutation=True``, a permutation solver is used to align \
+            estimated spectrograms. Default: ``True``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the gradient descent \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = \
+                np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            fdica = NaturalGradLaplaceFDICA()
+            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
+    def __init__(
+        self,
+        step_size: float = 1e-1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["NaturalGradLaplaceFDICA"], None],
+                List[Callable[["NaturalGradLaplaceFDICA"], None]],
+            ]
+        ] = None,
+        is_holonomic: bool = False,
+        should_solve_permutation: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""Contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    The shape is (n_sources, n_bins, n_frames).
+            """
+            return 2 * np.abs(y)
+
+        def score_fn(y: np.ndarray) -> np.ndarray:
+            r"""Score function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    The shape is (n_sources, n_bins, n_frames).
+            """
+            denom = self.flooring_fn(np.abs(y))
+            return y / denom
+
+        super().__init__(
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            is_holonomic=is_holonomic,
+            should_solve_permutation=should_solve_permutation,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def __repr__(self) -> str:
+        s = "NaturalGradLaplaceFDICA("
+        s += "step_size={step_size}"
+        s += ", is_holonomic={is_holonomic}"
+        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
 
 
 class AuxLaplaceFDICA(AuxFDICA):
