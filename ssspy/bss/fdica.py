@@ -778,6 +778,24 @@ class AuxFDICA(FDICAbase):
             Reference channel for projection back.
             Default: ``0``.
 
+    Examples:
+        .. code-block:: python
+
+            def contrast_fn(y):
+                return 2 * y
+
+            def d_contrast_fn(y):
+                return 2 * np.ones_like(y)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            fdica = AuxFDICA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            spectrogram_est = fdica(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+
     .. [#ono2010auxiliary]
         Ono, Nobutaka and Miyabe, Shigeki,
         "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
