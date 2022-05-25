@@ -877,7 +877,7 @@ class AuxFDICA(FDICAbase):
 
         return s.format(**self.__dict__)
 
-    def _eigh(self, A, B):
+    def _eigh(self, A, B) -> np.ndarray:
         r"""Generalized eigendecomposition.
         """
         import scipy.linalg as splinalg
@@ -903,7 +903,7 @@ class AuxFDICA(FDICAbase):
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
-    def update_once_ip1(self):
+    def update_once_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
@@ -965,7 +965,7 @@ class AuxFDICA(FDICAbase):
 
         self.demix_filter = W
 
-    def update_once_ip2(self):
+    def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
         For :math:`m` and :math:`n` (:math:`m\neq n`),
