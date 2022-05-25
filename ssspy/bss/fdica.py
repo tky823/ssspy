@@ -1110,6 +1110,11 @@ class GradLaplaceFDICA(GradFDICA):
     r"""Frequency-domain independent component analysis (FDICA) \
     using the gradient descent on a Laplace distribution.
 
+    We assume :math:`y_{ijn}` follows a Laplace distribution.
+
+    .. math::
+        p(y_{ijn})\propto\exp(|y_{ijn}|)
+
     Args:
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
@@ -1228,6 +1233,11 @@ class GradLaplaceFDICA(GradFDICA):
 class NaturalGradLaplaceFDICA(GradFDICA):
     r"""Frequency-domain independent component analysis (FDICA) \
     using the natural gradient descent on a Laplace distribution.
+
+    We assume :math:`y_{ijn}` follows a Laplace distribution.
+
+    .. math::
+        p(y_{ijn})\propto\exp(|y_{ijn}|)
 
     Args:
         step_size (float):
@@ -1349,7 +1359,12 @@ class NaturalGradLaplaceFDICA(GradFDICA):
 
 class AuxLaplaceFDICA(AuxFDICA):
     r"""Auxiliary-function-based frequency-domain independent component analysis \
-    (AuxFDICA)[#ono2010auxiliary]_ on a Laplacian distribution.
+    (AuxFDICA)[#ono2010auxiliary]_ on a Laplace distribution.
+
+    We assume :math:`y_{ijn}` follows a Laplace distribution.
+
+    .. math::
+        p(y_{ijn})\propto\exp(|y_{ijn}|)
 
     Args:
         algorithm_spatial (str):
