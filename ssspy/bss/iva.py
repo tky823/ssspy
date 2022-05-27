@@ -16,7 +16,7 @@ __all__ = [
     "AuxLaplaceIVA",
 ]
 
-algorithms_spatial = ["IP", "IP1", "IP2"]
+algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
@@ -428,35 +428,7 @@ class AuxIVAbase(IVAbase):
                 The separated signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
         """
-        self.input = input.copy()
-
-        self._reset(**kwargs)
-
-        if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
-
-        if self.should_apply_projection_back:
-            self.apply_projection_back()
-
-        self.output = self.separate(self.input, demix_filter=self.demix_filter)
-
-        return self.output
+        return super().__call__(input, n_iter=n_iter, **kwargs)
 
     def __repr__(self) -> str:
         s = "AuxIVA("
@@ -759,7 +731,8 @@ class AuxIVA(AuxIVAbase):
     Args:
         algorithm_spatial (str):
             Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
+            Choose from "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Default: "IP".
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
             This function is expected to receive (n_channels, n_bins, n_frames)
@@ -835,6 +808,53 @@ class AuxIVA(AuxIVAbase):
 
         self.algorithm_spatial = algorithm_spatial
 
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_negative_loglikelihood()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_negative_loglikelihood()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
     def __repr__(self) -> str:
         s = "AuxIVA("
         s += "algorithm_spatial={algorithm_spatial}"
@@ -847,6 +867,18 @@ class AuxIVA(AuxIVAbase):
         s += ")"
 
         return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes following on given keyword arguments.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            super()._reset(**kwargs)
+        else:
+            self.demix_filter = None
 
     def _eigh(self, A, B) -> np.ndarray:
         r"""Generalized eigendecomposition.
@@ -873,6 +905,10 @@ class AuxIVA(AuxIVAbase):
             self.update_once_ip1()
         elif self.algorithm_spatial in ["IP2"]:
             self.update_once_ip2()
+        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+            self.update_once_iss1()
+        elif self.algorithm_spatial in ["ISS2"]:
+            self.update_once_iss2()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -1055,6 +1091,65 @@ class AuxIVA(AuxIVAbase):
             W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
 
         self.demix_filter = W
+
+    def update_once_iss1(self) -> None:
+        n_sources = self.n_sources
+
+        Y = self.output
+        r = np.linalg.norm(Y, axis=1)
+        denom = self.flooring_fn(2 * r)
+        varphi = self.d_contrast_fn(r) / denom  # (n_sources, n_frames)
+
+        for src_idx in range(n_sources):
+            Y_n = Y[src_idx]  # (n_bins, n_frames)
+
+            d_n = np.mean(varphi[:, np.newaxis, :] * Y * Y_n.conj(), axis=-1)
+            u_n = np.mean(varphi[:, np.newaxis, :] * np.abs(Y_n) ** 2, axis=-1)
+            u_n = self.flooring_fn(u_n)
+            v_n = d_n / u_n
+            v_n[src_idx] = 1 - 1 / np.sqrt(u_n[src_idx])
+
+            Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
+
+    def update_once_iss2(self) -> None:
+        r"""Update estimated spectrograms once using pairwise iterative source steering.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        """
+        raise NotImplementedError("Implement 'update_once_iss2' method.")
+
+    def compute_negative_loglikelihood(self) -> float:
+        if self.should_apply_projection_back in ["IP", "IP1", "IP2"]:
+            return super().compute_negative_loglikelihood()
+        else:
+            X, Y = self.input, self.output
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite  # (n_bins, n_channels, n_channels)
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+            logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
+            G = self.contrast_fn(Y)  # (n_sources, n_frames)
+            loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
+
+            return loss
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms.
+        """
+        assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+
+        if self.should_apply_projection_back in ["IP", "IP1", "IP2"]:
+            super().apply_projection_back()
+        else:
+            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+
+            X, Y = self.input, self.output
+            Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
 
 
 class GradLaplaceIVA(GradIVA):
