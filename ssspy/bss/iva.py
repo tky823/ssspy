@@ -875,9 +875,9 @@ class AuxIVA(AuxIVAbase):
             kwargs:
                 Set arguments as attributes of IVA.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            super()._reset(**kwargs)
-        else:
+        super()._reset(**kwargs)
+
+        if self.algorithm_spatial in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
     def _eigh(self, A, B) -> np.ndarray:
