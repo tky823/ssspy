@@ -954,8 +954,8 @@ class AuxIVA(AuxIVAbase):
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         norm = np.linalg.norm(Y, axis=1)
-        denominator = self.flooring_fn(2 * norm)
-        weight = self.d_contrast_fn(norm) / denominator  # (n_sources, n_frames)
+        denom = self.flooring_fn(2 * norm)
+        weight = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
         GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
@@ -972,9 +972,9 @@ class AuxIVA(AuxIVAbase):
             wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
             wUw = np.real(wUw[..., 0])
             wUw = np.maximum(wUw, 0)
-            denominator = np.sqrt(wUw)
-            denominator = self.flooring_fn(denominator)
-            w_n_Hermite = w_n.conj() / denominator
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
             W[:, src_idx, :] = w_n_Hermite
 
         self.demix_filter = W
