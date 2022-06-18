@@ -885,7 +885,7 @@ class AuxIVA(AuxIVAbase):
         if self.algorithm_spatial in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def _eigh(self, A, B) -> np.ndarray:
+    def _eigh(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         r"""Generalized eigendecomposition.
         """
         import scipy.linalg as splinalg
