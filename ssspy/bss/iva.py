@@ -1130,12 +1130,12 @@ class AuxIVA(AuxIVAbase):
             return super().compute_negative_loglikelihood()
         else:
             X, Y = self.input, self.output
+            G = self.contrast_fn(Y)  # (n_sources, n_frames)
             X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
             X_Hermite = X.transpose(0, 2, 1).conj()
             XX_Hermite = X @ X_Hermite  # (n_bins, n_channels, n_channels)
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
             logdet = self.compute_logdet(W)  # (n_bins,)
-            G = self.contrast_fn(Y)  # (n_sources, n_frames)
             loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
 
             return loss
