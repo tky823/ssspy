@@ -1103,11 +1103,13 @@ class AuxIVA(AuxIVAbase):
         for src_idx in range(n_sources):
             Y_n = Y[src_idx]  # (n_bins, n_frames)
 
-            d_n = np.mean(varphi[:, np.newaxis, :] * Y * Y_n.conj(), axis=-1)
-            u_n = np.mean(varphi[:, np.newaxis, :] * np.abs(Y_n) ** 2, axis=-1)
-            u_n = self.flooring_fn(u_n)
-            v_n = d_n / u_n
-            v_n[src_idx] = 1 - 1 / np.sqrt(u_n[src_idx])
+            YY_n_conj = Y * Y_n.conj()
+            YY_n = np.abs(Y_n) ** 2
+            num = np.mean(varphi[:, np.newaxis, :] * YY_n_conj, axis=-1)
+            denom = np.mean(varphi[:, np.newaxis, :] * YY_n, axis=-1)
+            denom = self.flooring_fn(denom)
+            v_n = num / denom
+            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
 
             Y = Y - v_n[:, :, np.newaxis] * Y_n
 
