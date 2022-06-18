@@ -950,8 +950,6 @@ class AuxIVA(AuxIVAbase):
         weight = self.d_contrast_fn(norm) / denominator  # (n_sources, n_frames)
         GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
-        eps = self.flooring_fn(np.zeros(1))
-        U = U + eps * np.eye(n_channels)
 
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
@@ -1057,9 +1055,6 @@ class AuxIVA(AuxIVAbase):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        eps = self.flooring_fn(np.zeros(1))
-        eps_eye = eps * np.eye(2)
-
         for m, n in itertools.combinations(range(n_sources), 2):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
@@ -1073,7 +1068,6 @@ class AuxIVA(AuxIVAbase):
 
             G_mn_YY = weight_mn[:, np.newaxis, np.newaxis, np.newaxis, :] * YY_Hermite
             U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-            U_mn = U_mn + eps_eye
 
             U_m, U_n = U_mn
             H_mn = self._eigh(U_m, U_n)  # (n_bins, 2, 2)
