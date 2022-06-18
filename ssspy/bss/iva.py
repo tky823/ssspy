@@ -891,15 +891,8 @@ class AuxIVA(AuxIVAbase):
         Solve :math:`\boldsymbol{A}\boldsymbol{h} = \gamma\boldsymbol{B}\boldsymbol{h}`, \
         and return :math:`\boldsymbol{h}`.
         """
-        import scipy.linalg as splinalg
-
-        h = []
-
-        for A_i, B_i in zip(A, B):
-            _, h_i = splinalg.eigh(A_i, B_i)  # (n_bins, 2, 2)
-            h.append(h_i)
-
-        h = np.stack(h, axis=0)
+        AB = np.linalg.inv(A) @ B
+        _, h = np.linalg.eig(AB)
 
         return h
 
