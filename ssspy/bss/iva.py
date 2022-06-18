@@ -887,6 +887,9 @@ class AuxIVA(AuxIVAbase):
 
     def _eigh(self, A: np.ndarray, B: np.ndarray) -> np.ndarray:
         r"""Generalized eigendecomposition.
+
+        Solve :math:`\boldsymbol{A}\boldsymbol{h} = \gamma\boldsymbol{B}\boldsymbol{h}`, \
+        and return :math:`\boldsymbol{h}`.
         """
         import scipy.linalg as splinalg
 
