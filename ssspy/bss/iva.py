@@ -202,11 +202,16 @@ class IVAbase:
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
+        logdet = self.compute_logdet(W)  # (n_bins,)
         G = self.contrast_fn(Y)  # (n_sources, n_frames)
         loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
 
         return loss
+
+    def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant of demixing filter
+        """
+        return np.log(np.abs(np.linalg.det(demix_filter)))  # (n_bins,)
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
@@ -1126,7 +1131,7 @@ class AuxIVA(AuxIVAbase):
             X_Hermite = X.transpose(0, 2, 1).conj()
             XX_Hermite = X @ X_Hermite  # (n_bins, n_channels, n_channels)
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
-            logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
+            logdet = self.compute_logdet(W)  # (n_bins,)
             G = self.contrast_fn(Y)  # (n_sources, n_frames)
             loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
 
