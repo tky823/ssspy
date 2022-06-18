@@ -1118,7 +1118,7 @@ class AuxIVA(AuxIVAbase):
         raise NotImplementedError("Implement 'update_once_iss2' method.")
 
     def compute_negative_loglikelihood(self) -> float:
-        if self.should_apply_projection_back in ["IP", "IP1", "IP2"]:
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
             return super().compute_negative_loglikelihood()
         else:
             X, Y = self.input, self.output
@@ -1135,9 +1135,7 @@ class AuxIVA(AuxIVAbase):
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
-
-        if self.should_apply_projection_back in ["IP", "IP1", "IP2"]:
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
