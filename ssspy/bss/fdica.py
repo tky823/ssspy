@@ -467,8 +467,8 @@ class GradFDICA(GradFDICAbase):
                 return 2 * np.abs(y)
 
             def score_fn(y):
-                denominator = np.maximum(np.abs(y), 1e-10)
-                return y / denominator
+                denom = np.maximum(np.abs(y), 1e-10)
+                return y / denom
 
             n_channels, n_bins, n_frames = 2, 2049, 128
             spectrogram_mix = \
@@ -631,8 +631,8 @@ class NaturalGradFDICA(GradFDICAbase):
                 return 2 * np.abs(y)
 
             def score_fn(y):
-                denominator = np.maximum(np.abs(y), 1e-10)
-                return y / denominator
+                denom = np.maximum(np.abs(y), 1e-10)
+                return y / denom
 
             n_channels, n_bins, n_frames = 2, 2049, 128
             spectrogram_mix = \
@@ -962,8 +962,8 @@ class AuxFDICA(FDICAbase):
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         Y_abs = np.abs(Y)
-        denominator = self.flooring_fn(2 * Y_abs)
-        weight = self.d_contrast_fn(Y_abs) / denominator  # (n_sources, n_bins, n_frames)
+        denom = self.flooring_fn(2 * Y_abs)
+        weight = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
         weight = weight.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
         GXX = weight[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
@@ -983,9 +983,9 @@ class AuxFDICA(FDICAbase):
             wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
             wUw = np.real(wUw[..., 0])
             wUw = np.maximum(wUw, 0)
-            denominator = np.sqrt(wUw)
-            denominator = self.flooring_fn(denominator)
-            w_n_Hermite = w_n.conj() / denominator
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
             W[:, src_idx, :] = w_n_Hermite
 
         self.demix_filter = W
