@@ -963,9 +963,9 @@ class AuxFDICA(FDICAbase):
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         Y_abs = np.abs(Y)
         denom = self.flooring_fn(2 * Y_abs)
-        weight = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
-        weight = weight.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
-        GXX = weight[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        varphi = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
+        varphi = varphi.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
+        GXX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
         eps = self.flooring_fn(np.zeros(1))
         U = U + eps * np.eye(n_channels)
@@ -1082,9 +1082,9 @@ class AuxFDICA(FDICAbase):
 
             Y_mn_abs = np.abs(Y_mn)  # (2, n_bins, n_frames)
             denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
+            varphi_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
 
-            G_mn_YY = weight_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
+            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
             U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
             U_mn = U_mn + eps_eye
 
