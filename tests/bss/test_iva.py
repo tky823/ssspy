@@ -196,11 +196,7 @@ def test_natural_grad_iva(
 def test_aux_iva(
     n_sources: str,
     algorithm_spatial: str,
-    callbacks: Optional[
-        Union[
-            Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
-        ]
-    ],
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
 ):
     np.random.seed(111)
 
