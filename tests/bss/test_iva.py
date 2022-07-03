@@ -43,6 +43,8 @@ parameters_aux_iva = [
     (2, "IP", None),
     (3, "IP2", dummy_function),
     (2, "IP1", [DummyCallback(), dummy_function]),
+    (2, "ISS", None),
+    (3, "ISS1", dummy_function),
 ]
 
 
@@ -196,11 +198,7 @@ def test_natural_grad_iva(
 def test_aux_iva(
     n_sources: str,
     algorithm_spatial: str,
-    callbacks: Optional[
-        Union[
-            Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
-        ]
-    ],
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
 ):
     np.random.seed(111)
 
