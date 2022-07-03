@@ -68,3 +68,23 @@ Algorithms
    :special-members: __call__
    :members:
    :undoc-members:
+
+.. autoclass:: ssspy.bss.fdica.AuxFDICA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+
+.. autoclass:: ssspy.bss.fdica.GradLaplaceFDICA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+
+.. autoclass:: ssspy.bss.fdica.NaturalGradLaplaceFDICA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+
+.. autoclass:: ssspy.bss.fdica.AuxLaplaceFDICA
+   :special-members: __call__
+   :members:
+   :undoc-members:
