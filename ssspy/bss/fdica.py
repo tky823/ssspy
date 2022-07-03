@@ -905,15 +905,14 @@ class AuxFDICA(FDICAbase):
     def _eigh(self, A, B) -> np.ndarray:
         r"""Generalized eigendecomposition.
         """
-        import scipy.linalg as splinalg
+        L = np.linalg.cholesky(B)
+        L_inv = np.linalg.inv(L)
+        L_inv_Hermite = L_inv.transpose(0, 2, 1).conj()
+        C = L_inv @ A @ L_inv_Hermite
+        _, y = np.linalg.eigh(C)
+        h = L_inv_Hermite @ y
 
-        h = []
-
-        for A_i, B_i in zip(A, B):
-            _, h_i = splinalg.eigh(A_i, B_i)  # (n_bins, 2, 2)
-            h.append(h_i)
-
-        return np.stack(h, axis=0)
+        return h
 
     def update_once(self) -> None:
         r"""Update demixing filters once.
