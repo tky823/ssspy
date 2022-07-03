@@ -891,8 +891,12 @@ class AuxIVA(AuxIVAbase):
         Solve :math:`\boldsymbol{A}\boldsymbol{h} = \gamma\boldsymbol{B}\boldsymbol{h}`, \
         and return :math:`\boldsymbol{h}`.
         """
-        AB = np.linalg.inv(A) @ B
-        _, h = np.linalg.eig(AB)
+        L = np.linalg.cholesky(B)
+        L_inv = np.linalg.inv(L)
+        L_inv_Hermite = L_inv.transpose(0, 2, 1).conj()
+        C = L_inv @ A @ L_inv_Hermite
+        _, y = np.linalg.eigh(C)
+        h = L_inv_Hermite @ y
 
         return h
 
