@@ -41,7 +41,7 @@ parameters_grad_fdica = [
 parameters_aux_fdica = [
     (2, "IP", None),
     (3, "IP1", dummy_function),
-    (2, "IP", [DummyCallback(), dummy_function]),
+    (2, "IP2", [DummyCallback(), dummy_function]),
 ]
 
 
