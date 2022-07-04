@@ -1120,7 +1120,7 @@ class AuxIVA(AuxIVAbase):
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
         """
-        Y = self.output  # (n_sources, n_bins, n_frames)
+        Y = self.output
 
         for m, n in itertools.combinations(range(self.n_sources), 2):
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
@@ -1149,7 +1149,6 @@ class AuxIVA(AuxIVAbase):
                 axis=-1,
             )
             F = np.mean(varphi_tail[:, np.newaxis, np.newaxis, :] * YY_tail, axis=-1)
-
             Q = -np.linalg.inv(G_tail) @ F[:, :, :, np.newaxis]
             Q = Q.squeeze(axis=-1)
             Q = Q.transpose(1, 0, 2)
