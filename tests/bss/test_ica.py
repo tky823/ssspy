@@ -36,7 +36,7 @@ parameters_fast_ica = [
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
 def test_grad_ica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
 ):
@@ -70,7 +70,7 @@ def test_grad_ica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
 def test_natural_grad_ica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
 ):
@@ -104,7 +104,7 @@ def test_natural_grad_ica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
 def test_grad_laplace_ica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
 ):
@@ -129,7 +129,7 @@ def test_grad_laplace_ica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
 def test_natural_grad_laplace_ica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
 ):
@@ -154,7 +154,7 @@ def test_natural_grad_laplace_ica(
 
 @pytest.mark.parametrize("n_sources, callbacks", parameters_fast_ica)
 def test_fast_ica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]],
 ):
     np.random.seed(111)

@@ -47,7 +47,7 @@ parameters_aux_fdica = [
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
 def test_grad_fdica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradFDICA], None], List[Callable[[GradFDICA], None]]]],
     is_holonomic: bool,
 ):
@@ -98,7 +98,7 @@ def test_grad_fdica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
 def test_natural_grad_fdica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[Callable[[NaturalGradFDICA], None], List[Callable[[NaturalGradFDICA], None]]]
     ],
@@ -151,7 +151,7 @@ def test_natural_grad_fdica(
 
 @pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_fdica)
 def test_aux_fdica(
-    n_sources: str,
+    n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxFDICA], None], List[Callable[[AuxFDICA], None]]]],
 ):
@@ -204,7 +204,7 @@ def test_aux_fdica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
 def test_grad_laplace_fdica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[Callable[[GradLaplaceFDICA], None], List[Callable[[GradLaplaceFDICA], None]]]
     ],
@@ -248,7 +248,7 @@ def test_grad_laplace_fdica(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
 def test_natural_grad_laplace_fdica(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[
             Callable[[NaturalGradLaplaceFDICA], None],
@@ -295,7 +295,7 @@ def test_natural_grad_laplace_fdica(
 
 @pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_fdica)
 def test_aux_laplace_fdica(
-    n_sources: str,
+    n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[
         Union[Callable[[AuxLaplaceFDICA], None], List[Callable[[AuxLaplaceFDICA], None]]]
