@@ -50,7 +50,7 @@ parameters_aux_iva = [
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
 def test_grad_iva(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
     is_holonomic: bool,
 ):
@@ -122,7 +122,7 @@ def test_grad_iva(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
 def test_natural_grad_iva(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[Callable[[NaturalGradIVA], None], List[Callable[[NaturalGradIVA], None]]]
     ],
@@ -196,7 +196,7 @@ def test_natural_grad_iva(
 
 @pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_iva)
 def test_aux_iva(
-    n_sources: str,
+    n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
 ):
@@ -269,7 +269,7 @@ def test_aux_iva(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
 def test_grad_laplace_iva(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[Callable[[GradLaplaceIVA], None], List[Callable[[GradLaplaceIVA], None]]]
     ],
@@ -313,7 +313,7 @@ def test_grad_laplace_iva(
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
 def test_natural_grad_laplace_iva(
-    n_sources: str,
+    n_sources: int,
     callbacks: Optional[
         Union[
             Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
@@ -359,7 +359,7 @@ def test_natural_grad_laplace_iva(
 
 @pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_iva)
 def test_aux_laplace_iva(
-    n_sources: str,
+    n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[
         Union[
