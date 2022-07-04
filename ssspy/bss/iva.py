@@ -1120,7 +1120,68 @@ class AuxIVA(AuxIVAbase):
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
         """
-        raise NotImplementedError("Implement 'update_once_iss2' method.")
+        Y = self.output  # (n_sources, n_bins, n_frames)
+
+        for m, n in itertools.combinations(range(self.n_sources), 2):
+            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
+            Y_head = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+            Y_tail = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
+
+            YY_head = Y_head[:, np.newaxis, :, :] * Y_head[np.newaxis, :, :, :].conj()
+            YY_tail = Y_head[:, np.newaxis, :, :] * Y_tail[np.newaxis, :, :, :].conj()
+            YY_head = YY_head.transpose(2, 0, 1, 3)
+            YY_tail = YY_tail.transpose(1, 2, 0, 3)
+
+            # Auxiliary variables
+            r_head = np.linalg.norm(Y_head, axis=1)
+            r_tail = np.linalg.norm(Y_tail, axis=1)
+            denom_head = self.flooring_fn(2 * r_head)
+            denom_tail = self.flooring_fn(2 * r_tail)
+            varphi_head = self.d_contrast_fn(r_head) / denom_head
+            varphi_tail = self.d_contrast_fn(r_tail) / denom_tail
+
+            Y_head = Y_head.transpose(1, 0, 2)
+
+            # Tail
+            G_tail = np.mean(
+                varphi_tail[:, np.newaxis, np.newaxis, np.newaxis, :]
+                * YY_head[np.newaxis, :, :, :, :],
+                axis=-1,
+            )
+            F = np.mean(varphi_tail[:, np.newaxis, np.newaxis, :] * YY_tail, axis=-1)
+
+            Q = -np.linalg.inv(G_tail) @ F[:, :, :, np.newaxis]
+            Q = Q.squeeze(axis=-1)
+            Q = Q.transpose(1, 0, 2)
+            QY = Q.conj() @ Y_head
+            Y_tail = Y_tail + QY.transpose(1, 0, 2)
+
+            # Head
+            G_head = np.mean(
+                varphi_head[:, np.newaxis, np.newaxis, np.newaxis, :]
+                * YY_head[np.newaxis, :, :, :, :],
+                axis=-1,
+            )
+            G_m, G_n = G_head
+            H_mn = self._eigh(G_m, G_n)
+            h_mn = H_mn.transpose(2, 0, 1)
+            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_head @ h_mn[:, :, :, np.newaxis]
+            hGh_mn = np.squeeze(hGh_mn, axis=-1)
+            hGh_mn = np.real(hGh_mn)
+            hGh_mn = np.maximum(hGh_mn, 0)
+            denom_mn = np.sqrt(hGh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            P = h_mn / denom_mn
+            P = P.transpose(1, 0, 2)
+            Y_head = P.conj() @ Y_head
+            Y_head = Y_head.transpose(1, 0, 2)
+
+            # Concat
+            Y_m, Y_n = np.split(Y_head, [1], axis=0)
+            Y1, Y2, Y3 = np.split(Y_tail, [m, n - 1], axis=0)
+            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
+
+        self.output = Y
 
     def compute_negative_loglikelihood(self) -> float:
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
