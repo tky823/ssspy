@@ -42,6 +42,7 @@ parameters_aux_iva = [
     (2, "IP1", [DummyCallback(), dummy_function]),
     (2, "ISS", None),
     (3, "ISS1", dummy_function),
+    (2, "ISS2", [DummyCallback(), dummy_function]),
 ]
 
 
