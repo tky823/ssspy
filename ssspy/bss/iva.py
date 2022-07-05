@@ -1122,23 +1122,29 @@ class AuxIVA(AuxIVAbase):
         """
         Y = self.output
 
+        # Auxiliary variables
+        r = np.linalg.norm(Y, axis=1)
+        denom = self.flooring_fn(2 * r)
+        varphi = self.d_contrast_fn(r) / denom
+
         for m, n in itertools.combinations(range(self.n_sources), 2):
+            # Split into main and sub
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
             Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
             Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
+
+            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
+                varphi, [m, m + 1, n, n + 1], axis=0
+            )
+            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)  # (2, n_frames)
+            varphi_sub = np.concatenate(
+                [varphi_1, varphi_2, varphi_3], axis=0
+            )  # (n_sources - 2, n_frames)
 
             YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
             YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
             YY_main = YY_main.transpose(2, 0, 1, 3)
             YY_sub = YY_sub.transpose(1, 2, 0, 3)
-
-            # Auxiliary variables
-            r_main = np.linalg.norm(Y_main, axis=1)
-            r_sub = np.linalg.norm(Y_sub, axis=1)
-            denom_main = self.flooring_fn(2 * r_main)
-            denom_sub = self.flooring_fn(2 * r_sub)
-            varphi_main = self.d_contrast_fn(r_main) / denom_main
-            varphi_sub = self.d_contrast_fn(r_sub) / denom_sub
 
             Y_main = Y_main.transpose(1, 0, 2)
 
