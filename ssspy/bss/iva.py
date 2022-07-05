@@ -1124,47 +1124,47 @@ class AuxIVA(AuxIVAbase):
 
         for m, n in itertools.combinations(range(self.n_sources), 2):
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-            Y_head = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
-            Y_tail = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
+            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
 
-            YY_head = Y_head[:, np.newaxis, :, :] * Y_head[np.newaxis, :, :, :].conj()
-            YY_tail = Y_head[:, np.newaxis, :, :] * Y_tail[np.newaxis, :, :, :].conj()
-            YY_head = YY_head.transpose(2, 0, 1, 3)
-            YY_tail = YY_tail.transpose(1, 2, 0, 3)
+            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
+            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
+            YY_main = YY_main.transpose(2, 0, 1, 3)
+            YY_sub = YY_sub.transpose(1, 2, 0, 3)
 
             # Auxiliary variables
-            r_head = np.linalg.norm(Y_head, axis=1)
-            r_tail = np.linalg.norm(Y_tail, axis=1)
-            denom_head = self.flooring_fn(2 * r_head)
-            denom_tail = self.flooring_fn(2 * r_tail)
-            varphi_head = self.d_contrast_fn(r_head) / denom_head
-            varphi_tail = self.d_contrast_fn(r_tail) / denom_tail
+            r_main = np.linalg.norm(Y_main, axis=1)
+            r_sub = np.linalg.norm(Y_sub, axis=1)
+            denom_main = self.flooring_fn(2 * r_main)
+            denom_sub = self.flooring_fn(2 * r_sub)
+            varphi_main = self.d_contrast_fn(r_main) / denom_main
+            varphi_sub = self.d_contrast_fn(r_sub) / denom_sub
 
-            Y_head = Y_head.transpose(1, 0, 2)
+            Y_main = Y_main.transpose(1, 0, 2)
 
-            # Tail
-            G_tail = np.mean(
-                varphi_tail[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_head[np.newaxis, :, :, :, :],
+            # Sub
+            G_sub = np.mean(
+                varphi_sub[:, np.newaxis, np.newaxis, np.newaxis, :]
+                * YY_main[np.newaxis, :, :, :, :],
                 axis=-1,
             )
-            F = np.mean(varphi_tail[:, np.newaxis, np.newaxis, :] * YY_tail, axis=-1)
-            Q = -np.linalg.inv(G_tail) @ F[:, :, :, np.newaxis]
+            F = np.mean(varphi_sub[:, np.newaxis, np.newaxis, :] * YY_sub, axis=-1)
+            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
             Q = Q.squeeze(axis=-1)
             Q = Q.transpose(1, 0, 2)
-            QY = Q.conj() @ Y_head
-            Y_tail = Y_tail + QY.transpose(1, 0, 2)
+            QY = Q.conj() @ Y_main
+            Y_sub = Y_sub + QY.transpose(1, 0, 2)
 
-            # Head
-            G_head = np.mean(
-                varphi_head[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_head[np.newaxis, :, :, :, :],
+            # Main
+            G_main = np.mean(
+                varphi_main[:, np.newaxis, np.newaxis, np.newaxis, :]
+                * YY_main[np.newaxis, :, :, :, :],
                 axis=-1,
             )
-            G_m, G_n = G_head
+            G_m, G_n = G_main
             H_mn = self._eigh(G_m, G_n)
             h_mn = H_mn.transpose(2, 0, 1)
-            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_head @ h_mn[:, :, :, np.newaxis]
+            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
             hGh_mn = np.squeeze(hGh_mn, axis=-1)
             hGh_mn = np.real(hGh_mn)
             hGh_mn = np.maximum(hGh_mn, 0)
@@ -1172,12 +1172,12 @@ class AuxIVA(AuxIVAbase):
             denom_mn = self.flooring_fn(denom_mn)
             P = h_mn / denom_mn
             P = P.transpose(1, 0, 2)
-            Y_head = P.conj() @ Y_head
-            Y_head = Y_head.transpose(1, 0, 2)
+            Y_main = P.conj() @ Y_main
+            Y_main = Y_main.transpose(1, 0, 2)
 
             # Concat
-            Y_m, Y_n = np.split(Y_head, [1], axis=0)
-            Y1, Y2, Y3 = np.split(Y_tail, [m, n - 1], axis=0)
+            Y_m, Y_n = np.split(Y_main, [1], axis=0)
+            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
             Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
 
         self.output = Y
