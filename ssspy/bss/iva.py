@@ -1117,7 +1117,65 @@ class AuxIVA(AuxIVAbase):
     def update_once_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+        First, we compute auxiliary variables:
+
+        .. math::
+            \varphi_{jn}
+            \leftarrow\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}},
+
+        where
+
+        .. math::
+            G(\vec{\boldsymbol{y}}_{jn})
+            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
+            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+            &= G(\vec{\boldsymbol{y}}_{jn}).
+
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
+        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+
+        .. math::
+            \begin{array}{rclc}
+                \boldsymbol{G}_{in}^{(m,m')}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\varphi_{jn}
+                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                &(n=1,\ldots,N), \\
+                \boldsymbol{f}_{in}^{(m,m')}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}
+                \varphi_{jn}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
+                &(n\neq m,m').
+            \end{array}
+
+        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
+        we compute
+
+        .. math::
+            \begin{array}{rclc}
+                \boldsymbol{p}_{in}
+                &=& \dfrac{\boldsymbol{h}_{in}}
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
+                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                \boldsymbol{q}_{in}
+                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
+                & (n\neq m,m'),
+            \end{array}
+
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        a generalized eigenvector obtained from
+
+        .. math::
+            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+
+        Separated signal :math:`y_{ijn}` is updated as follows:
+
+        .. math::
+            y_{ijn}
+            &\leftarrow\begin{cases}
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            \end{cases}.
 
         """
         Y = self.output
