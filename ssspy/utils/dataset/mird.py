@@ -28,17 +28,19 @@ def download(root: str = ".data/MIRD", n_sources: int = 3) -> str:
     n_channels = len(channels)
     n_samples = int(sample_rate * duration)
 
+    template_rir_name = (
+        "Impulse_response_Acoustic_Lab_Bar-Ilan_University_"
+        "(Reverberation_{:.3f}s)_3-3-3-8-3-3-3_1m_{:03d}.mat"
+    )
+
     os.makedirs(root, exist_ok=True)
 
     if not os.path.exists(zip_path):
         urllib.request.urlretrieve(url, zip_path)
 
-    shutil.unpack_archive(zip_path, root)
+    if not os.path.exists(os.path.join(root, template_rir_name.format(0.16, 0))):
+        shutil.unpack_archive(zip_path, root)
 
-    template_rir_name = (
-        "Impulse_response_Acoustic_Lab_Bar-Ilan_University_"
-        "(Reverberation_{:.3f}s)_3-3-3-8-3-3-3_1m_{:03d}.mat"
-    )
     npz_path = os.path.join(root, "MIRD-{}ch.npz".format(n_channels))
 
     assert n_channels == n_sources, "Mixing system should be determined."

@@ -17,7 +17,8 @@ def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1
     if not os.path.exists(zip_path):
         urllib.request.urlretrieve(url, zip_path)
 
-    shutil.unpack_archive(zip_path, root)
+    if not os.path.exists(os.path.join(root, "{}_inst_matrix.mat".format(tag))):
+        shutil.unpack_archive(zip_path, root)
 
     source_paths = []
 
