@@ -12,10 +12,7 @@ from ssspy.bss.fdica import (
     AuxFDICA,
     AuxLaplaceFDICA,
 )
-from tests.bss.create_dataset import (
-    create_sisec2011_dataset,
-    create_mird_dataset,
-)
+from ssspy.utils.dataset import download_dummy_data
 
 max_samples = 16000
 n_iter = 5
@@ -53,28 +50,13 @@ def test_grad_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
@@ -106,28 +88,13 @@ def test_natural_grad_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
@@ -157,28 +124,13 @@ def test_aux_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
@@ -212,28 +164,13 @@ def test_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
@@ -259,28 +196,13 @@ def test_natural_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
@@ -303,28 +225,13 @@ def test_aux_laplace_fdica(
 ):
     np.random.seed(111)
 
-    sisec2011_npz_path = create_sisec2011_dataset(n_sources=n_sources)
-    mird_npz_path = create_mird_dataset(n_sources=n_sources)
-
-    sisec2011_npz = np.load(sisec2011_npz_path)
-    mird_npz = np.load(mird_npz_path)
-
-    waveform_src_img = []
-
-    for src_idx in range(n_sources):
-        key = "src_{}".format(src_idx + 1)
-        waveform_src = sisec2011_npz[key][:max_samples]
-        n_samples = len(waveform_src)
-        _waveform_src_img = []
-
-        for waveform_rir in mird_npz[key]:
-            waveform_conv = np.convolve(waveform_src, waveform_rir)[:n_samples]
-            _waveform_src_img.append(waveform_conv)
-
-        _waveform_src_img = np.stack(_waveform_src_img, axis=0)  # (n_channels, n_samples)
-        waveform_src_img.append(_waveform_src_img)
-
-    waveform_src_img = np.stack(waveform_src_img, axis=1)  # (n_channels, n_sources, n_samples)
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
