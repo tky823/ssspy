@@ -35,12 +35,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
         run: |
           . ./tests/scripts/download_sisec2011.sh
-          . ./tests/scripts/download_mird.sh
       - name: Download dataset (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           ./tests/scripts/download_sisec2011.bat
-          ./tests/scripts/download_mird.bat
       - name: Pytest
         run: |
           pytest --cov=./ssspy --cov-report=xml
