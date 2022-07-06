@@ -12,12 +12,12 @@ def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1
     url = "http://www.irisa.fr/metiss/SiSEC10/underdetermined/{}".format(filename)
     zip_path = os.path.join(root, filename)
 
-    os.makedirs(root, exist_ok=True)
-
     if not os.path.exists(zip_path):
         urllib.request.urlretrieve(url, zip_path)
 
-    shutil.unpack_archive(zip_path, root)
+    if not os.path.isdir(root):
+        os.makedirs(root, exist_ok=True)
+        shutil.unpack_archive(zip_path, root)
 
     source_paths = []
 

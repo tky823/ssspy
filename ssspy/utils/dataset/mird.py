@@ -28,12 +28,12 @@ def download(root: str = ".data/MIRD", n_sources: int = 3) -> str:
     n_channels = len(channels)
     n_samples = int(sample_rate * duration)
 
-    os.makedirs(root, exist_ok=True)
-
     if not os.path.exists(zip_path):
         urllib.request.urlretrieve(url, zip_path)
 
-    shutil.unpack_archive(zip_path, root)
+    if not os.path.isdir(root):
+        os.makedirs(root, exist_ok=True)
+        shutil.unpack_archive(zip_path, root)
 
     template_rir_name = (
         "Impulse_response_Acoustic_Lab_Bar-Ilan_University_"
