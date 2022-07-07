@@ -1061,7 +1061,7 @@ class AuxIVA(AuxIVAbase):
             U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
 
             U_m, U_n = U_mn
-            H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
+            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
             h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
             hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
             hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
@@ -1213,7 +1213,7 @@ class AuxIVA(AuxIVAbase):
                 axis=-1,
             )
             G_m, G_n = G_main
-            H_mn = eigh(G_m, G_n)
+            _, H_mn = eigh(G_m, G_n)
             h_mn = H_mn.transpose(2, 0, 1)
             hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
             hGh_mn = np.squeeze(hGh_mn, axis=-1)
