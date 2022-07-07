@@ -6,6 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import pair_selector
+from ..linalg import eigh
 from ..algorithm import projection_back
 
 __all__ = [
@@ -906,18 +907,6 @@ class AuxFDICA(FDICAbase):
 
         return s.format(**self.__dict__)
 
-    def _eigh(self, A, B) -> np.ndarray:
-        r"""Generalized eigendecomposition.
-        """
-        L = np.linalg.cholesky(B)
-        L_inv = np.linalg.inv(L)
-        L_inv_Hermite = L_inv.transpose(0, 2, 1).conj()
-        C = L_inv @ A @ L_inv_Hermite
-        _, y = np.linalg.eigh(C)
-        h = L_inv_Hermite @ y
-
-        return h
-
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
@@ -1086,7 +1075,7 @@ class AuxFDICA(FDICAbase):
             U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
 
             U_m, U_n = U_mn
-            H_mn = self._eigh(U_m, U_n)  # (n_bins, 2, 2)
+            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
             h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
             hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
             hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
