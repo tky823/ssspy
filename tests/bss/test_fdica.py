@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, List
+from typing import Optional, Union, Callable, List, Dict, Any
 
 import pytest
 import numpy as np
@@ -15,6 +15,8 @@ from ssspy.bss.fdica import (
 from ssspy.utils.dataset import download_dummy_data
 
 max_samples = 16000
+n_fft = 2048
+n_bins = n_fft // 2 + 1
 n_iter = 5
 
 
@@ -31,22 +33,33 @@ class DummyCallback:
 
 
 parameters_grad_fdica = [
-    (2, None, True),
-    (3, dummy_function, False),
-    (2, [DummyCallback(), dummy_function], False),
+    (2, None, True, {}),
+    (
+        3,
+        dummy_function,
+        False,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
 ]
 parameters_aux_fdica = [
-    (2, "IP", None),
-    (3, "IP1", dummy_function),
-    (2, "IP2", [DummyCallback(), dummy_function]),
+    (2, "IP", None, {}),
+    (
+        3,
+        "IP1",
+        dummy_function,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (2, "IP2", [DummyCallback(), dummy_function], {"demix_filter": None}),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
 def test_grad_fdica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradFDICA], None], List[Callable[[GradFDICA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -78,13 +91,14 @@ def test_grad_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
 def test_natural_grad_fdica(
     n_sources: int,
     callbacks: Optional[
         Union[Callable[[NaturalGradFDICA], None], List[Callable[[NaturalGradFDICA], None]]]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -116,11 +130,14 @@ def test_natural_grad_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_fdica)
+@pytest.mark.parametrize(
+    "n_sources, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_fdica
+)
 def test_aux_fdica(
     n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxFDICA], None], List[Callable[[AuxFDICA], None]]]],
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -154,13 +171,14 @@ def test_aux_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
 def test_grad_laplace_fdica(
     n_sources: int,
     callbacks: Optional[
         Union[Callable[[GradLaplaceFDICA], None], List[Callable[[GradLaplaceFDICA], None]]]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -183,7 +201,7 @@ def test_grad_laplace_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
 def test_natural_grad_laplace_fdica(
     n_sources: int,
     callbacks: Optional[
@@ -193,6 +211,7 @@ def test_natural_grad_laplace_fdica(
         ]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -215,13 +234,16 @@ def test_natural_grad_laplace_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_fdica)
+@pytest.mark.parametrize(
+    "n_sources, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_fdica
+)
 def test_aux_laplace_fdica(
     n_sources: int,
     algorithm_spatial: str,
     callbacks: Optional[
         Union[Callable[[AuxLaplaceFDICA], None], List[Callable[[AuxLaplaceFDICA], None]]]
     ],
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 

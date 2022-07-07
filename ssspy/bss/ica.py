@@ -139,8 +139,11 @@ class GradICAbase:
         if not hasattr(self, "demix_filter"):
             W = np.eye(n_sources, n_channels, dtype=np.float64)
         else:
-            # To avoid overwriting ``demix_filter`` given by keyword arguments.
-            W = self.demix_filter.copy()
+            if self.demix_filter is None:
+                W = None
+            else:
+                # To avoid overwriting ``demix_filter`` given by keyword arguments.
+                W = self.demix_filter.copy()
 
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
@@ -338,8 +341,11 @@ class FastICAbase:
         if not hasattr(self, "demix_filter"):
             W = np.eye(n_sources, n_channels, dtype=np.float64)
         else:
-            # To avoid overwriting ``demix_filter`` given by keyword arguments.
-            W = self.demix_filter.copy()
+            if self.demix_filter is None:
+                W = None
+            else:
+                # To avoid overwriting ``demix_filter`` given by keyword arguments.
+                W = self.demix_filter.copy()
 
         XX_trans = np.mean(X[:, np.newaxis, :] * X[np.newaxis, :, :], axis=-1)
         lamb, Gamma = np.linalg.eigh(XX_trans)  # (n_channels,), (n_channels, n_channels)

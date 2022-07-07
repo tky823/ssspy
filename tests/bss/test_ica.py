@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, List
+from typing import Optional, Union, Callable, List, Dict, Any
 
 import pytest
 import numpy as np
@@ -23,22 +23,23 @@ class DummyCallback:
 
 
 parameters_grad_ica = [
-    (2, None, True),
-    (3, dummy_function, False),
-    (2, [DummyCallback(), dummy_function], False),
+    (2, None, True, {}),
+    (3, dummy_function, False, {"demix_filter": -np.eye(3)}),
+    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
 ]
 parameters_fast_ica = [
-    (2, None),
-    (3, dummy_function),
-    (2, [DummyCallback(), dummy_function]),
+    (2, None, {}),
+    (3, dummy_function, {"demix_filter": -np.eye(3)}),
+    (2, [DummyCallback(), dummy_function], {"demix_filter": None}),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
 def test_grad_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -68,11 +69,12 @@ def test_grad_ica(
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
 def test_natural_grad_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -102,11 +104,12 @@ def test_natural_grad_ica(
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
 def test_grad_laplace_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -127,11 +130,12 @@ def test_grad_laplace_ica(
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
 def test_natural_grad_laplace_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -152,10 +156,11 @@ def test_natural_grad_laplace_ica(
     assert waveform_mix.shape == waveform_est.shape
 
 
-@pytest.mark.parametrize("n_sources, callbacks", parameters_fast_ica)
+@pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_fast_ica)
 def test_fast_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]],
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
