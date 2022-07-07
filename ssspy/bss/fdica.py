@@ -191,7 +191,7 @@ class FDICAbase:
 
         return output
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -370,7 +370,7 @@ class GradFDICAbase(FDICAbase):
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -381,7 +381,7 @@ class GradFDICAbase(FDICAbase):
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:
@@ -860,7 +860,7 @@ class AuxFDICA(FDICAbase):
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -871,7 +871,7 @@ class AuxFDICA(FDICAbase):
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:

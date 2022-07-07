@@ -184,7 +184,7 @@ class IVAbase:
         """
         raise NotImplementedError("Implement 'update_once' method.")
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -321,7 +321,7 @@ class GradIVAbase(IVAbase):
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -332,7 +332,7 @@ class GradIVAbase(IVAbase):
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:
@@ -834,7 +834,7 @@ class AuxIVA(AuxIVAbase):
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -845,7 +845,7 @@ class AuxIVA(AuxIVAbase):
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:
@@ -1246,9 +1246,9 @@ class AuxIVA(AuxIVAbase):
 
         self.output = Y
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            return super().compute_negative_loglikelihood()
+            return super().compute_loss()
         else:
             X, Y = self.input, self.output
             G = self.contrast_fn(Y)  # (n_sources, n_frames)
@@ -1409,7 +1409,7 @@ class GradLaplaceIVA(GradIVA):
         """
         return super().update_once()
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -1423,7 +1423,7 @@ class GradLaplaceIVA(GradIVA):
             float:
                 Computed negative log-likelihood.
         """
-        return super().compute_negative_loglikelihood()
+        return super().compute_loss()
 
 
 class NaturalGradLaplaceIVA(NaturalGradIVA):
@@ -1564,7 +1564,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         """
         return super().update_once()
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -1578,7 +1578,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             float:
                 Computed negative log-likelihood.
         """
-        return super().compute_negative_loglikelihood()
+        return super().compute_loss()
 
 
 class AuxLaplaceIVA(AuxIVA):

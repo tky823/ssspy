@@ -86,7 +86,7 @@ class GradICAbase:
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -97,7 +97,7 @@ class GradICAbase:
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:
@@ -174,7 +174,7 @@ class GradICAbase:
 
         return output
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -284,7 +284,7 @@ class FastICAbase:
         self._reset(**kwargs)
 
         if self.should_record_loss:
-            loss = self.compute_negative_loglikelihood()
+            loss = self.compute_loss()
             self.loss.append(loss)
 
         if self.callbacks is not None:
@@ -295,7 +295,7 @@ class FastICAbase:
             self.update_once()
 
             if self.should_record_loss:
-                loss = self.compute_negative_loglikelihood()
+                loss = self.compute_loss()
                 self.loss.append(loss)
 
             if self.callbacks is not None:
@@ -420,7 +420,7 @@ class FastICAbase:
 
         return output
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -924,7 +924,7 @@ class GradLaplaceICA(GradICA):
         """
         super().update_once()
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -938,7 +938,7 @@ class GradLaplaceICA(GradICA):
             float:
                 Computed negative log-likelihood.
         """
-        return super().compute_negative_loglikelihood()
+        return super().compute_loss()
 
 
 class NaturalGradLaplaceICA(NaturalGradICA):
@@ -1040,7 +1040,7 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         """
         super().update_once()
 
-    def compute_negative_loglikelihood(self) -> float:
+    def compute_loss(self) -> float:
         r"""Compute negative log-likelihood :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
@@ -1054,4 +1054,4 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             float:
                 Computed negative log-likelihood.
         """
-        return super().compute_negative_loglikelihood()
+        return super().compute_loss()
