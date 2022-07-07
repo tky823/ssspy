@@ -5,7 +5,8 @@ def pair_selector(n_sources: int) -> Iterable[Tuple[int, int]]:
     r"""Select pair in pairwise update
 
     Args:
-        n_sources: int
+        n_sources (int):
+            Number of sources.
 
     Yields:
         int:
