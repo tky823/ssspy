@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, List
+from typing import Optional, Union, Callable, List, Dict, Any
 
 import pytest
 import numpy as np
@@ -15,6 +15,8 @@ from ssspy.bss.iva import (
 from ssspy.utils.dataset import download_dummy_data
 
 max_samples = 16000
+n_fft = 2048
+n_bins = n_fft // 2 + 1
 n_iter = 5
 
 
@@ -31,26 +33,44 @@ class DummyCallback:
 
 
 parameters_grad_iva = [
-    (2, None, True),
-    (3, dummy_function, False),
-    (2, [DummyCallback(), dummy_function], False),
+    (2, None, True, {}),
+    (
+        3,
+        dummy_function,
+        False,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
 ]
 
 parameters_aux_iva = [
-    (2, "dev1_female3", "IP", None),
-    (3, "dev1_female3", "IP2", dummy_function),
-    (2, "dev1_female3", "IP1", [DummyCallback(), dummy_function]),
-    (2, "dev1_female3", "ISS", None),
-    (3, "dev1_female3", "ISS1", dummy_function),
-    (4, "dev1_female4", "ISS2", [DummyCallback(), dummy_function]),
+    (2, "dev1_female3", "IP", None, {}),
+    (
+        3,
+        "dev1_female3",
+        "IP2",
+        dummy_function,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (2, "dev1_female3", "IP1", [DummyCallback(), dummy_function], {"demix_filter": None}),
+    (2, "dev1_female3", "ISS", None, {}),
+    (
+        3,
+        "dev1_female3",
+        "ISS1",
+        dummy_function,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (4, "dev1_female4", "ISS2", [DummyCallback(), dummy_function], {"demix_filter": None}),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
 def test_grad_iva(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -103,13 +123,14 @@ def test_grad_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
 def test_natural_grad_iva(
     n_sources: int,
     callbacks: Optional[
         Union[Callable[[NaturalGradIVA], None], List[Callable[[NaturalGradIVA], None]]]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -163,13 +184,14 @@ def test_natural_grad_iva(
 
 
 @pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks", parameters_aux_iva
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
 )
 def test_aux_iva(
     n_sources: int,
     sisec2010_tag: str,
     algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -223,13 +245,14 @@ def test_aux_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
 def test_grad_laplace_iva(
     n_sources: int,
     callbacks: Optional[
         Union[Callable[[GradLaplaceIVA], None], List[Callable[[GradLaplaceIVA], None]]]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -252,7 +275,7 @@ def test_grad_laplace_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
 def test_natural_grad_laplace_iva(
     n_sources: int,
     callbacks: Optional[
@@ -261,6 +284,7 @@ def test_natural_grad_laplace_iva(
         ]
     ],
     is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -284,7 +308,7 @@ def test_natural_grad_laplace_iva(
 
 
 @pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks", parameters_aux_iva
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
 )
 def test_aux_laplace_iva(
     n_sources: int,
@@ -295,6 +319,7 @@ def test_aux_laplace_iva(
             Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
         ]
     ],
+    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
