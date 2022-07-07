@@ -232,6 +232,58 @@ class IVAbase:
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
+class FastIVAbase(IVAbase):
+    r"""Base class of fast independent vector analysis (FastIVA).
+
+    Args:
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+    """
+
+    def __init__(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def __repr__(self) -> str:
+        s = "FastIVA("
+        s += "should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+
 class GradIVAbase(IVAbase):
     r""" Base class of independent vector analysis (IVA) using gradient descent.
 
