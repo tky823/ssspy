@@ -1,10 +1,10 @@
 from typing import Optional, Union, List, Callable
 import functools
-import itertools
 
 import numpy as np
 
 from ._flooring import max_flooring
+from ._select_pair import pair_selector
 from ..algorithm import projection_back
 
 __all__ = [
@@ -1060,7 +1060,7 @@ class AuxIVA(AuxIVAbase):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        for m, n in itertools.combinations(range(n_sources), 2):
+        for m, n in pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
 
@@ -1178,6 +1178,7 @@ class AuxIVA(AuxIVAbase):
             \end{cases}.
 
         """
+        n_sources = self.n_sources
         Y = self.output
 
         # Auxiliary variables
@@ -1185,7 +1186,7 @@ class AuxIVA(AuxIVAbase):
         denom = self.flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom
 
-        for m, n in itertools.combinations(range(self.n_sources), 2):
+        for m, n in pair_selector(n_sources):
             # Split into main and sub
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
             Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
