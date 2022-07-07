@@ -10,9 +10,9 @@ def pair_selector(n_sources: int) -> Iterable[Tuple[int, int]]:
 
     Yields:
         int:
-            First element of updating pair
+            First element of updating pair.
         int:
-            Seceond element of updating pair
+            Second element of updating pair.
     """
     for src_idx in range(n_sources):
         m, n = 2 * src_idx, 2 * src_idx + 1
