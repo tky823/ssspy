@@ -37,11 +37,12 @@ parameters_grad_iva = [
 ]
 
 parameters_aux_iva = [
-    (2, "IP", None),
-    (3, "IP2", dummy_function),
-    (2, "IP1", [DummyCallback(), dummy_function]),
-    (2, "ISS", None),
-    (3, "ISS1", dummy_function),
+    (2, "dev1_female3", "IP", None),
+    (3, "dev1_female3", "IP2", dummy_function),
+    (2, "dev1_female3", "IP1", [DummyCallback(), dummy_function]),
+    (2, "dev1_female3", "ISS", None),
+    (3, "dev1_female3", "ISS1", dummy_function),
+    (4, "dev1_female4", "ISS2", [DummyCallback(), dummy_function]),
 ]
 
 
@@ -161,9 +162,12 @@ def test_natural_grad_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_iva)
+@pytest.mark.parametrize(
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks", parameters_aux_iva
+)
 def test_aux_iva(
     n_sources: int,
+    sisec2010_tag: str,
     algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
 ):
@@ -173,7 +177,7 @@ def test_aux_iva(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
-        sisec2010_tag="dev1_female3",
+        sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -279,9 +283,12 @@ def test_natural_grad_laplace_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, algorithm_spatial, callbacks", parameters_aux_iva)
+@pytest.mark.parametrize(
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks", parameters_aux_iva
+)
 def test_aux_laplace_iva(
     n_sources: int,
+    sisec2010_tag: str,
     algorithm_spatial: str,
     callbacks: Optional[
         Union[
@@ -295,7 +302,7 @@ def test_aux_laplace_iva(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
-        sisec2010_tag="dev1_female3",
+        sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
