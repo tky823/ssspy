@@ -1,7 +1,7 @@
-from typing import Iterable
+from typing import Iterable, Tuple
 
 
-def pair_selector(n_sources: int) -> Iterable[int, int]:
+def pair_selector(n_sources: int) -> Iterable[Tuple[int, int]]:
     r"""Select pair in pairwise update
 
     Args:
