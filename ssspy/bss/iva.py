@@ -185,7 +185,7 @@ class IVAbase:
         raise NotImplementedError("Implement 'update_once' method.")
 
     def compute_loss(self) -> float:
-        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+        r"""Compute loss :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
 
@@ -198,7 +198,7 @@ class IVAbase:
 
         Returns:
             float:
-                Computed negative log-likelihood.
+                Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
@@ -1410,7 +1410,7 @@ class GradLaplaceIVA(GradIVA):
         return super().update_once()
 
     def compute_loss(self) -> float:
-        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+        r"""Compute loss :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
 
@@ -1421,7 +1421,7 @@ class GradLaplaceIVA(GradIVA):
 
         Returns:
             float:
-                Computed negative log-likelihood.
+                Computed loss.
         """
         return super().compute_loss()
 
@@ -1565,7 +1565,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         return super().update_once()
 
     def compute_loss(self) -> float:
-        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+        r"""Compute loss :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
 
@@ -1576,7 +1576,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
 
         Returns:
             float:
-                Computed negative log-likelihood.
+                Computed loss.
         """
         return super().compute_loss()
 

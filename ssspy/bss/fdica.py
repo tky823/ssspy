@@ -192,7 +192,7 @@ class FDICAbase:
         return output
 
     def compute_loss(self) -> float:
-        r"""Compute negative log-likelihood :math:`\mathcal{L}`.
+        r"""Compute loss :math:`\mathcal{L}`.
 
         :math:`\mathcal{L}` is given as follows:
 
@@ -207,7 +207,7 @@ class FDICAbase:
 
         Returns:
             float:
-                Computed negative log-likelihood.
+                Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
