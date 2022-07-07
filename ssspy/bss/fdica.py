@@ -5,6 +5,7 @@ import functools
 import numpy as np
 
 from ._flooring import max_flooring
+from ._select_pair import pair_selector
 from ..algorithm import projection_back
 
 __all__ = [
@@ -1067,7 +1068,7 @@ class AuxFDICA(FDICAbase):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        for m, n in itertools.combinations(range(n_sources), 2):
+        for m, n in pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
 
