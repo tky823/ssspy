@@ -1,7 +1,7 @@
 from typing import Iterable
 
 
-def pair_selector(n_sources: int) -> Iterable:
+def pair_selector(n_sources: int) -> Iterable[int, int]:
     r"""Select pair in pairwise update
 
     Args:
