@@ -140,7 +140,7 @@ class GradICAbase:
             W = np.eye(n_sources, n_channels, dtype=np.float64)
         else:
             if self.demix_filter is None:
-                W = self.demix_filter
+                W = None
             else:
                 # To avoid overwriting ``demix_filter`` given by keyword arguments.
                 W = self.demix_filter.copy()
@@ -342,7 +342,7 @@ class FastICAbase:
             W = np.eye(n_sources, n_channels, dtype=np.float64)
         else:
             if self.demix_filter is None:
-                W = self.demix_filter
+                W = None
             else:
                 # To avoid overwriting ``demix_filter`` given by keyword arguments.
                 W = self.demix_filter.copy()

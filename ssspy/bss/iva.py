@@ -148,7 +148,7 @@ class IVAbase:
             W = np.tile(W, reps=(n_bins, 1, 1))
         else:
             if self.demix_filter is None:
-                W = self.demix_filter
+                W = None
             else:
                 # To avoid overwriting ``demix_filter`` given by keyword arguments.
                 W = self.demix_filter.copy()
