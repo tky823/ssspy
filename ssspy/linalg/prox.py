@@ -24,7 +24,7 @@ def neg_log(x: np.ndarray, step_size: float = 1):
     """
     assert np.all(x >= 0)
 
-    output = (x + np.sqrt(x + 4 * step_size)) / 2
+    output = (x + np.sqrt(x ** 2 + 4 * step_size)) / 2
 
     return output
 
