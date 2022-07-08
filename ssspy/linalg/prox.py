@@ -10,7 +10,7 @@ def neg_log(x: np.ndarray, step_size: float = 1):
 
     .. math::
         \mathrm{prox}_{-\mu\log}(x)
-        = \frac{x + \sqrt{x + 4\mu}}{2}
+        = \frac{x + \sqrt{x^{2} + 4\mu}}{2}
 
     Args:
         x (np.ndarray):
