@@ -96,7 +96,7 @@ class PDSBSSbase:
 
     def __repr__(self) -> str:
         s = "PDSBSS("
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += "should_apply_projection_back={should_apply_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
         if self.should_apply_projection_back:
@@ -192,8 +192,7 @@ class PDSBSSbase:
 
 
 class PDSBSS(PDSBSSbase):
-    r"""Base class of based on blind source separation \
-    via proximal splitting algorithm [#yatabe2018determined]_.
+    r"""Blind source separation via proximal splitting algorithm [#yatabe2018determined]_.
 
     Args:
         mu1 (float):
@@ -274,6 +273,20 @@ class PDSBSS(PDSBSSbase):
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
+
+    def __repr__(self) -> str:
+        s = "PDSBSS("
+        s += "mu1={mu1}, mu2={mu2}"
+        s += ", alpha={alpha}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
         r"""Reset attributes following on given keyword arguments.
