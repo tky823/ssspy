@@ -3,6 +3,7 @@ from typing import Optional, Union, List, Callable
 import numpy as np
 
 from ..algorithm import projection_back
+from ..linalg import prox
 
 EPS = 1e-10
 
@@ -188,3 +189,128 @@ class PDSBSSbase:
         Y_scaled = self.separate(X, demix_filter=W_scaled)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
+
+
+class PDSBSS(PDSBSSbase):
+    r"""Base class of based on blind source separation \
+    via proximal splitting algorithm [#yatabe2018determined]_.
+
+    Args:
+        mu1 (float):
+            Step size. Default: ``1``.
+        mu2 (float):
+            Step size. Default: ``1``.
+        alpha (float):
+            Step size. Default: ``1``.
+        prox_penalty (callable):
+            Proximal operator of penalty function.
+            Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+    """
+
+    def __init__(
+        self,
+        mu1: float = 1,
+        mu2: float = 1,
+        alpha: float = 1,
+        prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
+        callbacks: Optional[
+            Union[Callable[["PDSBSS"], None], List[Callable[["PDSBSS"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            prox_penalty=prox_penalty,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+        self.mu1, self.mu2 = mu1, mu2
+        self.alpha = alpha
+
+    def __call__(self, input, n_iter=100, **kwargs):
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes following on given keyword arguments.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of PDSBSS.
+        """
+        super()._reset(**kwargs)
+
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+
+        if not hasattr(self, "dual"):
+            dual = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+        else:
+            if self.dual is None:
+                dual = None
+            else:
+                # To avoid overwriting ``dual`` given by keyword arguments.
+                dual = self.dual.copy()
+
+        self.dual = dual
+
+    def update_once(self):
+        r"""Update demixing filters and dual parameters once.
+        """
+        mu1, mu2 = self.mu1, self.mu2
+        alpha = self.alpha
+
+        Y = self.dual
+        X, W = self.input, self.demix_filter
+
+        XY = np.sum(Y * X[:, np.newaxis, :, :].conj(), axis=-1)
+        W_tilde = prox.logdet(W - mu1 * mu2 * XY.transpose(2, 0, 1), step_size=mu1)
+        Z = Y + self.separate(X, demix_filter=2 * W_tilde - W)
+        Y_tilde = Z - self.prox_penalty(Z, step_size=1 / mu2)
+
+        self.demix_filter = alpha * W_tilde + (1 - alpha) * W
+        self.dual = alpha * Y_tilde + (1 - alpha) * Y
