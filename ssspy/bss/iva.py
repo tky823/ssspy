@@ -1965,10 +1965,27 @@ class PDSIVA(PDSBSS):
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
+        def penalty_fn(y: np.ndarray) -> np.ndarray:
+            r"""Contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                float:
+                    Computed loss.
+            """
+            G = contrast_fn(y)  # (n_sources, n_frames)
+            loss = np.sum(G.mean(axis=-1), axis=0)
+
+            return loss
+
         super().__init__(
             mu1=mu1,
             mu2=mu2,
             alpha=alpha,
+            penalty_fn=penalty_fn,
             prox_penalty=prox_penalty,
             callbacks=callbacks,
             should_apply_projection_back=should_apply_projection_back,
@@ -1977,28 +1994,6 @@ class PDSIVA(PDSBSS):
         )
 
         self.contrast_fn = contrast_fn
-
-    def compute_loss(self) -> float:
-        r"""Compute loss :math:`\mathcal{L}`.
-
-        :math:`\mathcal{L}` is given as follows:
-
-        .. math::
-            \mathcal{L} \
-            = \frac{2}{J}\sum_{j,n}\|\vec{\boldsymbol{y}}_{jn}\|_{2} \
-            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|.
-
-        Returns:
-            float:
-                Computed loss.
-        """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        logdet = self.compute_logdet(W)  # (n_bins,)
-        G = self.contrast_fn(Y)  # (n_sources, n_frames)
-        loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
-
-        return loss
 
 
 class GradLaplaceIVA(GradIVA):
