@@ -13,6 +13,8 @@ class PDSBSSbase:
     via proximal splitting algorithm [#yatabe2018determined]_.
 
     Args:
+        penalty_fn (callable):
+            Penalty function that determines source model.
         prox_penalty (callable):
             Proximal operator of penalty function.
             Default: ``None``.
@@ -37,6 +39,7 @@ class PDSBSSbase:
 
     def __init__(
         self,
+        penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["PDSBSSbase"], None], List[Callable[["PDSBSSbase"], None]]]
@@ -172,7 +175,12 @@ class PDSBSSbase:
             float:
                 Computed loss.
         """
-        raise NotImplementedError("Implement 'compute_loss'.")
+        X, W = self.input, self.demix_filter
+        logdet = self.compute_logdet(W)  # (n_bins,)
+        penalty = self.penalty_fn(X, demix_filter=W)
+        loss = penalty - 2 * np.sum(logdet, axis=0)
+
+        return loss
 
     def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
         r"""Compute log-determinant of demixing filter
