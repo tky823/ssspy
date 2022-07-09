@@ -338,8 +338,8 @@ class PDSBSS(PDSBSSbase):
         Y = self.dual
         X, W = self.input, self.demix_filter
 
-        XY = np.sum(Y * X[:, np.newaxis, :, :].conj(), axis=-1)
-        W_tilde = prox.logdet(W - mu1 * mu2 * XY.transpose(2, 0, 1), step_size=mu1)
+        XY = Y.transpose(1, 0, 2) @ X.transpose(1, 2, 0).conj()
+        W_tilde = prox.logdet(W - mu1 * mu2 * XY, step_size=mu1)
         Z = Y + self.separate(X, demix_filter=2 * W_tilde - W)
         Y_tilde = Z - self.prox_penalty(Z, step_size=1 / mu2)
 
