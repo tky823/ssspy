@@ -388,7 +388,7 @@ class GaussILRMA(ILRMAbase):
         # TODO: normalize bases and activations
         norm = T.sum(axis=1)  # (n_sources, n_basis)
         T = T / norm[:, np.newaxis, :]
-        V = V / norm[:, :, np.newaxis]
+        V = V * norm[:, :, np.newaxis]
 
         self.basis, self.activation = T, V
 
