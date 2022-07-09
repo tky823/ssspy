@@ -262,6 +262,21 @@ class PDSBSS(PDSBSSbase):
         self.alpha = alpha
 
     def __call__(self, input, n_iter=100, **kwargs):
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                Mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                Number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
         self.input = input.copy()
 
         self._reset(**kwargs)
