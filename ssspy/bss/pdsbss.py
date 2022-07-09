@@ -181,8 +181,9 @@ class PDSBSSbase:
                 Computed loss.
         """
         X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
         logdet = self.compute_logdet(W)  # (n_bins,)
-        penalty = self.penalty_fn(X, demix_filter=W)
+        penalty = self.penalty_fn(Y)
         loss = penalty - 2 * np.sum(logdet, axis=0)
 
         return loss
