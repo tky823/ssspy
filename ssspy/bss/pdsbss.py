@@ -48,6 +48,11 @@ class PDSBSSbase:
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
+        if penalty_fn is None:
+            raise ValueError("Specify penalty function.")
+        else:
+            self.penalty_fn = penalty_fn
+
         if prox_penalty is None:
             raise ValueError("Specify proximal operator of penalty function.")
         else:
