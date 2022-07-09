@@ -214,6 +214,8 @@ class PDSBSS(PDSBSSbase):
             Step size. Default: ``1``.
         alpha (float):
             Step size. Default: ``1``.
+        penalty_fn (callable):
+            Penalty function that determines source model.
         prox_penalty (callable):
             Proximal operator of penalty function.
             Default: ``None``.
@@ -237,6 +239,7 @@ class PDSBSS(PDSBSSbase):
         mu1: float = 1,
         mu2: float = 1,
         alpha: float = 1,
+        penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["PDSBSS"], None], List[Callable[["PDSBSS"], None]]]
@@ -246,6 +249,7 @@ class PDSBSS(PDSBSSbase):
         reference_id: int = 0,
     ) -> None:
         super().__init__(
+            penalty_fn=penalty_fn,
             prox_penalty=prox_penalty,
             callbacks=callbacks,
             should_apply_projection_back=should_apply_projection_back,
