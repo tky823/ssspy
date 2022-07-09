@@ -369,7 +369,8 @@ class GaussILRMA(ILRMAbase):
         denom = self.flooring_fn(denom)
         Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
         num = np.sum(V[:, np.newaxis, :, :] * Y2TV[:, :, np.newaxis, :], axis=3)
-        denom = np.sum(V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :], axis=3)
+        denom = self.flooring_fn(TV)
+        denom = np.sum(V[:, np.newaxis, :, :] / denom[:, :, np.newaxis, :], axis=3)
         denom = self.flooring_fn(denom)
         T = ((num / denom) ** (p / (p + 2))) * T
 
@@ -379,7 +380,8 @@ class GaussILRMA(ILRMAbase):
         denom = self.flooring_fn(denom)
         Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
         num = np.sum(T[:, :, :, np.newaxis] * Y2TV[:, :, np.newaxis, :], axis=1)
-        denom = np.sum(T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :], axis=1)
+        denom = self.flooring_fn(TV)
+        denom = np.sum(T[:, :, :, np.newaxis] / denom[:, :, np.newaxis, :], axis=1)
         denom = self.flooring_fn(denom)
         V = ((num / denom) ** (p / (p + 2))) * V
 
