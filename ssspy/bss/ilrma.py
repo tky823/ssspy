@@ -6,6 +6,10 @@ import numpy as np
 from ._flooring import max_flooring
 from ..algorithm import projection_back
 
+__all__ = [
+    "GaussILRMA",
+]
+
 algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
@@ -163,11 +167,12 @@ class ILRMAbase:
         r"""Initialize NMF.
         """
         n_basis = self.n_basis
+        n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
         eps = self.eps
 
-        self.basis = eps + (1 - eps) * np.random.random(n_bins, n_basis)
-        self.activation = eps + (1 - eps) * np.random.random(n_basis, n_frames)
+        self.basis = eps + (1 - eps) * np.random.random((n_sources, n_bins, n_basis))
+        self.activation = eps + (1 - eps) * np.random.random((n_sources, n_basis, n_frames))
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
@@ -224,3 +229,276 @@ class ILRMAbase:
         Y_scaled = self.separate(X, demix_filter=W_scaled)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
+
+
+class GaussILRMA(ILRMAbase):
+    def __init__(
+        self,
+        n_basis: int,
+        algorithm_spatial: str = "IP",
+        domain: float = 2,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["GaussILRMA"], None], List[Callable[["GaussILRMA"], None]]]
+        ] = None,
+        normalization: Optional[Union[str, bool]] = "projection_back",
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+        eps: float = EPS,
+    ) -> None:
+        super().__init__(
+            n_basis=n_basis,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+            eps=eps,
+        )
+
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert 0 < domain <= 2, "domain parameter should be chosen from (0, 2]."
+
+        self.normalization = normalization
+        self.algorithm_spatial = algorithm_spatial
+        self.domain = domain
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def __repr__(self) -> str:
+        s = "GaussILRMA("
+        s += "n_basis={n_basis}"
+        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", domain={domain}"
+        s += ", normalization={normalization}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ", eps={eps}"
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes following on given keyword arguments.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        super()._reset(**kwargs)
+
+        if self.algorithm_spatial in ["ISS", "ISS1", "ISS2"]:
+            self.demix_filter = None
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+
+        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        """
+        self.update_source_model()
+        self.update_spatial_model()
+
+        if self.normalization:
+            self.normalize()
+
+    def update_source_model(self) -> None:
+        r"""Update NMF bases and activations.
+        """
+        p = self.domain
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        Y = self.separate(X, demix_filter=W)
+        Y2 = np.abs(Y) ** 2
+
+        # Update basis
+        TV = T @ V  # (n_sources, n_bins, n_frames)
+        denom = TV ** ((p + 2) / p)
+        denom = self.flooring_fn(denom)
+        Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
+        num = np.sum(V[:, np.newaxis, :, :] * Y2TV[:, :, np.newaxis, :], axis=3)
+        denom = np.sum(V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :], axis=3)
+        denom = self.flooring_fn(denom)
+        T = ((num / denom) ** (p / (p + 2))) * T
+
+        # Update activation
+        TV = T @ V  # (n_sources, n_bins, n_frames)
+        denom = TV ** ((p + 2) / p)
+        denom = self.flooring_fn(denom)
+        Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
+        num = np.sum(T[:, :, :, np.newaxis] * Y2TV[:, :, np.newaxis, :], axis=1)
+        denom = np.sum(T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :], axis=1)
+        denom = self.flooring_fn(denom)
+        V = ((num / denom) ** (p / (p + 2))) * V
+
+        # TODO: normalize bases and activations
+
+        self.basis, self.activation = T, V
+
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_spatial_model_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_spatial_model_ip1(self) -> None:
+        r"""Update demixing filters once using iterative projection.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}, \\
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &= \frac{1}{J}\sum_{j}
+            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        TV = T @ V
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+        varphi = 1 / self.flooring_fn(TV)
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]  # (n_bins, n_channels)
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+    def normalize(self) -> None:
+        normalization = self.normalization
+
+        assert normalization, "Set normalization."
+
+        p = self.domain
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        Y = self.separate(X, demix_filter=W)
+
+        if type(normalization) is bool:
+            normalization = "power"
+
+        if normalization == "power":
+            psi = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
+            psi = np.sqrt(psi)
+        else:
+            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+
+        W = W / psi[np.newaxis, :, np.newaxis]
+        T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+
+        self.demix_filter = W
+        self.basis, self.activation = T, V
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        TV = T @ V
+
+        Y2 = np.abs(Y) ** 2
+        denom = self.flooring_fn(TV)
+        Y2TV = Y2 / denom
+
+        logdet = self.compute_logdet(W)  # (n_bins,)
+        loss = Y2TV - np.log(Y2TV)
+        loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
+        loss = loss.sum(axis=0)
+
+        return loss
