@@ -260,7 +260,7 @@ class GaussILRMA(ILRMAbase):
         )
 
         assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
-        assert 0 < domain <= 2, "domain parameter should be chosen from (0, 2]."
+        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
 
         self.normalization = normalization
         self.algorithm_spatial = algorithm_spatial
