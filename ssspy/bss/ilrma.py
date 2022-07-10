@@ -163,7 +163,7 @@ class ILRMAbase:
 
         self._init_nmf()
 
-    def _init_nmf(self):
+    def _init_nmf(self) -> None:
         r"""Initialize NMF.
         """
         n_basis = self.n_basis
