@@ -542,15 +542,14 @@ class GaussILRMA(ILRMAbase):
         X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
 
-        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        TV = (T @ V) ** (2 / p)
-
+        Y = self.separate(X, demix_filter=W)
         Y2 = np.abs(Y) ** 2
-        denom = self.flooring_fn(TV)
-        Y2TV = Y2 / denom
+
+        TV = self.flooring_fn(T @ V)
+        TV2p = TV ** (2 / p)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
-        loss = Y2TV + np.log(TV)
+        loss = Y2 / TV2p + np.log(TV2p)
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
         loss = loss.sum(axis=0)
 
