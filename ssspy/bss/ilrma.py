@@ -540,7 +540,7 @@ class GaussILRMA(ILRMAbase):
         Y = self.separate(X, demix_filter=W)
         Y2 = np.abs(Y) ** 2
 
-        TV = self.flooring_fn(T @ V)
+        TV = T @ V
         TV2p = TV ** (2 / p)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
