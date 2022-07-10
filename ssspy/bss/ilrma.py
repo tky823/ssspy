@@ -362,31 +362,38 @@ class GaussILRMA(ILRMAbase):
 
         Y = self.separate(X, demix_filter=W)
         Y2 = np.abs(Y) ** 2
+        p2p = (p + 2) / p
+        pp2 = p / (p + 2)
 
         # Update basis
-        TV = T @ V  # (n_sources, n_bins, n_frames)
-        denom = TV ** ((p + 2) / p)
+        TV = self.flooring_fn(T @ V)
+
+        TVp2p = TV ** p2p
+        V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
+        num = np.sum(V_TVp2p * Y2[:, :, np.newaxis, :], axis=3)
+
+        V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+        denom = np.sum(V_TV, axis=3)
         denom = self.flooring_fn(denom)
-        Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
-        num = np.sum(V[:, np.newaxis, :, :] * Y2TV[:, :, np.newaxis, :], axis=3)
-        denom = self.flooring_fn(TV)
-        denom = np.sum(V[:, np.newaxis, :, :] / denom[:, :, np.newaxis, :], axis=3)
-        denom = self.flooring_fn(denom)
-        T = ((num / denom) ** (p / (p + 2))) * T
+
+        T = ((num / denom) ** pp2) * T
 
         # Update activation
-        TV = T @ V  # (n_sources, n_bins, n_frames)
-        denom = TV ** ((p + 2) / p)
-        denom = self.flooring_fn(denom)
-        Y2TV = Y2 / denom  # (n_sources, n_bins, n_frames)
-        num = np.sum(T[:, :, :, np.newaxis] * Y2TV[:, :, np.newaxis, :], axis=1)
-        denom = self.flooring_fn(TV)
-        denom = np.sum(T[:, :, :, np.newaxis] / denom[:, :, np.newaxis, :], axis=1)
-        denom = self.flooring_fn(denom)
-        V = ((num / denom) ** (p / (p + 2))) * V
+        TV = self.flooring_fn(T @ V)
 
-        # TODO: normalize bases and activations
-        norm = T.sum(axis=1)  # (n_sources, n_basis)
+        TVp2p = TV ** p2p
+        T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
+        num = np.sum(T_TVp2p * Y2[:, :, np.newaxis, :], axis=1)
+
+        T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+        denom = np.sum(T_TV, axis=1)
+        denom = self.flooring_fn(denom)
+
+        V = ((num / denom) ** pp2) * V
+
+        # Normalize bases and activations
+        norm = np.sum(T, axis=1)
+        norm = self.flooring_fn(norm)
         T = T / norm[:, np.newaxis, :]
         V = V * norm[:, :, np.newaxis]
 
@@ -424,10 +431,11 @@ class GaussILRMA(ILRMAbase):
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
+        p = self.domain
         X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
 
-        TV = T @ V
+        TV = (T @ V) ** (2 / p)
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
@@ -487,22 +495,40 @@ class GaussILRMA(ILRMAbase):
 
         :math:`\mathcal{L}` is given as follows:
 
+        .. math::
+            \mathcal{L}
+            = \frac{1}{J}\sum_{i,j}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
+            - \log\frac{|y_{ijn}|^{2}}{r_{ijn}}\right),
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+        if ``partitioning=False``, otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
         Returns:
             float:
                 Computed loss.
         """
+        p = self.domain
         X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
 
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        TV = T @ V
+        TV = (T @ V) ** (2 / p)
 
         Y2 = np.abs(Y) ** 2
         denom = self.flooring_fn(TV)
         Y2TV = Y2 / denom
 
         logdet = self.compute_logdet(W)  # (n_bins,)
-        loss = Y2TV - np.log(Y2TV)
+        loss = Y2TV + np.log(TV)
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
         loss = loss.sum(axis=0)
 
