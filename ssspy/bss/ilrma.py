@@ -435,12 +435,11 @@ class GaussILRMA(ILRMAbase):
         X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
 
-        TV = self.flooring_fn(T @ V)
-        TV2p = TV ** (2 / p)
+        TV2p = (T @ V) ** (2 / p)
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
-        varphi = 1 / TV2p
+        varphi = 1 / self.flooring_fn(TV2p)
         varphi = varphi.transpose(1, 0, 2)
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
