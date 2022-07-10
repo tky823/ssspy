@@ -391,12 +391,6 @@ class GaussILRMA(ILRMAbase):
 
         V = ((num / denom) ** pp2) * V
 
-        # Normalize bases and activations
-        norm = np.sum(T, axis=1)
-        norm = self.flooring_fn(norm)
-        T = T / norm[:, np.newaxis, :]
-        V = V * norm[:, :, np.newaxis]
-
         self.basis, self.activation = T, V
 
     def update_spatial_model(self) -> None:
@@ -506,6 +500,7 @@ class GaussILRMA(ILRMAbase):
         else:
             raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
 
+        psi = self.flooring_fn(psi)
         W = W / psi[np.newaxis, :, np.newaxis]
         T = T / (psi[:, np.newaxis, np.newaxis] ** p)
 
@@ -549,7 +544,7 @@ class GaussILRMA(ILRMAbase):
         TV2p = TV ** (2 / p)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
-        loss = Y2 / TV2p + np.log(TV2p)
+        loss = Y2 / TV2p + (2 / p) * np.log(TV)
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
         loss = loss.sum(axis=0)
 
