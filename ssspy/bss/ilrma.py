@@ -366,7 +366,7 @@ class GaussILRMA(ILRMAbase):
         pp2 = p / (p + 2)
 
         # Update basis
-        TV = self.flooring_fn(T @ V)
+        TV = T @ V
 
         TVp2p = TV ** p2p
         V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
@@ -374,12 +374,12 @@ class GaussILRMA(ILRMAbase):
 
         V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
         denom = np.sum(V_TV, axis=3)
-        denom = self.flooring_fn(denom)
 
         T = ((num / denom) ** pp2) * T
+        T = self.flooring_fn(T)
 
         # Update activation
-        TV = self.flooring_fn(T @ V)
+        TV = T @ V
 
         TVp2p = TV ** p2p
         T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
@@ -387,9 +387,9 @@ class GaussILRMA(ILRMAbase):
 
         T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
         denom = np.sum(T_TV, axis=1)
-        denom = self.flooring_fn(denom)
 
         V = ((num / denom) ** pp2) * V
+        V = self.flooring_fn(V)
 
         self.basis, self.activation = T, V
 
@@ -433,21 +433,21 @@ class GaussILRMA(ILRMAbase):
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
-        varphi = 1 / self.flooring_fn(TV2p)
+        varphi = 1 / TV2p
         varphi = varphi.transpose(1, 0, 2)
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
 
         for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
+            w_n_Hermite = W[:, src_idx, :]
             U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]  # (n_bins, n_channels)
+            e_n = E[:, src_idx, :]
 
             WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
+            w_n = np.linalg.solve(WU, e_n)
             wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
             wUw = np.real(wUw[..., 0])
             wUw = np.maximum(wUw, 0)
