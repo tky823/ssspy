@@ -171,8 +171,8 @@ class ILRMAbase:
         n_bins, n_frames = self.n_bins, self.n_frames
         eps = self.eps
 
-        self.basis = eps + (1 - eps) * np.random.random((n_sources, n_bins, n_basis))
-        self.activation = eps + (1 - eps) * np.random.random((n_sources, n_basis, n_frames))
+        self.basis = eps + (1 - eps) * np.random.rand(n_sources, n_bins, n_basis)
+        self.activation = eps + (1 - eps) * np.random.rand(n_sources, n_basis, n_frames)
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
