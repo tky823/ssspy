@@ -465,6 +465,28 @@ class GaussILRMA(ILRMAbase):
         self.demix_filter = W
 
     def normalize(self) -> None:
+        r"""Normalize demixing filters and NMF bases.
+
+        Demixing filters and NMF bases are normalized by
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            \boldsymbol{t}_{ikn}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}^{p}},
+
+        where :math:`\psi_{in}` is normalization term.
+        :math:`0<p\leq 2` is a domain parameter.
+
+        If self.normalization="power", \
+        normalization term :math:`\psi_{in}` is computed as
+
+        .. math::
+            \psi_{in}
+            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+
+        """
         normalization = self.normalization
 
         assert normalization, "Set normalization."
