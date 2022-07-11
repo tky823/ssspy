@@ -1,5 +1,6 @@
 from typing import Optional, Union, List, Callable
 import functools
+import warnings
 
 import numpy as np
 
@@ -485,24 +486,44 @@ class GaussILRMA(ILRMAbase):
 
         assert normalization, "Set normalization."
 
+        reference_id = self.reference_id
+
         p = self.domain
         X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
 
         Y = self.separate(X, demix_filter=W)
 
-        if type(normalization) is bool:
-            normalization = "power"
+        if normalization:
+            if type(normalization) is bool:
+                # when normalization is True
+                normalization = "power"
 
-        if normalization == "power":
-            psi = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
-            psi = np.sqrt(psi)
-        else:
-            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                W = W / psi[np.newaxis, :, np.newaxis]
+                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+            elif normalization == "projection_back":
+                if reference_id is None:
+                    warnings.warn(
+                        "channel 0 is used for reference_id \
+                            of projection-back-based normalization.",
+                        UserWarning,
+                    )
+                    reference_id = 0
 
-        psi = self.flooring_fn(psi)
-        W = W / psi[np.newaxis, :, np.newaxis]
-        T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+                scale = np.linalg.inv(W)
+                scale = scale[:, reference_id, :]
+                W = W * scale[:, :, np.newaxis]
+                scale = scale.transpose(1, 0)
+                scale = np.abs(scale) ** p
+                T = T * scale[:, :, np.newaxis]
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
 
         self.demix_filter = W
         self.basis, self.activation = T, V
