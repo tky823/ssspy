@@ -30,7 +30,7 @@ class DummyCallback:
 
 parameters_algorithm_spatial = ["IP", "IP1"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
-parameters_gauss_ilrma_w_latent = [
+parameters_gauss_ilrma_latent = [
     (2, 4, 2),
     (3, 3, 1),
 ]
@@ -38,17 +38,17 @@ parameters_gauss_ilrma_wo_latent = [
     (2, 2, 2),
     (3, 1, 1),
 ]
-parameters_normalization_w_latent = [True, False, "power"]
+parameters_normalization_latent = [True, False, "power"]
 parameters_normalization_wo_latent = [True, False, "power", "projection_back"]
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_w_latent,
+    "n_sources, n_basis, domain", parameters_gauss_ilrma_latent,
 )
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
-@pytest.mark.parametrize("normalization", parameters_normalization_w_latent)
-def test_gauss_ilrma_w_latent(
+@pytest.mark.parametrize("normalization", parameters_normalization_latent)
+def test_gauss_ilrma_latent(
     n_sources: int,
     n_basis: int,
     algorithm_spatial: str,

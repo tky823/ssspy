@@ -555,11 +555,11 @@ class GaussILRMA(ILRMAbase):
         assert normalization, "Set normalization."
 
         if self.partitioning:
-            self.normalize_partitioning()
+            self.normalize_latent()
         else:
-            self.normalize_wo_partitioning()
+            self.normalize_wo_latent()
 
-    def normalize_partitioning(self) -> None:
+    def normalize_latent(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
 
         Demixing filters and NMF parameters are normalized by
@@ -615,7 +615,7 @@ class GaussILRMA(ILRMAbase):
         self.latent = Z
         self.basis, self.activation = T, V
 
-    def normalize_wo_partitioning(self) -> None:
+    def normalize_wo_latent(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
 
         Demixing filters and NMF parameters are normalized by
