@@ -604,7 +604,7 @@ class GaussILRMA(ILRMAbase):
             psi = np.sqrt(Y2)
             psi = self.flooring_fn(psi)
             W = W / psi[np.newaxis, :, np.newaxis]
-            Z_psi = Z / psi[:, np.newaxis] ** p
+            Z_psi = Z / (psi[:, np.newaxis] ** p)
             scale = np.sum(Z_psi, axis=0)
             T = T * scale[np.newaxis, :]
             Z = Z_psi / scale
