@@ -60,7 +60,6 @@ class ILRMAbase:
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
-        eps: float = EPS,
     ) -> None:
         self.n_basis = n_basis
 
@@ -84,8 +83,6 @@ class ILRMAbase:
             raise ValueError("Specify 'reference_id' if should_apply_projection_back=True.")
         else:
             self.reference_id = reference_id
-
-        self.eps = eps
 
         self.should_record_loss = should_record_loss
 
@@ -170,10 +167,14 @@ class ILRMAbase:
         n_basis = self.n_basis
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
-        eps = self.eps
 
-        self.basis = eps + (1 - eps) * np.random.rand(n_sources, n_bins, n_basis)
-        self.activation = eps + (1 - eps) * np.random.rand(n_sources, n_basis, n_frames)
+        T = np.random.rand(n_sources, n_bins, n_basis)
+        V = np.random.rand(n_sources, n_basis, n_frames)
+
+        T = self.flooring_fn(T)
+        V = self.flooring_fn(V)
+
+        self.basis, self.activation = T, V
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
@@ -248,7 +249,6 @@ class GaussILRMA(ILRMAbase):
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
-        eps: float = EPS,
     ) -> None:
         super().__init__(
             n_basis=n_basis,
@@ -257,7 +257,6 @@ class GaussILRMA(ILRMAbase):
             should_apply_projection_back=should_apply_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
-            eps=eps,
         )
 
         assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
@@ -326,7 +325,6 @@ class GaussILRMA(ILRMAbase):
         if self.should_apply_projection_back:
             s += ", reference_id={reference_id}"
 
-        s += ", eps={eps}"
         s += ")"
 
         return s.format(**self.__dict__)
