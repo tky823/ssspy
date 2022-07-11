@@ -488,21 +488,41 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \boldsymbol{U}_{in}
             &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            \frac{1}{\sum_{k}z_{nk}t_{ik}v_{kj}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
+
+        if ``partitioning=True``, otherwise
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &= \frac{1}{J}\sum_{j}
+            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
+
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
         p = self.domain
         X, W = self.input, self.demix_filter
-        T, V = self.basis, self.activation
 
-        TV2p = (T @ V) ** (2 / p)
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+            ZTV2p = ZTV ** (2 / p)
+            varphi = 1 / ZTV2p
+        else:
+            T, V = self.basis, self.activation
+
+            TV2p = (T @ V) ** (2 / p)
+            varphi = 1 / TV2p
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
-        varphi = 1 / TV2p
+
         varphi = varphi.transpose(1, 0, 2)
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
