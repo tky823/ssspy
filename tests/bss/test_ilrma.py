@@ -29,16 +29,20 @@ class DummyCallback:
 
 
 parameters_gauss_ilrma = [
-    (2, 2, "IP", 2, None, True),
-    (3, 2, "IP1", 1, dummy_function, "power"),
-    (2, 2, "IP", 0.5, [DummyCallback(), dummy_function], "power"),
+    (2, 2, 2),
+    (3, 1, 1),
 ]
+parameters_algorithm_spatial = ["IP", "IP1"]
+parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_normalization = [True, False, "power", "projection_back"]
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, algorithm_spatial, domain, callbacks, normalization",
-    parameters_gauss_ilrma,
+    "n_sources, n_basis, domain", parameters_gauss_ilrma,
 )
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("normalization", parameters_normalization)
 def test_gauss_ilrma(
     n_sources: int,
     n_basis: int,
