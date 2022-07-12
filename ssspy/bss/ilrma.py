@@ -395,8 +395,8 @@ class GaussILRMA(ILRMAbase):
             ZV_ZTVp2p = ZV[:, np.newaxis, :, :] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 3))
 
-            V_ZTV = V[np.newaxis, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(V_ZTV, axis=(0, 3))
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
 
             T = ((num / denom) ** pp2) * T
             T = self.flooring_fn(T)
@@ -409,8 +409,8 @@ class GaussILRMA(ILRMAbase):
             ZT_ZTVp2p = ZT[:, :, :, np.newaxis] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZT_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 1))
 
-            T_ZTV = T[np.newaxis, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(T_ZTV, axis=(0, 1))
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
 
             V = ((num / denom) ** pp2) * V
             V = self.flooring_fn(V)
@@ -423,8 +423,8 @@ class GaussILRMA(ILRMAbase):
             TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(TV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(1, 3))
 
-            T_ZTV = Z[:, np.newaxis, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(T_ZTV, axis=(1, 3))
+            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(TV_ZTV, axis=(1, 3))
 
             Z = ((num / denom) ** pp2) * Z
             Z = Z / Z.sum(axis=0)
