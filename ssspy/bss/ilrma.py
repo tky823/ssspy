@@ -172,8 +172,7 @@ class ILRMAbase:
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if self.partitioning:
-            variance_latent = 1e-2  # TODO
-            Z = np.random.rand(n_sources, n_basis) * variance_latent + 1 / n_sources
+            Z = np.random.rand(n_sources, n_basis)
             Z = Z / Z.sum(axis=0)
             T = np.random.rand(n_bins, n_basis)
             V = np.random.rand(n_basis, n_frames)
