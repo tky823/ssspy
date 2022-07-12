@@ -387,6 +387,20 @@ class GaussILRMA(ILRMAbase):
             Z = self.latent
             T, V = self.basis, self.activation
 
+            # Update latent
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+
+            ZTVp2p = ZTV ** p2p
+            TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
+            num = np.sum(TV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(TV_ZTV, axis=(1, 3))
+
+            Z = ((num / denom) ** pp2) * Z
+            Z = Z / Z.sum(axis=0)
+
             # Update basis
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
             ZTV = np.sum(ZV[:, np.newaxis, :, :] * T[np.newaxis, :, :, np.newaxis], axis=2)
@@ -414,20 +428,6 @@ class GaussILRMA(ILRMAbase):
 
             V = ((num / denom) ** pp2) * V
             V = self.flooring_fn(V)
-
-            # Update latent
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
-
-            ZTVp2p = ZTV ** p2p
-            TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
-            num = np.sum(TV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(1, 3))
-
-            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(TV_ZTV, axis=(1, 3))
-
-            Z = ((num / denom) ** pp2) * Z
-            Z = Z / Z.sum(axis=0)
 
             self.latent = Z
             self.basis, self.activation = T, V
