@@ -263,7 +263,7 @@ class GaussILRMA(ILRMAbase):
         callbacks: Optional[
             Union[Callable[["GaussILRMA"], None], List[Callable[["GaussILRMA"], None]]]
         ] = None,
-        normalization: Optional[Union[str, bool]] = "projection_back",
+        normalization: Optional[Union[bool, str]] = True,
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
