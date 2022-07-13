@@ -1424,7 +1424,7 @@ class GradGaussIVA(GradIVA):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["GradIVA"], None], List[Callable[["GradIVA"], None]]]
+            Union[Callable[["GradGaussIVA"], None], List[Callable[["GradGaussIVA"], None]]]
         ] = None,
         is_holonomic: bool = True,
         should_apply_projection_back: bool = True,
