@@ -1449,7 +1449,7 @@ class GradGaussIVA(GradIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(self.variance) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
         def score_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -1697,7 +1697,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(self.variance) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
         def score_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -1862,7 +1862,7 @@ class AuxGaussIVA(AuxIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(self.variance) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
         def d_contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
