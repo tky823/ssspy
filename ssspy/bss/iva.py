@@ -1714,9 +1714,9 @@ class AuxGaussIVA(AuxIVA):
         """
         super()._reset(**kwargs)
 
-        n_bins, n_frames = self.n_bins, self.n_frames
+        n_sources, n_frames = self.n_sources, self.n_frames
 
-        self.variance = np.ones((n_bins, n_frames))
+        self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
         r"""Update demixing filters once.
