@@ -1816,6 +1816,8 @@ class AuxGaussIVA(AuxIVA):
         super().update_once()
 
     def update_source_model(self) -> None:
+        r"""Update variance of Gaussian distribution.
+        """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
