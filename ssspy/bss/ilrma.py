@@ -218,6 +218,39 @@ class ILRMAbase:
 
         return output
 
+    def reconstruct_nmf(
+        self, basis: np.ndarray, activation: np.ndarray, latent: Optional[np.ndarray] = None
+    ):
+        r"""Reconstruct NMF.
+
+        Args:
+            basis (numpy.ndarray):
+                Basis matrix.
+                The shape is (n_sources, n_basis, n_frames) if latent is given.
+                Otherwise, (n_basis, n_frames).
+            activation (numpy.ndarray):
+                Activation matrix.
+                The shape is (n_sources, n_bins, n_basis) if latent is given.
+                Otherwise, (n_bins, n_basis).
+            latent (numpy.ndarray, optional):
+                Latent variable that determines number of bases per source.
+
+        Returns:
+            numpy.ndarray:
+                Reconstructed NMF.
+                The shape is (n_sources, n_bins, n_frames).
+        """
+        if latent is None:
+            T, V = basis, activation
+            R = T @ V
+        else:
+            Z = latent
+            T, V = basis, activation
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            R = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+
+        return R
+
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
@@ -388,7 +421,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update latent
             TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
@@ -402,7 +435,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update basis
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(ZV[:, np.newaxis, :, :] * T[np.newaxis, :, :, np.newaxis], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             ZV_ZTVp2p = ZV[:, np.newaxis, :, :] / ZTVp2p[:, :, np.newaxis, :]
@@ -416,7 +449,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update activation
             ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
-            ZTV = np.sum(ZT[:, :, :, np.newaxis] * V[np.newaxis, np.newaxis, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             ZT_ZTVp2p = ZT[:, :, :, np.newaxis] / ZTVp2p[:, :, np.newaxis, :]
@@ -434,7 +467,7 @@ class GaussILRMA(ILRMAbase):
             T, V = self.basis, self.activation
 
             # Update basis
-            TV = T @ V
+            TV = self.reconstruct_nmf(T, V)
 
             TVp2p = TV ** p2p
             V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
@@ -447,7 +480,7 @@ class GaussILRMA(ILRMAbase):
             T = self.flooring_fn(T)
 
             # Update activation
-            TV = T @ V
+            TV = self.reconstruct_nmf(T, V)
 
             TVp2p = TV ** p2p
             T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
@@ -466,6 +499,8 @@ class GaussILRMA(ILRMAbase):
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
+        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+            self.update_once_iss1()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -545,6 +580,9 @@ class GaussILRMA(ILRMAbase):
             W[:, src_idx, :] = w_n_Hermite
 
         self.demix_filter = W
+
+    def update_once_iss1(self) -> None:
+        pass
 
     def normalize(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
@@ -712,17 +750,13 @@ class GaussILRMA(ILRMAbase):
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
-            ZTV2p = ZTV ** (2 / p)
-
-            loss = Y2 / ZTV2p + (2 / p) * np.log(ZTV)
+            R = self.reconstruct_nmf(T, V, latent=Z)
         else:
             T, V = self.basis, self.activation
-            TV = T @ V
-            TV2p = TV ** (2 / p)
+            R = self.reconstruct_nmf(T, V)
 
-            loss = Y2 / TV2p + (2 / p) * np.log(TV)
+        R2p = R ** (2 / p)
+        loss = Y2 / R2p + (2 / p) * np.log(R)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
 
