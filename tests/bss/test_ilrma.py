@@ -28,7 +28,7 @@ class DummyCallback:
         pass
 
 
-parameters_algorithm_spatial = ["IP", "IP1"]
+parameters_algorithm_spatial = ["IP", "IP1", "ISS", "ISS1"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_gauss_ilrma_latent = [
     (2, 4, 2),
