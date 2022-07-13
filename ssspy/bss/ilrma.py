@@ -582,7 +582,33 @@ class GaussILRMA(ILRMAbase):
         self.demix_filter = W
 
     def update_once_iss1(self) -> None:
-        pass
+        n_sources = self.n_sources
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V, latent=Z)
+        else:
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V)
+
+        Y = self.output
+        varphi = 1 / R  # (n_sources, n_bins, n_frames)
+
+        for src_idx in range(n_sources):
+            Y_n = Y[src_idx]  # (n_bins, n_frames)
+
+            YY_n_conj = Y * Y_n.conj()
+            YY_n = np.abs(Y_n) ** 2
+            num = np.mean(varphi * YY_n_conj, axis=-1)
+            denom = np.mean(varphi * YY_n, axis=-1)
+            denom = self.flooring_fn(denom)
+            v_n = num / denom
+            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
+
+            Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
 
     def normalize(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
