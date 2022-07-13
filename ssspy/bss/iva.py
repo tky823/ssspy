@@ -1914,7 +1914,10 @@ class AuxGaussIVA(AuxIVA):
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
 
         self.variance = np.mean(np.abs(Y) ** 2, axis=1)
