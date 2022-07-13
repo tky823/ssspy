@@ -1661,6 +1661,99 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         return super().compute_loss()
 
 
+class NaturalGradGaussIVA(NaturalGradIVA):
+    def __init__(
+        self,
+        step_size: float = 0.1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["NaturalGradGaussIVA"], None],
+                List[Callable[["NaturalGradGaussIVA"], None]],
+            ]
+        ] = None,
+        is_holonomic: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Separated signal with shape of (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            n_bins = self.n_bins
+            alpha = self.variance
+            norm = np.linalg.norm(y, axis=1)
+
+            return n_bins * np.log(self.variance) + (norm ** 2) / alpha
+
+        def score_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Norm of separated signal.
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            alpha = self.variance
+            return y / alpha[:, np.newaxis, :]
+
+        super().__init__(
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            is_holonomic=is_holonomic,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def _reset(self, **kwargs):
+        r"""Reset attributes following on given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        super()._reset(**kwargs)
+
+        n_sources, n_frames = self.n_sources, self.n_frames
+
+        self.variance = np.ones((n_sources, n_frames))
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        self.update_source_model()
+
+        super().update_once()
+
+    def update_source_model(self) -> None:
+        r"""Update variance of Gaussian distribution.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        self.variance = np.mean(np.abs(Y) ** 2, axis=1)
+
+
 class AuxLaplaceIVA(AuxIVA):
     r"""Auxiliary-function-based independent vector analysis (IVA) \
     on a Laplacian distribution.
