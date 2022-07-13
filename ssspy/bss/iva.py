@@ -13,8 +13,11 @@ __all__ = [
     "NaturalGradIVA",
     "AuxIVA",
     "GradLaplaceIVA",
+    "GradGaussIVA",
     "NaturalGradLaplaceIVA",
+    "NaturalGradGaussIVA",
     "AuxLaplaceIVA",
+    "AuxGaussIVA",
 ]
 
 algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
