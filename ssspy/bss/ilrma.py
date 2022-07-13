@@ -768,9 +768,17 @@ class GaussILRMA(ILRMAbase):
                 Computed loss.
         """
         p = self.domain
-        X, W = self.input, self.demix_filter
 
-        Y = self.separate(X, demix_filter=W)
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            X, Y = self.input, self.output
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+
         Y2 = np.abs(Y) ** 2
 
         if self.partitioning:
