@@ -1419,7 +1419,7 @@ class GradLaplaceIVA(GradIVA):
 class GradGaussIVA(GradIVA):
     def __init__(
         self,
-        step_size: float = 0.1,
+        step_size: float = 1e-1,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
@@ -1664,7 +1664,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
 class NaturalGradGaussIVA(NaturalGradIVA):
     def __init__(
         self,
-        step_size: float = 0.1,
+        step_size: float = 1e-1,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
