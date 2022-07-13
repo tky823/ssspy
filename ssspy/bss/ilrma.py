@@ -218,6 +218,39 @@ class ILRMAbase:
 
         return output
 
+    def reconstruct_nmf(
+        self, basis: np.ndarray, activation: np.ndarray, latent: Optional[np.ndarray] = None
+    ):
+        r"""Reconstruct NMF.
+
+        Args:
+            basis (numpy.ndarray):
+                Basis matrix.
+                The shape is (n_sources, n_basis, n_frames) if latent is given.
+                Otherwise, (n_basis, n_frames).
+            activation (numpy.ndarray):
+                Activation matrix.
+                The shape is (n_sources, n_bins, n_basis) if latent is given.
+                Otherwise, (n_bins, n_basis).
+            latent (numpy.ndarray, optional):
+                Latent variable that determines number of bases per source.
+
+        Returns:
+            numpy.ndarray:
+                Reconstructed NMF.
+                The shape is (n_sources, n_bins, n_frames).
+        """
+        if latent is None:
+            T, V = basis, activation
+            R = T @ V
+        else:
+            Z = latent
+            T, V = basis, activation
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            R = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+
+        return R
+
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
@@ -375,9 +408,13 @@ class GaussILRMA(ILRMAbase):
         r"""Update NMF bases, activations, and latent variables.
         """
         p = self.domain
-        X, W = self.input, self.demix_filter
 
-        Y = self.separate(X, demix_filter=W)
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
         Y2 = np.abs(Y) ** 2
         p2p = (p + 2) / p
         pp2 = p / (p + 2)
@@ -388,7 +425,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update latent
             TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
@@ -402,7 +439,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update basis
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(ZV[:, np.newaxis, :, :] * T[np.newaxis, :, :, np.newaxis], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             ZV_ZTVp2p = ZV[:, np.newaxis, :, :] / ZTVp2p[:, :, np.newaxis, :]
@@ -416,7 +453,7 @@ class GaussILRMA(ILRMAbase):
 
             # Update activation
             ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
-            ZTV = np.sum(ZT[:, :, :, np.newaxis] * V[np.newaxis, np.newaxis, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTVp2p = ZTV ** p2p
             ZT_ZTVp2p = ZT[:, :, :, np.newaxis] / ZTVp2p[:, :, np.newaxis, :]
@@ -434,7 +471,7 @@ class GaussILRMA(ILRMAbase):
             T, V = self.basis, self.activation
 
             # Update basis
-            TV = T @ V
+            TV = self.reconstruct_nmf(T, V)
 
             TVp2p = TV ** p2p
             V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
@@ -447,7 +484,7 @@ class GaussILRMA(ILRMAbase):
             T = self.flooring_fn(T)
 
             # Update activation
-            TV = T @ V
+            TV = self.reconstruct_nmf(T, V)
 
             TVp2p = TV ** p2p
             T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
@@ -466,6 +503,8 @@ class GaussILRMA(ILRMAbase):
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
+        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+            self.update_once_iss1()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -546,6 +585,35 @@ class GaussILRMA(ILRMAbase):
 
         self.demix_filter = W
 
+    def update_once_iss1(self) -> None:
+        n_sources = self.n_sources
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V, latent=Z)
+        else:
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V)
+
+        Y = self.output
+        varphi = 1 / R  # (n_sources, n_bins, n_frames)
+
+        for src_idx in range(n_sources):
+            Y_n = Y[src_idx]  # (n_bins, n_frames)
+
+            YY_n_conj = Y * Y_n.conj()
+            YY_n = np.abs(Y_n) ** 2
+            num = np.mean(varphi * YY_n_conj, axis=-1)
+            denom = np.mean(varphi * YY_n, axis=-1)
+            denom = self.flooring_fn(denom)
+            v_n = num / denom
+            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
+
+            Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
+
     def normalize(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
         """
@@ -584,33 +652,54 @@ class GaussILRMA(ILRMAbase):
             \boldsymbol{x}_{ij}|^{2}}.
 
         """
-
         normalization = self.normalization
 
         p = self.domain
-        X, W = self.input, self.demix_filter
         Z = self.latent
         T, V = self.basis, self.activation
-
-        Y = self.separate(X, demix_filter=W)
 
         if type(normalization) is bool:
             # when normalization is True
             normalization = "power"
 
-        if normalization == "power":
-            Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
-            psi = np.sqrt(Y2)
-            psi = self.flooring_fn(psi)
-            W = W / psi[np.newaxis, :, np.newaxis]
-            Z_psi = Z / (psi[:, np.newaxis] ** p)
-            scale = np.sum(Z_psi, axis=0)
-            T = T * scale[np.newaxis, :]
-            Z = Z_psi / scale
-        else:
-            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
 
-        self.demix_filter = W
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                W = W / psi[np.newaxis, :, np.newaxis]
+                Z_psi = Z / (psi[:, np.newaxis] ** p)
+                scale = np.sum(Z_psi, axis=0)
+                T = T * scale[np.newaxis, :]
+                Z = Z_psi / scale
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
+
+            self.demix_filter = W
+        else:
+            Y = self.output
+
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                Y = Y / psi[:, np.newaxis, np.newaxis]
+                Z_psi = Z / (psi[:, np.newaxis] ** p)
+                scale = np.sum(Z_psi, axis=0)
+                T = T * scale[np.newaxis, :]
+                Z = Z_psi / scale
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
+
+            self.output = Y
+
         self.latent = Z
         self.basis, self.activation = T, V
 
@@ -641,40 +730,82 @@ class GaussILRMA(ILRMAbase):
         reference_id = self.reference_id
 
         p = self.domain
-        X, W = self.input, self.demix_filter
         T, V = self.basis, self.activation
-
-        Y = self.separate(X, demix_filter=W)
 
         if type(normalization) is bool:
             # when normalization is True
             normalization = "power"
 
-        if normalization == "power":
-            Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
-            psi = np.sqrt(Y2)
-            psi = self.flooring_fn(psi)
-            W = W / psi[np.newaxis, :, np.newaxis]
-            T = T / (psi[:, np.newaxis, np.newaxis] ** p)
-        elif normalization == "projection_back":
-            if reference_id is None:
-                warnings.warn(
-                    "channel 0 is used for reference_id \
-                        of projection-back-based normalization.",
-                    UserWarning,
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                W = W / psi[np.newaxis, :, np.newaxis]
+                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+            elif normalization == "projection_back":
+                if reference_id is None:
+                    warnings.warn(
+                        "channel 0 is used for reference_id \
+                            of projection-back-based normalization.",
+                        UserWarning,
+                    )
+                    reference_id = 0
+
+                scale = np.linalg.inv(W)
+                scale = scale[:, reference_id, :]
+                W = W * scale[:, :, np.newaxis]
+                scale = scale.transpose(1, 0)
+                scale = np.abs(scale) ** p
+                T = T * scale[:, :, np.newaxis]
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
                 )
-                reference_id = 0
 
-            scale = np.linalg.inv(W)
-            scale = scale[:, reference_id, :]
-            W = W * scale[:, :, np.newaxis]
-            scale = scale.transpose(1, 0)
-            scale = np.abs(scale) ** p
-            T = T * scale[:, :, np.newaxis]
+            self.demix_filter = W
         else:
-            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+            X, Y = self.input, self.output
 
-        self.demix_filter = W
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                Y = Y / psi[:, np.newaxis, np.newaxis]
+                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+            elif normalization == "projection_back":
+                if reference_id is None:
+                    warnings.warn(
+                        "channel 0 is used for reference_id \
+                            of projection-back-based normalization.",
+                        UserWarning,
+                    )
+                    reference_id = 0
+
+                Y = Y.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
+                X = X.transpose(1, 0, 2)  # (n_bins, n_channels, n_frames)
+                Y_Hermite = Y.transpose(0, 2, 1).conj()  # (n_bins, n_frames, n_sources)
+                XY_Hermite = X @ Y_Hermite  # (n_bins, n_channels, n_sources)
+                YY_Hermite = Y @ Y_Hermite  # (n_bins, n_sources, n_sources)
+
+                scale = XY_Hermite @ np.linalg.inv(YY_Hermite)  # (n_bins, n_channels, n_sources)
+
+                scale = scale[..., reference_id, :]  # (n_bins, n_sources)
+                Y_scaled = Y * scale[..., np.newaxis]  # (n_bins, n_sources, n_frames)
+                Y = Y_scaled.swapaxes(-3, -2)  # (n_sources, n_bins, n_frames)
+                scale = scale.transpose(1, 0)
+                scale = np.abs(scale) ** p
+                T = T * scale[:, :, np.newaxis]
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
+
+            self.output = Y
+
         self.basis, self.activation = T, V
 
     def compute_loss(self) -> float:
@@ -704,25 +835,29 @@ class GaussILRMA(ILRMAbase):
                 Computed loss.
         """
         p = self.domain
-        X, W = self.input, self.demix_filter
 
-        Y = self.separate(X, demix_filter=W)
-        Y2 = np.abs(Y) ** 2
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Y2 = np.abs(Y) ** 2
+        else:
+            X, Y = self.input, self.output
+            Y2 = np.abs(Y) ** 2
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
 
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
-            ZTV2p = ZTV ** (2 / p)
-
-            loss = Y2 / ZTV2p + (2 / p) * np.log(ZTV)
+            R = self.reconstruct_nmf(T, V, latent=Z)
         else:
             T, V = self.basis, self.activation
-            TV = T @ V
-            TV2p = TV ** (2 / p)
+            R = self.reconstruct_nmf(T, V)
 
-            loss = Y2 / TV2p + (2 / p) * np.log(TV)
+        R2p = R ** (2 / p)
+        loss = Y2 / R2p + (2 / p) * np.log(R)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
 
@@ -730,3 +865,16 @@ class GaussILRMA(ILRMAbase):
         loss = loss.sum(axis=0)
 
         return loss
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms.
+        """
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            super().apply_projection_back()
+        else:
+            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+
+            X, Y = self.input, self.output
+            Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
