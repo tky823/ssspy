@@ -100,10 +100,10 @@ class ILRMAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
+                The number of iterations of demixing filter updates.
                 Default: 100.
 
         Returns:
@@ -115,7 +115,32 @@ class ILRMAbase:
 
         self._reset(**kwargs)
 
-        raise NotImplementedError("Implement '__call__' method.")
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
     def __repr__(self) -> str:
         s = "ILRMA("
@@ -319,53 +344,6 @@ class GaussILRMA(ILRMAbase):
         self.domain = domain
         self.normalization = normalization
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate a frequency-domain multichannel signal.
-
-        Args:
-            input (numpy.ndarray):
-                The mixture signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
-            n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
-
-        Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
-        """
-        self.input = input.copy()
-
-        self._reset(**kwargs)
-
-        if self.should_record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.should_record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
-
-        if self.should_apply_projection_back:
-            self.apply_projection_back()
-
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            self.output = self.separate(self.input, demix_filter=self.demix_filter)
-
-        return self.output
-
     def __repr__(self) -> str:
         s = "GaussILRMA("
         s += "n_basis={n_basis}"
@@ -557,14 +535,14 @@ class GaussILRMA(ILRMAbase):
             Z = self.latent
             T, V = self.basis, self.activation
 
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
             ZTV2p = ZTV ** (2 / p)
             varphi = 1 / ZTV2p
         else:
             T, V = self.basis, self.activation
 
-            TV2p = (T @ V) ** (2 / p)
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
             varphi = 1 / TV2p
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
@@ -1156,3 +1134,41 @@ class GaussILRMA(ILRMAbase):
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+
+
+class TILRMA(ILRMAbase):
+    def __init__(
+        self,
+        n_basis: int,
+        dof: float,
+        algorithm_spatial: str = "IP",
+        domain: float = 2,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["TILRMA"], None], List[Callable[["TILRMA"], None]]]
+        ] = None,
+        normalization: Optional[Union[bool, str]] = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            n_basis=n_basis,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+
+        self.dof = dof
+        self.algorithm_spatial = algorithm_spatial
+        self.domain = domain
+        self.normalization = normalization
