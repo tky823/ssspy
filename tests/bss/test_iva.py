@@ -17,8 +17,9 @@ from ssspy.bss.iva import (
 )
 from ssspy.utils.dataset import download_dummy_data
 
-max_samples = 16000
-n_fft = 2048
+max_samples = 8000
+n_fft = 512
+hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 5
 
@@ -86,7 +87,9 @@ def test_grad_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y: np.ndarray) -> np.ndarray:
         r"""Contrast function.
@@ -146,7 +149,9 @@ def test_natural_grad_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y: np.ndarray) -> np.ndarray:
         r"""Contrast function.
@@ -207,7 +212,9 @@ def test_aux_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y: np.ndarray) -> np.ndarray:
         r"""Contrast function.
@@ -268,7 +275,9 @@ def test_grad_laplace_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = GradLaplaceIVA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
@@ -298,7 +307,9 @@ def test_grad_gauss_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = GradGaussIVA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
@@ -330,7 +341,9 @@ def test_natural_grad_laplace_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = NaturalGradLaplaceIVA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
@@ -360,7 +373,9 @@ def test_natural_grad_gauss_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = NaturalGradGaussIVA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
@@ -395,7 +410,9 @@ def test_aux_laplace_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = AuxLaplaceIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
@@ -428,7 +445,9 @@ def test_aux_gauss_iva(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     iva = AuxGaussIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
