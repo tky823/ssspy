@@ -676,6 +676,7 @@ class GaussILRMA(ILRMAbase):
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
+        p = self.domain
         X, W = self.input, self.demix_filter
 
         E = np.eye(n_sources, n_channels)
@@ -684,10 +685,12 @@ class GaussILRMA(ILRMAbase):
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            R = ZTV ** (2 / p)
         else:
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V)
+            TV = self.reconstruct_nmf(T, V)
+            R = TV ** (2 / p)
 
         varphi = 1 / R
 
@@ -722,16 +725,20 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_iss1(self) -> None:
         n_sources = self.n_sources
 
+        p = self.domain
+        Y = self.output
+
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            R = ZTV ** (2 / p)
         else:
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V)
+            TV = self.reconstruct_nmf(T, V)
+            R = TV ** (2 / p)
 
-        Y = self.output
-        varphi = 1 / R  # (n_sources, n_bins, n_frames)
+        varphi = 1 / R
 
         for src_idx in range(n_sources):
             Y_n = Y[src_idx]  # (n_bins, n_frames)
@@ -811,15 +818,19 @@ class GaussILRMA(ILRMAbase):
 
         """
         n_sources = self.n_sources
+
+        p = self.domain
         Y = self.output
 
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            R = ZTV ** (2 / p)
         else:
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V)
+            TV = self.reconstruct_nmf(T, V)
+            R = TV ** (2 / p)
 
         varphi = 1 / R
 
@@ -1117,13 +1128,14 @@ class GaussILRMA(ILRMAbase):
         if self.partitioning:
             Z = self.latent
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            R = ZTV ** (2 / p)
+            loss = Y2 / R + (2 / p) * np.log(ZTV)
         else:
             T, V = self.basis, self.activation
-            R = self.reconstruct_nmf(T, V)
-
-        R2p = R ** (2 / p)
-        loss = Y2 / R2p + (2 / p) * np.log(R)
+            TV = self.reconstruct_nmf(T, V)
+            R = TV ** (2 / p)
+            loss = Y2 / R + (2 / p) * np.log(TV)
 
         logdet = self.compute_logdet(W)  # (n_bins,)
 
