@@ -688,12 +688,17 @@ class GaussILRMA(ILRMAbase):
         n_sources = self.n_sources
         Y = self.output
 
-        # Auxiliary variables
-        r = np.linalg.norm(Y, axis=1)
-        denom = self.flooring_fn(2 * r)
-        varphi = self.d_contrast_fn(r) / denom
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V, latent=Z)
+        else:
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V)
 
-        for m, n in pair_selector(n_sources):
+        varphi = 1 / R
+
+        for m, n in pair_selector(n_sources, sort=True):
             # Split into main and sub
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
             Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
@@ -702,10 +707,8 @@ class GaussILRMA(ILRMAbase):
             varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
                 varphi, [m, m + 1, n, n + 1], axis=0
             )
-            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)  # (2, n_frames)
-            varphi_sub = np.concatenate(
-                [varphi_1, varphi_2, varphi_3], axis=0
-            )  # (n_sources - 2, n_frames)
+            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
+            varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
 
             YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
             YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
@@ -716,11 +719,10 @@ class GaussILRMA(ILRMAbase):
 
             # Sub
             G_sub = np.mean(
-                varphi_sub[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_main[np.newaxis, :, :, :, :],
+                varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
                 axis=-1,
             )
-            F = np.mean(varphi_sub[:, np.newaxis, np.newaxis, :] * YY_sub, axis=-1)
+            F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
             Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
             Q = Q.squeeze(axis=-1)
             Q = Q.transpose(1, 0, 2)
@@ -729,8 +731,7 @@ class GaussILRMA(ILRMAbase):
 
             # Main
             G_main = np.mean(
-                varphi_main[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_main[np.newaxis, :, :, :, :],
+                varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
                 axis=-1,
             )
             G_m, G_n = G_main
