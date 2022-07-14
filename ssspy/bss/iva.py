@@ -13,8 +13,11 @@ __all__ = [
     "NaturalGradIVA",
     "AuxIVA",
     "GradLaplaceIVA",
+    "GradGaussIVA",
     "NaturalGradLaplaceIVA",
+    "NaturalGradGaussIVA",
     "AuxLaplaceIVA",
+    "AuxGaussIVA",
 ]
 
 algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
@@ -1416,6 +1419,96 @@ class GradLaplaceIVA(GradIVA):
         return super().compute_loss()
 
 
+class GradGaussIVA(GradIVA):
+    def __init__(
+        self,
+        step_size: float = 1e-1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["GradGaussIVA"], None], List[Callable[["GradGaussIVA"], None]]]
+        ] = None,
+        is_holonomic: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Separated signal with shape of (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            n_bins = self.n_bins
+            alpha = self.variance
+            norm = np.linalg.norm(y, axis=1)
+
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+
+        def score_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Norm of separated signal.
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            alpha = self.variance
+            return y / alpha[:, np.newaxis, :]
+
+        super().__init__(
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            is_holonomic=is_holonomic,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def _reset(self, **kwargs):
+        r"""Reset attributes following on given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        super()._reset(**kwargs)
+
+        n_sources, n_frames = self.n_sources, self.n_frames
+
+        self.variance = np.ones((n_sources, n_frames))
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        self.update_source_model()
+
+        super().update_once()
+
+    def update_source_model(self) -> None:
+        r"""Update variance of Gaussian distribution.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        self.variance = np.mean(np.abs(Y) ** 2, axis=1)
+
+
 class NaturalGradLaplaceIVA(NaturalGradIVA):
     r"""Independent vector analysis (IVA) using the natural gradient descent \
     on a Laplacian distribution.
@@ -1571,6 +1664,99 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         return super().compute_loss()
 
 
+class NaturalGradGaussIVA(NaturalGradIVA):
+    def __init__(
+        self,
+        step_size: float = 1e-1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["NaturalGradGaussIVA"], None],
+                List[Callable[["NaturalGradGaussIVA"], None]],
+            ]
+        ] = None,
+        is_holonomic: bool = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Separated signal with shape of (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            n_bins = self.n_bins
+            alpha = self.variance
+            norm = np.linalg.norm(y, axis=1)
+
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+
+        def score_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Norm of separated signal.
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            alpha = self.variance
+            return y / alpha[:, np.newaxis, :]
+
+        super().__init__(
+            step_size=step_size,
+            contrast_fn=contrast_fn,
+            score_fn=score_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            is_holonomic=is_holonomic,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def _reset(self, **kwargs):
+        r"""Reset attributes following on given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        super()._reset(**kwargs)
+
+        n_sources, n_frames = self.n_sources, self.n_frames
+
+        self.variance = np.ones((n_sources, n_frames))
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        self.update_source_model()
+
+        super().update_once()
+
+    def update_source_model(self) -> None:
+        r"""Update variance of Gaussian distribution.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        self.variance = np.mean(np.abs(Y) ** 2, axis=1)
+
+
 class AuxLaplaceIVA(AuxIVA):
     r"""Auxiliary-function-based independent vector analysis (IVA) \
     on a Laplacian distribution.
@@ -1645,3 +1831,217 @@ class AuxLaplaceIVA(AuxIVA):
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
+
+
+class AuxGaussIVA(AuxIVA):
+    def __init__(
+        self,
+        algorithm_spatial: str = "IP",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["AuxGaussIVA"], None], List[Callable[["AuxGaussIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ):
+        def contrast_fn(y: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Separated signal with shape of (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            n_bins = self.n_bins
+            alpha = self.variance
+            norm = np.linalg.norm(y, axis=1)
+
+            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+
+        def d_contrast_fn(y: np.ndarray, variance=None) -> np.ndarray:
+            r"""
+            Args:
+                y (numpy.ndarray):
+                    Norm of separated signal.
+                    The shape is (n_sources, n_frames).
+                variance (numpy.ndarray, optional):
+                    Estimated variance with the shape of (n_sources, n_frames).
+                    If None is given, self.variance is used.
+                    This argument is mainly used for IP2.
+
+            Returns:
+                numpy.ndarray:
+                    Computed contrast function.
+                    The shape is (n_sources, n_frames).
+            """
+            if variance is None:
+                variance = self.variance
+
+            return 2 * y / variance
+
+        super().__init__(
+            algorithm_spatial=algorithm_spatial,
+            contrast_fn=contrast_fn,
+            d_contrast_fn=d_contrast_fn,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+    def _reset(self, **kwargs):
+        r"""Reset attributes following on given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Set arguments as attributes of IVA.
+        """
+        super()._reset(**kwargs)
+
+        n_sources, n_frames = self.n_sources, self.n_frames
+
+        self.variance = np.ones((n_sources, n_frames))
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        self.update_source_model()
+
+        super().update_once()
+
+    def update_once_ip2(self) -> None:
+        r"""Update demixing filters once using pairwise iterative projection.
+
+        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
+            \boldsymbol{V}_{in}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+
+        where
+
+        .. math::
+            \boldsymbol{y}_{ij}^{(m,n)}
+            = \left(
+            \begin{array}{c}
+                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+            \end{array}
+            \right).
+
+        Compute generalized eigenvectors of
+        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            G(\vec{\boldsymbol{y}}_{jn})
+            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
+            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+            &= G(\vec{\boldsymbol{y}}_{jn}).
+
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        and :math:`\boldsymbol{h}_{in}`.
+
+        .. math::
+            \boldsymbol{h}_{im}
+            &\leftarrow\frac{\boldsymbol{h}_{im}}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{h}_{im}}}, \\
+            \boldsymbol{h}_{in}
+            &\leftarrow\frac{\boldsymbol{h}_{in}}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{h}_{in}}}.
+
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        simultaneously.
+
+        .. math::
+            (
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )\leftarrow(
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )(
+            \begin{array}{cc}
+                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+            \end{array}
+            )
+
+        At each iteration, we update for all pairs of :math:`m`
+        and :math:`n` (:math:`m<n`).
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+        R = self.variance
+
+        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
+
+        for m, n in pair_selector(n_sources):
+            W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
+            Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
+            R_mn = R[(m, n), :]
+
+            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
+            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+
+            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)  # (2, n_frames)
+            denom_mn = self.flooring_fn(2 * Y_mn_abs)
+            weight_mn = self.d_contrast_fn(Y_mn_abs, variance=R_mn) / denom_mn
+
+            G_mn_YY = weight_mn[:, np.newaxis, np.newaxis, np.newaxis, :] * YY_Hermite
+            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
+
+            U_m, U_n = U_mn
+            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
+            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
+            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
+            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
+            hUh_mn = np.real(hUh_mn)
+            hUh_mn = np.maximum(hUh_mn, 0)
+            denom_mn = np.sqrt(hUh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            h_mn = h_mn / denom_mn
+            H_mn = h_mn.transpose(1, 2, 0)
+            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
+
+            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
+
+        self.demix_filter = W
+
+    def update_source_model(self) -> None:
+        r"""Update variance of Gaussian distribution.
+        """
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        self.variance = np.mean(np.abs(Y) ** 2, axis=1)

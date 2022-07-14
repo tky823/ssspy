@@ -9,8 +9,11 @@ from ssspy.bss.iva import (
     NaturalGradIVA,
     AuxIVA,
     GradLaplaceIVA,
+    GradGaussIVA,
     NaturalGradLaplaceIVA,
+    NaturalGradGaussIVA,
     AuxLaplaceIVA,
+    AuxGaussIVA,
 )
 from ssspy.utils.dataset import download_dummy_data
 
@@ -276,6 +279,36 @@ def test_grad_laplace_iva(
 
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+def test_grad_gauss_iva(
+    n_sources: int,
+    callbacks: Optional[
+        Union[Callable[[GradGaussIVA], None], List[Callable[[GradGaussIVA], None]]]
+    ],
+    is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+
+    iva = GradGaussIVA(callbacks=callbacks, is_holonomic=is_holonomic)
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
 def test_natural_grad_laplace_iva(
     n_sources: int,
     callbacks: Optional[
@@ -300,6 +333,36 @@ def test_natural_grad_laplace_iva(
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
 
     iva = NaturalGradLaplaceIVA(callbacks=callbacks, is_holonomic=is_holonomic)
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+def test_natural_grad_gauss_iva(
+    n_sources: int,
+    callbacks: Optional[
+        Union[Callable[[NaturalGradGaussIVA], None], List[Callable[[NaturalGradGaussIVA], None]]]
+    ],
+    is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+
+    iva = NaturalGradGaussIVA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
@@ -335,6 +398,39 @@ def test_aux_laplace_iva(
     _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
 
     iva = AuxLaplaceIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize(
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
+)
+def test_aux_gauss_iva(
+    n_sources: int,
+    sisec2010_tag: str,
+    algorithm_spatial: str,
+    callbacks: Optional[
+        Union[Callable[[NaturalGradGaussIVA], None], List[Callable[[NaturalGradGaussIVA], None]]]
+    ],
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img = download_dummy_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag=sisec2010_tag,
+        max_samples=max_samples,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+
+    iva = AuxGaussIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
