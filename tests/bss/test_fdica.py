@@ -14,8 +14,9 @@ from ssspy.bss.fdica import (
 )
 from ssspy.utils.dataset import download_dummy_data
 
-max_samples = 16000
-n_fft = 2048
+max_samples = 8000
+n_fft = 512
+hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 5
 
@@ -72,7 +73,9 @@ def test_grad_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y):
         return 2 * np.abs(y)
@@ -111,7 +114,9 @@ def test_natural_grad_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y):
         return 2 * np.abs(y)
@@ -150,7 +155,9 @@ def test_aux_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     def contrast_fn(y):
         return 2 * np.abs(y)
@@ -191,7 +198,9 @@ def test_grad_laplace_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     fdica = GradLaplaceFDICA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
@@ -224,7 +233,9 @@ def test_natural_grad_laplace_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     fdica = NaturalGradLaplaceFDICA(callbacks=callbacks, is_holonomic=is_holonomic)
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
@@ -256,7 +267,9 @@ def test_aux_laplace_fdica(
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
-    _, _, spectrogram_mix = ss.stft(waveform_mix, window="hann", nperseg=2048, noverlap=1024)
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
 
     fdica = AuxLaplaceFDICA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
