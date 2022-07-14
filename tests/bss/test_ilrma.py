@@ -7,9 +7,9 @@ import scipy.signal as ss
 from ssspy.bss.ilrma import GaussILRMA
 from ssspy.utils.dataset import download_dummy_data
 
-max_samples = 16000
-n_fft = 2048
-hop_length = 1024
+max_samples = 8000
+n_fft = 512
+hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 5
 sisec2010_root = "./tests/.data/SiSEC2010"
@@ -28,7 +28,7 @@ class DummyCallback:
         pass
 
 
-parameters_algorithm_spatial = ["IP", "IP1", "ISS", "ISS1"]
+parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_gauss_ilrma_latent = [
     (2, 4, 2),
