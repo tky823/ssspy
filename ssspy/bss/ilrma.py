@@ -594,6 +594,131 @@ class GaussILRMA(ILRMAbase):
 
         self.demix_filter = W
 
+    def update_spatial_model_ip2(self) -> None:
+        r"""Update demixing filters once using pairwise iterative projection.
+
+        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijm}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
+            \boldsymbol{V}_{in}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+
+        where
+
+        .. math::
+            \boldsymbol{y}_{ij}^{(m,n)}
+            = \left(
+            \begin{array}{c}
+                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+            \end{array}
+            \right).
+
+        Compute generalized eigenvectors of
+        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \sum_{k}z_{nk}t_{ik}v_{kj}
+
+        if ``partitioning=True``.
+        Otherwise,
+
+        .. math::
+            r_{ijn}
+            = \sum_{k}t_{ikn}v_{kjn}.
+
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        and :math:`\boldsymbol{h}_{in}`.
+
+        .. math::
+            \boldsymbol{h}_{im}
+            &\leftarrow\frac{\boldsymbol{h}_{im}}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{h}_{im}}}, \\
+            \boldsymbol{h}_{in}
+            &\leftarrow\frac{\boldsymbol{h}_{in}}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{h}_{in}}}.
+
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        simultaneously.
+
+        .. math::
+            (
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )\leftarrow(
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )(
+            \begin{array}{cc}
+                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+            \end{array}
+            )
+
+        At each iteration, we update for all pairs of :math:`m`
+        and :math:`n` (:math:`m<n`).
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        X, W = self.input, self.demix_filter
+
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V, latent=Z)
+        else:
+            T, V = self.basis, self.activation
+            R = self.reconstruct_nmf(T, V)
+
+        varphi = 1 / R
+
+        for m, n in pair_selector(n_sources, sort=True):
+            W_mn = W[:, (m, n), :]
+            varphi_mn = varphi[(m, n), :, :]
+            Y_mn = self.separate(X, demix_filter=W_mn)
+
+            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
+            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+
+            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
+            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
+
+            U_m, U_n = U_mn
+            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
+            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
+            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
+            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
+            hUh_mn = np.real(hUh_mn)
+            hUh_mn = np.maximum(hUh_mn, 0)
+            denom_mn = np.sqrt(hUh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            h_mn = h_mn / denom_mn
+            H_mn = h_mn.transpose(1, 2, 0)
+            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
+
+            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
+
+        self.demix_filter = W
+
     def update_spatial_model_iss1(self) -> None:
         n_sources = self.n_sources
 
