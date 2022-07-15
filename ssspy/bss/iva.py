@@ -12,6 +12,7 @@ __all__ = [
     "GradIVA",
     "NaturalGradIVA",
     "AuxIVA",
+    "FasterIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
@@ -1387,7 +1388,7 @@ class FasterIVA(FastIVAbase):
         if d_contrast_fn is None:
             raise ValueError("Specify derivative of contrast function.")
         else:
-            self.score_fn = d_contrast_fn
+            self.d_contrast_fn = d_contrast_fn
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
