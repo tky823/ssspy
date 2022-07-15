@@ -91,46 +91,7 @@ def test_fast_iva_base(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
-        n_sources=n_sources,
-        sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
-    )
-    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
-
-    _, _, spectrogram_mix = ss.stft(
-        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
-    )
-
-    def contrast_fn(y: np.ndarray) -> np.ndarray:
-        r"""Contrast function.
-
-        Args:
-            y (np.ndarray):
-                The shape is (n_sources, n_bins, n_frames).
-
-        Returns:
-            np.ndarray:
-                The shape is (n_sources, n_frames).
-        """
-        return 2 * np.linalg.norm(y, axis=1)
-
-    def d_contrast_fn(y) -> np.ndarray:
-        r"""Derivative of contrast function.
-
-        Args:
-            y (np.ndarray):
-                The shape is (n_sources, n_frames).
-
-        Returns:
-            np.ndarray:
-                The shape is (n_sources, n_frames).
-        """
-        return 2 * np.ones_like(y)
-
-    iva = FastIVAbase(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn, callbacks=callbacks)
+    iva = FastIVAbase(callbacks=callbacks)
 
     print(iva)
 
