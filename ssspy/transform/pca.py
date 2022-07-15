@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def pca(input: np.ndarray) -> np.ndarray:
+def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
     r"""
     Args:
         input (numpy.ndarray):
@@ -11,6 +11,9 @@ def pca(input: np.ndarray) -> np.ndarray:
             (batch_size, n_channels, n_samples).
             If input is 4D complex tensor, it is regarded as \
             (batch_size, n_channels, n_bins, n_frames).
+        ascend (bool):
+            If ``ascend=True``, first channel corresponds to first principle component.
+            Otherwise, last channel corresponds to first principle component.
 
     Returns:
         numpy.ndarray:
@@ -21,12 +24,20 @@ def pca(input: np.ndarray) -> np.ndarray:
             X = input.transpose(1, 2, 0)
             covariance = np.mean(X[:, :, :, np.newaxis] * X[:, :, np.newaxis, :].conj(), axis=1)
             _, V = np.linalg.eigh(covariance)
+
+            if ascend:
+                V = V[..., ::-1]
+
             Y = X @ V.conj()
             output = Y.transpose(2, 0, 1)
         else:
             X = input.transpose(0, 2, 1)
             covariance = np.mean(X[:, :, :, np.newaxis] * X[:, :, np.newaxis, :], axis=1)
             _, V = np.linalg.eigh(covariance)
+
+            if ascend:
+                V = V[..., ::-1]
+
             Y = X @ V
             output = Y.transpose(0, 2, 1)
     elif input.ndim == 4:
@@ -36,11 +47,17 @@ def pca(input: np.ndarray) -> np.ndarray:
                 X[:, :, :, :, np.newaxis] * X[:, :, :, np.newaxis, :].conj(), axis=2
             )
             _, V = np.linalg.eigh(covariance)
+
+            if ascend:
+                V = V[..., ::-1]
+
             Y = X @ V.conj()
             output = Y.transpose(0, 3, 1, 2)
         else:
             raise ValueError("Complex tensor is expected, but given real tensor.")
     else:
-        raise ValueError("The dimension of input is expected 3, but given {}.".format(input.ndim))
+        raise ValueError(
+            "The dimension of input is expected 3 or 4, but given {}.".format(input.ndim)
+        )
 
     return output
