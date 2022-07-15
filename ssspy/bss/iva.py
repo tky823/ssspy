@@ -1320,6 +1320,155 @@ class AuxIVA(AuxIVAbase):
             self.output = Y_scaled
 
 
+class FasterIVA(FastIVAbase):
+    r"""Faster independent vector analysis (FastIVA) [#brendel2021fasteriva]_.
+
+    Args:
+        contrast_fn (callable):
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_frames).
+        d_contrast_fn (callable):
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
+            and return (n_channels, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    .. [#brendel2021fasteriva] A. Brendel and W. Kellermann,
+        "Faster IVA: Update rules for independent vector analysis based on negentropy \
+        and the majorize-minimize principle,"
+        in *Proc. WASPAA*, pp. 131-135, 2021.
+    """
+
+    def __init__(
+        self,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["FasterIVA"], None], List[Callable[["FasterIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+        if contrast_fn is None:
+            raise ValueError("Specify contrast function.")
+        else:
+            self.contrast_fn = contrast_fn
+
+        if d_contrast_fn is None:
+            raise ValueError("Specify derivative of contrast function.")
+        else:
+            self.score_fn = d_contrast_fn
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: 100.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def __repr__(self) -> str:
+        s = "FasterIVA("
+        s += "should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        norm = np.linalg.norm(Y, axis=1)
+        denom = self.flooring_fn(2 * norm)
+        varphi = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
+        varphi_XX = varphi[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
+
+        _, w = eigh(U)  # (n_bins, n_sources, n_channels, n_channels)
+        W = w[..., -1].conj()  # eigenvector that corresponds to largest eigenvalue
+        u, _, v_Hermite = np.linalg.svd(W)
+        W = u @ v_Hermite
+
+        self.demix_filter = W
+
+
 class GradLaplaceIVA(GradIVA):
     r"""Independent vector analysis (IVA) using the gradient descent on a Laplacian distribution.
 
