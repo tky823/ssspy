@@ -5,6 +5,8 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
     r"""
     Args:
         input (numpy.ndarray):
+            If input is 2D real tensor, it is regarded as \
+            (n_channels, n_samples).
             If input is 3D complex tensor, it is regarded as \
             (n_channels, n_bins, n_frames).
             If input is 3D real tensor, it is regarded as \
@@ -19,7 +21,20 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
         numpy.ndarray:
             Output tensor. The type (real or complex) and shape is same as input.
     """
-    if input.ndim == 3:
+    if input.ndim == 2:
+        if np.iscomplexobj(input):
+            raise ValueError("Real tensor is expected, but given complex tensor.")
+        else:
+            X = input.transpose(1, 0)
+            covariance = np.mean(X[:, :, np.newaxis] * X[:, np.newaxis, :], axis=0)
+            _, V = np.linalg.eigh(covariance)
+
+            if ascend:
+                V = V[..., ::-1]
+
+            Y = X @ V
+            output = Y.transpose(1, 0)
+    elif input.ndim == 3:
         if np.iscomplexobj(input):
             X = input.transpose(1, 2, 0)
             covariance = np.mean(X[:, :, :, np.newaxis] * X[:, :, np.newaxis, :].conj(), axis=1)

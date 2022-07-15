@@ -20,12 +20,11 @@ def whiten(input: np.ndarray) -> np.ndarray:
             The type (real or complex) and shape is same as input.
     """
     if input.ndim == 2:
-        X = input.transpose(1, 0)
-
         if np.iscomplexobj(input):
             raise ValueError("Real tensor is expected, but given complex tensor.")
         else:
             n_channels = input.shape[0]
+            X = input.transpose(1, 0)
             covariance = np.mean(X[:, :, np.newaxis] * X[:, np.newaxis, :], axis=0)
             W, V = np.linalg.eigh(covariance)
             D_diag = 1 / np.sqrt(W)
