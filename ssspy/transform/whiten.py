@@ -19,14 +19,13 @@ def whiten(input: np.ndarray) -> np.ndarray:
             Whitened tensor.
             The type (real or complex) and shape is same as input.
     """
-    n_channels = input.shape[0]
-
     if input.ndim == 2:
         X = input.transpose(1, 0)
 
         if np.iscomplexobj(input):
             raise ValueError("Real tensor is expected, but given complex tensor.")
         else:
+            n_channels = input.shape[0]
             covariance = np.mean(X[:, :, np.newaxis] * X[:, np.newaxis, :], axis=0)
             W, V = np.linalg.eigh(covariance)
             D_diag = 1 / np.sqrt(W)
@@ -35,6 +34,7 @@ def whiten(input: np.ndarray) -> np.ndarray:
             output = D_diag @ V_transpose @ X.transpose(1, 0)
     elif input.ndim == 3:
         if np.iscomplexobj(input):
+            n_channels = input.shape[0]
             X = input.transpose(1, 2, 0)
             covariance = np.mean(X[:, :, :, np.newaxis] * X[:, :, np.newaxis, :].conj(), axis=1)
             W, V = np.linalg.eigh(covariance)
@@ -45,6 +45,7 @@ def whiten(input: np.ndarray) -> np.ndarray:
             Y = D_diag @ V_Hermite @ X.transpose(0, 2, 1)
             output = Y.transpose(1, 0, 2)
         else:
+            n_channels = input.shape[1]
             X = input.transpose(0, 2, 1)
             covariance = np.mean(X[:, :, :, np.newaxis] * X[:, :, np.newaxis, :], axis=1)
             W, V = np.linalg.eigh(covariance)
@@ -55,6 +56,7 @@ def whiten(input: np.ndarray) -> np.ndarray:
             output = D_diag @ V_transpose @ X.transpose(0, 2, 1)
     elif input.ndim == 4:
         if np.iscomplexobj(input):
+            n_channels = input.shape[1]
             X = input.transpose(0, 2, 3, 1)
             covariance = np.mean(
                 X[:, :, :, :, np.newaxis] * X[:, :, :, np.newaxis, :].conj(), axis=2
