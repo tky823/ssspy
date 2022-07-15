@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def pca(input: np.ndarray):
+def pca(input: np.ndarray) -> np.ndarray:
     r"""
     Args:
         input (numpy.ndarray):
