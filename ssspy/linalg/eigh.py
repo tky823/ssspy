@@ -1,13 +1,13 @@
 import numpy as np
 
 
-def eigh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
-    r"""Generalized eigendecomposition.
+def eigh(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
+    r"""Generalized eigenvalue decomposition.
 
     Args:
         A (numpy.ndarray):
             A complex Hermitian matrix with shape of (*, n_channels, n_channels).
-        B (numpy.ndarray):
+        B (numpy.ndarray, optional):
             A complex Hermitian matrix with shape of (*, n_channels, n_channels).
 
     Returns:
@@ -19,6 +19,9 @@ def eigh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     Solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`, \
     and return :math:`\boldsymbol{z}`.
     """
+    if B is None:
+        return np.linalg.eigh(A)
+
     L = np.linalg.cholesky(B)
     L_inv = np.linalg.inv(L)
     L_inv_Hermite = np.swapaxes(L_inv, -2, -1).conj()
