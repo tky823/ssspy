@@ -5,17 +5,16 @@ def pca(input: np.ndarray) -> np.ndarray:
     r"""
     Args:
         input (numpy.ndarray):
-            If input is complex, the tensor is regarded as \
+            If input is 3D complex tensor, it is regarded as \
             (n_channels, n_bins, n_frames).
-            Otherwise, (batch_size, n_channels, n_samples).
+            If input is 3D real tensor, it is regarded as \
+            (batch_size, n_channels, n_samples).
+            If input is 4D complex tensor, it is regarded as \
             (batch_size, n_channels, n_bins, n_frames).
 
     Returns:
         numpy.ndarray:
-            Output tensor.
-            The shape is (n_channels, n_bins, n_frames) if input is complex.
-            Otherwise, (batch_size, n_channels, n_samples).
-            (batch_size, n_channels, n_bins, n_frames).
+            Output tensor. The type (real or complex) and shape is same as input.
     """
     if input.ndim == 3:
         if np.iscomplexobj(input):
