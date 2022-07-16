@@ -12,7 +12,7 @@ from ssspy.bss.fdica import (
     AuxFDICA,
     AuxLaplaceFDICA,
 )
-from ssspy.utils.dataset import download_dummy_data
+from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
@@ -52,12 +52,13 @@ def test_grad_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -93,12 +94,13 @@ def test_natural_grad_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -134,12 +136,13 @@ def test_aux_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -177,12 +180,13 @@ def test_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -212,12 +216,13 @@ def test_natural_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -246,12 +251,13 @@ def test_aux_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
