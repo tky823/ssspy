@@ -1070,7 +1070,7 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \mathcal{L}
             = \frac{1}{J}\sum_{i,j}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
-            - \log\frac{|y_{ijn}|^{2}}{r_{ijn}}\right),
+            + \log r_{ijn}\right),
 
         where
 
