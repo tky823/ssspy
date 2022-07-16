@@ -506,13 +506,13 @@ class GaussILRMA(ILRMAbase):
             \boldsymbol{e}_{n}, \\
             \boldsymbol{w}_{in}
             &\leftarrow\frac{\boldsymbol{w}_{in}}
-            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}, \\
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
 
         where
 
         .. math::
             \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
+            = \frac{1}{J}\sum_{j}
             \frac{1}{\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
 
@@ -520,7 +520,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
+            = \frac{1}{J}\sum_{j}
             \frac{1}{\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
         """
@@ -1270,27 +1270,27 @@ class TILRMA(ILRMAbase):
             \boldsymbol{e}_{n}, \\
             \boldsymbol{w}_{in}
             &\leftarrow\frac{\boldsymbol{w}_{in}}
-            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}, \\
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
 
         where
 
         .. math::
             \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
+            = \frac{1}{J}\sum_{j}
             \frac{1}{\tilde{r}_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
 
         :math:`\tilde{r}_{ijn}` is defined as
 
         .. math::
             \tilde{r}_{ijn}
-            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2},
 
         if ``partitioning=True``. Otherwise
 
         .. math::
             \tilde{r}_{ijn}
-            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         n_sources, n_channels = self.n_sources, self.n_channels
