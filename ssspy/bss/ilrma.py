@@ -1069,8 +1069,9 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \mathcal{L}
-            = \frac{1}{J}\sum_{i,j}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
-            + \log r_{ijn}\right),
+            = \frac{1}{J}\sum_{i,j,n}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
+            + \log r_{ijn}\right)
+            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|,
 
         where
 
