@@ -1442,3 +1442,66 @@ class TILRMA(ILRMAbase):
             self.output = Y
 
         self.basis, self.activation = T, V
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L}
+            = \frac{1}{J}\sum_{i,j}
+            \left\{1+\frac{\nu}{2}\log\left(1+\frac{2}{\nu}
+            \frac{|y_{ijn}|^{2}}{r_{ijn}}\right)
+            + \log r_{ijn}\right\}
+            -2\sum_{i}\log\left|\det\boldsymbol{W}_{i}\right|,
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+        if ``partitioning=False``, otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        nu = self.dof
+        p = self.domain
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Y2 = np.abs(Y) ** 2
+        else:
+            X, Y = self.input, self.output
+            Y2 = np.abs(Y) ** 2
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            Y2ZTV2p = Y2 / (ZTV ** (2 / p))
+            loss = (1 + nu / 2) * np.log(1 + (2 / nu) * Y2ZTV2p) + (2 / p) * np.log(ZTV)
+        else:
+            T, V = self.basis, self.activation
+            TV = self.reconstruct_nmf(T, V)
+            Y2TV2p = Y2 / (TV ** (2 / p))
+            loss = (1 + nu / 2) * np.log(1 + (2 / nu) * Y2TV2p) + (2 / p) * np.log(TV)
+
+        logdet = self.compute_logdet(W)  # (n_bins,)
+
+        loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
+        loss = loss.sum(axis=0)
+
+        return loss
