@@ -513,7 +513,7 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \boldsymbol{U}_{in}
             &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}z_{nk}t_{ik}v_{kj}}
+            \frac{1}{\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
 
         if ``partitioning=True``, otherwise
@@ -521,9 +521,8 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \boldsymbol{U}_{in}
             &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            \frac{1}{\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
-
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
@@ -1278,17 +1277,21 @@ class TILRMA(ILRMAbase):
         .. math::
             \boldsymbol{U}_{in}
             &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}z_{nk}t_{ik}v_{kj}}
-            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
+            \frac{1}{\tilde{r}_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
 
-        if ``partitioning=True``, otherwise
+        :math:`\tilde{r}_{ijn}` is defined as
 
         .. math::
-            \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
-            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
 
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
