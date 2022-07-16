@@ -374,7 +374,7 @@ class GaussILRMA(ILRMAbase):
             self.demix_filter = None
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
+        r"""Update NMF parameters and demixing filters once.
         """
         self.update_source_model()
         self.update_spatial_model()
@@ -1192,8 +1192,11 @@ class TILRMA(ILRMAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
+        r"""Update NMF parameters and demixing filters once.
         """
+        self.update_source_model()
+        self.update_spatial_model()
+
         if self.normalization:
             self.normalize()
 
