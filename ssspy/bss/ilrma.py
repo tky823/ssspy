@@ -887,9 +887,9 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ik}
-            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}},
+            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
             z_{nk}
             &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
             {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
@@ -964,7 +964,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ikn}
             &\leftarrow\frac{t_{ikn}}{\psi_{in}^{p}},
 
@@ -1370,9 +1370,9 @@ class TILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ik}
-            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}},
+            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
             z_{nk}
             &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
             {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
@@ -1447,7 +1447,7 @@ class TILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ikn}
             &\leftarrow\frac{t_{ikn}}{\psi_{in}^{p}},
 
