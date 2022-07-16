@@ -6,21 +6,9 @@ import numpy as np
 from ssspy.bss.ica import GradICA, NaturalGradICA, GradLaplaceICA, NaturalGradLaplaceICA
 from ssspy.bss.ica import FastICA
 from tests.bss.create_dataset import create_sisec2011_mird_dataset
+from tests.dummy.callback import DummyCallback, dummy_function
 
 n_iter = 5
-
-
-def dummy_function(_) -> None:
-    pass
-
-
-class DummyCallback:
-    def __init__(self) -> None:
-        pass
-
-    def __call__(self, _) -> None:
-        pass
-
 
 parameters_grad_ica = [
     (2, None, True, {}),

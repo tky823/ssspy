@@ -18,25 +18,13 @@ from ssspy.bss.iva import (
     AuxGaussIVA,
 )
 from ssspy.utils.dataset import download_dummy_data
+from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 5
-
-
-def dummy_function(_) -> None:
-    pass
-
-
-class DummyCallback:
-    def __init__(self) -> None:
-        pass
-
-    def __call__(self, _) -> None:
-        pass
-
 
 parameters_grad_iva = [
     (2, None, True, {}),
