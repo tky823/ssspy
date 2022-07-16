@@ -1197,6 +1197,59 @@ class TILRMA(ILRMAbase):
         if self.normalization:
             self.normalize()
 
+    def update_source_model(self) -> None:
+        r"""Update NMF bases, activations, and latent variables.
+        """
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        pp2 = p / (p + 2)
+        nunu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            raise NotImplementedError("Not support TILRMA w/ partitioning function.")
+        else:
+            T, V = self.basis, self.activation
+
+            # Update basis
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2p = TV ** (2 / p)
+            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            RTV = R_tilde * TV
+            V_RTV = V[:, np.newaxis, :, :] / RTV[:, :, np.newaxis, :]
+            num = np.sum(V_RTV * Y2[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+            T = ((num / denom) ** pp2) * T
+            T = self.flooring_fn(T)
+
+            # Update activation
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2p = TV ** (2 / p)
+            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            RTV = R_tilde * TV
+            T_RTV = T[:, :, :, np.newaxis] / RTV[:, :, np.newaxis, :]
+            num = np.sum(T_RTV * Y2[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+            V = ((num / denom) ** pp2) * V
+            V = self.flooring_fn(V)
+
+            self.basis, self.activation = T, V
+
     def normalize(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
         """
