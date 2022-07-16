@@ -1217,7 +1217,59 @@ class TILRMA(ILRMAbase):
         nunu2 = nu / (nu + 2)
 
         if self.partitioning:
-            raise NotImplementedError("Not support TILRMA w/ partitioning function.")
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            # Update latent
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(TV_ZTV, axis=(1, 3))
+
+            Z = ((num / denom) ** pp2) * Z
+            Z = Z / Z.sum(axis=0)
+
+            # Update basis
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZV_RZTV = ZV[:, np.newaxis, :, :] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZV_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+
+            T = ((num / denom) ** pp2) * T
+            T = self.flooring_fn(T)
+
+            # Update activation
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+
+            V = ((num / denom) ** pp2) * V
+            V = self.flooring_fn(V)
+
+            self.latent = Z
+            self.basis, self.activation = T, V
         else:
             T, V = self.basis, self.activation
 
