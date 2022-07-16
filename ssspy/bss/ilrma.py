@@ -1250,6 +1250,104 @@ class TILRMA(ILRMAbase):
 
             self.basis, self.activation = T, V
 
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once.
+
+        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_spatial_model_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_spatial_model_ip1(self) -> None:
+        r"""Update demixing filters once using iterative projection.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}, \\
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &= \frac{1}{J}\sum_{j}
+            \frac{1}{\sum_{k}z_{nk}t_{ik}v_{kj}}
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
+
+        if ``partitioning=True``, otherwise
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &= \frac{1}{J}\sum_{j}
+            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
+
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
+
+        varphi = 1 / R_tilde
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
     def normalize(self) -> None:
         r"""Normalize demixing filters and NMF parameters.
         """
