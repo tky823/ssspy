@@ -100,10 +100,10 @@ class ILRMAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
+                The number of iterations of demixing filter updates.
                 Default: 100.
 
         Returns:
@@ -115,7 +115,32 @@ class ILRMAbase:
 
         self._reset(**kwargs)
 
-        raise NotImplementedError("Implement '__call__' method.")
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
     def __repr__(self) -> str:
         s = "ILRMA("
@@ -319,53 +344,6 @@ class GaussILRMA(ILRMAbase):
         self.domain = domain
         self.normalization = normalization
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate a frequency-domain multichannel signal.
-
-        Args:
-            input (numpy.ndarray):
-                The mixture signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
-            n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
-
-        Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
-        """
-        self.input = input.copy()
-
-        self._reset(**kwargs)
-
-        if self.should_record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.should_record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
-
-        if self.should_apply_projection_back:
-            self.apply_projection_back()
-
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            self.output = self.separate(self.input, demix_filter=self.demix_filter)
-
-        return self.output
-
     def __repr__(self) -> str:
         s = "GaussILRMA("
         s += "n_basis={n_basis}"
@@ -396,7 +374,7 @@ class GaussILRMA(ILRMAbase):
             self.demix_filter = None
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
+        r"""Update NMF parameters and demixing filters once.
         """
         self.update_source_model()
         self.update_spatial_model()
@@ -528,24 +506,23 @@ class GaussILRMA(ILRMAbase):
             \boldsymbol{e}_{n}, \\
             \boldsymbol{w}_{in}
             &\leftarrow\frac{\boldsymbol{w}_{in}}
-            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}}, \\
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
 
         where
 
         .. math::
             \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}z_{nk}t_{ik}v_{kj}}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}
 
         if ``partitioning=True``, otherwise
 
         .. math::
             \boldsymbol{U}_{in}
-            &= \frac{1}{J}\sum_{j}
-            \frac{1}{\sum_{k}t_{ikn}v_{kjn}}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
-
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
@@ -557,14 +534,14 @@ class GaussILRMA(ILRMAbase):
             Z = self.latent
             T, V = self.basis, self.activation
 
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
             ZTV2p = ZTV ** (2 / p)
             varphi = 1 / ZTV2p
         else:
             T, V = self.basis, self.activation
 
-            TV2p = (T @ V) ** (2 / p)
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
             varphi = 1 / TV2p
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
@@ -910,9 +887,9 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ik}
-            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}},
+            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
             z_{nk}
             &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
             {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
@@ -987,7 +964,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
             t_{ikn}
             &\leftarrow\frac{t_{ikn}}{\psi_{in}^{p}},
 
@@ -1092,8 +1069,9 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \mathcal{L}
-            = \frac{1}{J}\sum_{i,j}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
-            - \log\frac{|y_{ijn}|^{2}}{r_{ijn}}\right),
+            = \frac{1}{J}\sum_{i,j,n}\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}
+            + \log r_{ijn}\right)
+            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|,
 
         where
 
@@ -1156,3 +1134,484 @@ class GaussILRMA(ILRMAbase):
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+
+
+class TILRMA(ILRMAbase):
+    def __init__(
+        self,
+        n_basis: int,
+        dof: float,
+        algorithm_spatial: str = "IP",
+        domain: float = 2,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["TILRMA"], None], List[Callable[["TILRMA"], None]]]
+        ] = None,
+        normalization: Optional[Union[bool, str]] = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            n_basis=n_basis,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+
+        self.dof = dof
+        self.algorithm_spatial = algorithm_spatial
+        self.domain = domain
+        self.normalization = normalization
+
+    def __repr__(self) -> str:
+        s = "TILRMA("
+        s += "n_basis={n_basis}"
+        s += ", dof={dof}"
+        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", domain={domain}"
+        s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update NMF parameters and demixing filters once.
+        """
+        self.update_source_model()
+        self.update_spatial_model()
+
+        if self.normalization:
+            self.normalize()
+
+    def update_source_model(self) -> None:
+        r"""Update NMF bases, activations, and latent variables.
+        """
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        pp2 = p / (p + 2)
+        nunu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            # Update latent
+            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(TV_ZTV, axis=(1, 3))
+
+            Z = ((num / denom) ** pp2) * Z
+            Z = Z / Z.sum(axis=0)
+
+            # Update basis
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZV_RZTV = ZV[:, np.newaxis, :, :] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZV_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+
+            T = ((num / denom) ** pp2) * T
+            T = self.flooring_fn(T)
+
+            # Update activation
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+
+            V = ((num / denom) ** pp2) * V
+            V = self.flooring_fn(V)
+
+            self.latent = Z
+            self.basis, self.activation = T, V
+        else:
+            T, V = self.basis, self.activation
+
+            # Update basis
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2p = TV ** (2 / p)
+            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            RTV = R_tilde * TV
+            V_RTV = V[:, np.newaxis, :, :] / RTV[:, :, np.newaxis, :]
+            num = np.sum(V_RTV * Y2[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+            T = ((num / denom) ** pp2) * T
+            T = self.flooring_fn(T)
+
+            # Update activation
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2p = TV ** (2 / p)
+            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            RTV = R_tilde * TV
+            T_RTV = T[:, :, :, np.newaxis] / RTV[:, :, np.newaxis, :]
+            num = np.sum(T_RTV * Y2[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+            V = ((num / denom) ** pp2) * V
+            V = self.flooring_fn(V)
+
+            self.basis, self.activation = T, V
+
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once.
+
+        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_spatial_model_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_spatial_model_ip1(self) -> None:
+        r"""Update demixing filters once using iterative projection.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{\tilde{r}_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
+
+        :math:`\tilde{r}_{ijn}` is defined as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
+
+        varphi = 1 / R_tilde
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+    def normalize(self) -> None:
+        r"""Normalize demixing filters and NMF parameters.
+        """
+        normalization = self.normalization
+
+        assert normalization, "Set normalization."
+
+        if self.partitioning:
+            self.normalize_latent()
+        else:
+            self.normalize_wo_latent()
+
+    def normalize_latent(self) -> None:
+        r"""Normalize demixing filters and NMF parameters.
+
+        Demixing filters and NMF parameters are normalized by
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
+            t_{ik}
+            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
+            z_{nk}
+            &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
+            {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
+
+        where :math:`\psi_{in}` is normalization term.
+        :math:`0<p\leq 2` is a domain parameter.
+
+        If self.normalization="power", \
+        normalization term :math:`\psi_{in}` is computed as
+
+        .. math::
+            \psi_{in}
+            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+
+        """
+        normalization = self.normalization
+
+        p = self.domain
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        if type(normalization) is bool:
+            # when normalization is True
+            normalization = "power"
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                W = W / psi[np.newaxis, :, np.newaxis]
+                Z_psi = Z / (psi[:, np.newaxis] ** p)
+                scale = np.sum(Z_psi, axis=0)
+                T = T * scale[np.newaxis, :]
+                Z = Z_psi / scale
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
+
+            self.demix_filter = W
+        else:
+            raise NotImplementedError(
+                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
+            )
+
+            self.output = Y
+
+        self.latent = Z
+        self.basis, self.activation = T, V
+
+    def normalize_wo_latent(self) -> None:
+        r"""Normalize demixing filters and NMF parameters.
+
+        Demixing filters and NMF parameters are normalized by
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
+            t_{ikn}
+            &\leftarrow\frac{t_{ikn}}{\psi_{in}^{p}},
+
+        where :math:`\psi_{in}` is normalization term.
+        :math:`0<p\leq 2` is a domain parameter.
+
+        If self.normalization="power", \
+        normalization term :math:`\psi_{in}` is computed as
+
+        .. math::
+            \psi_{in}
+            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+        """
+        normalization = self.normalization
+        reference_id = self.reference_id
+
+        p = self.domain
+        T, V = self.basis, self.activation
+
+        if type(normalization) is bool:
+            # when normalization is True
+            normalization = "power"
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+
+            if normalization == "power":
+                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
+                psi = np.sqrt(Y2)
+                psi = self.flooring_fn(psi)
+                W = W / psi[np.newaxis, :, np.newaxis]
+                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
+            elif normalization == "projection_back":
+                if reference_id is None:
+                    warnings.warn(
+                        "channel 0 is used for reference_id \
+                            of projection-back-based normalization.",
+                        UserWarning,
+                    )
+                    reference_id = 0
+
+                scale = np.linalg.inv(W)
+                scale = scale[:, reference_id, :]
+                W = W * scale[:, :, np.newaxis]
+                scale = scale.transpose(1, 0)
+                scale = np.abs(scale) ** p
+                T = T * scale[:, :, np.newaxis]
+            else:
+                raise NotImplementedError(
+                    "Normalization {} is not implemented.".format(normalization)
+                )
+
+            self.demix_filter = W
+        else:
+            raise NotImplementedError(
+                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
+            )
+
+            self.output = Y
+
+        self.basis, self.activation = T, V
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L}
+            = \frac{1}{J}\sum_{i,j}
+            \left\{1+\frac{\nu}{2}\log\left(1+\frac{2}{\nu}
+            \frac{|y_{ijn}|^{2}}{r_{ijn}}\right)
+            + \log r_{ijn}\right\}
+            -2\sum_{i}\log\left|\det\boldsymbol{W}_{i}\right|,
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+        if ``partitioning=False``, otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        nu = self.dof
+        p = self.domain
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Y2 = np.abs(Y) ** 2
+        else:
+            raise NotImplementedError(
+                "Loss for {} is not implemented.".format(self.algorithm_spatial)
+            )
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            Y2ZTV2p = Y2 / (ZTV ** (2 / p))
+            loss = (1 + nu / 2) * np.log(1 + (2 / nu) * Y2ZTV2p) + (2 / p) * np.log(ZTV)
+        else:
+            T, V = self.basis, self.activation
+            TV = self.reconstruct_nmf(T, V)
+            Y2TV2p = Y2 / (TV ** (2 / p))
+            loss = (1 + nu / 2) * np.log(1 + (2 / nu) * Y2TV2p) + (2 / p) * np.log(TV)
+
+        logdet = self.compute_logdet(W)  # (n_bins,)
+
+        loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
+        loss = loss.sum(axis=0)
+
+        return loss
