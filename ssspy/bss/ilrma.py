@@ -1475,21 +1475,9 @@ class TILRMA(ILRMAbase):
 
             self.demix_filter = W
         else:
-            Y = self.output
-
-            if normalization == "power":
-                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
-                psi = np.sqrt(Y2)
-                psi = self.flooring_fn(psi)
-                Y = Y / psi[:, np.newaxis, np.newaxis]
-                Z_psi = Z / (psi[:, np.newaxis] ** p)
-                scale = np.sum(Z_psi, axis=0)
-                T = T * scale[np.newaxis, :]
-                Z = Z_psi / scale
-            else:
-                raise NotImplementedError(
-                    "Normalization {} is not implemented.".format(normalization)
-                )
+            raise NotImplementedError(
+                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
+            )
 
             self.output = Y
 
@@ -1560,41 +1548,9 @@ class TILRMA(ILRMAbase):
 
             self.demix_filter = W
         else:
-            X, Y = self.input, self.output
-
-            if normalization == "power":
-                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
-                psi = np.sqrt(Y2)
-                psi = self.flooring_fn(psi)
-                Y = Y / psi[:, np.newaxis, np.newaxis]
-                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
-            elif normalization == "projection_back":
-                if reference_id is None:
-                    warnings.warn(
-                        "channel 0 is used for reference_id \
-                            of projection-back-based normalization.",
-                        UserWarning,
-                    )
-                    reference_id = 0
-
-                Y = Y.transpose(1, 0, 2)
-                X = X.transpose(1, 0, 2)
-                Y_Hermite = Y.transpose(0, 2, 1).conj()
-                XY_Hermite = X @ Y_Hermite
-                YY_Hermite = Y @ Y_Hermite
-
-                scale = XY_Hermite @ np.linalg.inv(YY_Hermite)
-
-                scale = scale[..., reference_id, :]
-                Y_scaled = Y * scale[..., np.newaxis]
-                Y = Y_scaled.swapaxes(-3, -2)
-                scale = scale.transpose(1, 0)
-                scale = np.abs(scale) ** p
-                T = T * scale[:, :, np.newaxis]
-            else:
-                raise NotImplementedError(
-                    "Normalization {} is not implemented.".format(normalization)
-                )
+            raise NotImplementedError(
+                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
+            )
 
             self.output = Y
 
@@ -1637,12 +1593,9 @@ class TILRMA(ILRMAbase):
             Y = self.separate(X, demix_filter=W)
             Y2 = np.abs(Y) ** 2
         else:
-            X, Y = self.input, self.output
-            Y2 = np.abs(Y) ** 2
-            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
-            X_Hermite = X.transpose(0, 2, 1).conj()
-            XX_Hermite = X @ X_Hermite
-            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+            raise NotImplementedError(
+                "Loss for {} is not implemented.".format(self.algorithm_spatial)
+            )
 
         if self.partitioning:
             Z = self.latent
