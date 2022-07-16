@@ -31,14 +31,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install libsndfile1
-      - name: Download dataset (Ubuntu & MacOS)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: |
-          . ./tests/scripts/download_sisec2011.sh
-      - name: Download dataset (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          ./tests/scripts/download_sisec2011.bat
       - name: Pytest
         run: |
           pytest --cov=./ssspy --cov-report=xml
