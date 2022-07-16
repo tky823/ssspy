@@ -4,27 +4,15 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
-from ssspy.utils.dataset import download_dummy_data
 from ssspy.bss.pdsbss import PDSBSS
+from ssspy.utils.dataset import download_sample_speech_data
+from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 16000
 n_fft = 2048
 hop_length = 1024
 n_bins = n_fft // 2 + 1
 n_iter = 5
-
-
-def dummy_function(_) -> None:
-    pass
-
-
-class DummyCallback:
-    def __init__(self) -> None:
-        pass
-
-    def __call__(self, _) -> None:
-        pass
-
 
 parameters_pdsbss = [
     (2, None, {}),
@@ -45,12 +33,13 @@ def test_pdsbss(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_samples=max_samples,
+        conv=True
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
