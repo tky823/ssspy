@@ -5,7 +5,7 @@ import numpy as np
 import scipy.signal as ss
 
 from ssspy.bss.ilrma import GaussILRMA, TILRMA
-from ssspy.utils.dataset import download_dummy_data
+from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
@@ -54,12 +54,13 @@ def test_gauss_ilrma_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -105,12 +106,13 @@ def test_gauss_ilrma_wo_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -158,12 +160,13 @@ def test_t_ilrma_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
+        conv=True
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -212,12 +215,13 @@ def test_t_ilrma_wo_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_dummy_data(
+    waveform_src_img = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
+        conv=True
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 

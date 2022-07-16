@@ -5,9 +5,10 @@ import numpy as np
 
 from ssspy.bss.ica import GradICA, NaturalGradICA, GradLaplaceICA, NaturalGradLaplaceICA
 from ssspy.bss.ica import FastICA
-from tests.bss.create_dataset import create_sisec2011_mird_dataset
+from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
+max_samples = 8000
 n_iter = 5
 
 parameters_grad_ica = [
@@ -29,18 +30,15 @@ def test_grad_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    np.random.seed(111)
-
-    npz_path = create_sisec2011_mird_dataset(n_sources=n_sources)
-
-    npz = np.load(npz_path)
-    waveform_src = []
-
-    for src_idx in range(n_sources):
-        waveform_src.append(npz["src_{}".format(src_idx + 1)])
-
-    waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
-    waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+        conv=False,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     def contrast_fn(x):
         return np.log(1 + np.exp(x))
@@ -64,18 +62,15 @@ def test_natural_grad_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    np.random.seed(111)
-
-    npz_path = create_sisec2011_mird_dataset(n_sources=n_sources)
-
-    npz = np.load(npz_path)
-    waveform_src = []
-
-    for src_idx in range(n_sources):
-        waveform_src.append(npz["src_{}".format(src_idx + 1)])
-
-    waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
-    waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+        conv=False,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     def contrast_fn(x):
         return np.log(1 + np.exp(x))
@@ -99,18 +94,15 @@ def test_grad_laplace_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    np.random.seed(111)
-
-    npz_path = create_sisec2011_mird_dataset(n_sources=n_sources)
-
-    npz = np.load(npz_path)
-    waveform_src = []
-
-    for src_idx in range(n_sources):
-        waveform_src.append(npz["src_{}".format(src_idx + 1)])
-
-    waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
-    waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+        conv=False,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     ica = GradLaplaceICA(callbacks=callbacks, is_holonomic=is_holonomic)
     waveform_est = ica(waveform_mix, n_iter=n_iter)
@@ -125,18 +117,15 @@ def test_natural_grad_laplace_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    np.random.seed(111)
-
-    npz_path = create_sisec2011_mird_dataset(n_sources=n_sources)
-
-    npz = np.load(npz_path)
-    waveform_src = []
-
-    for src_idx in range(n_sources):
-        waveform_src.append(npz["src_{}".format(src_idx + 1)])
-
-    waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
-    waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+        conv=False,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     ica = NaturalGradLaplaceICA(callbacks=callbacks, is_holonomic=is_holonomic)
     waveform_est = ica(waveform_mix, n_iter=n_iter)
@@ -150,18 +139,15 @@ def test_fast_ica(
     callbacks: Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]],
     reset_kwargs: Dict[Any, Any],
 ):
-    np.random.seed(111)
-
-    npz_path = create_sisec2011_mird_dataset(n_sources=n_sources)
-
-    npz = np.load(npz_path)
-    waveform_src = []
-
-    for src_idx in range(n_sources):
-        waveform_src.append(npz["src_{}".format(src_idx + 1)])
-
-    waveform_src = np.stack(waveform_src, axis=1)  # (n_channels, n_sources, n_samples)
-    waveform_mix = np.sum(waveform_src, axis=1)  # (n_channels, n_samples)
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_samples=max_samples,
+        conv=False,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
     def contrast_fn(x):
         return np.log(1 + np.exp(x))
