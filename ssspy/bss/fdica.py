@@ -1,11 +1,11 @@
-from typing import Optional, Union, List, Callable
+from typing import Optional, Union, List, Tuple, Callable, Iterable
 import itertools
 import functools
 
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector
+from ._select_pair import pair_selector as default_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -773,6 +773,10 @@ class AuxFDICA(FDICAbase):
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -822,6 +826,7 @@ class AuxFDICA(FDICAbase):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
         ] = None,
@@ -843,6 +848,11 @@ class AuxFDICA(FDICAbase):
 
         self.algorithm_spatial = algorithm_spatial
         self.d_contrast_fn = d_contrast_fn
+
+        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+            self.pair_selector = functools.partial(default_pair_selector, sort=True)
+        else:
+            self.pair_selector = pair_selector
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -1060,7 +1070,7 @@ class AuxFDICA(FDICAbase):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        for m, n in pair_selector(n_sources):
+        for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
 
@@ -1364,6 +1374,10 @@ class AuxLaplaceFDICA(AuxFDICA):
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1388,6 +1402,7 @@ class AuxLaplaceFDICA(AuxFDICA):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
         ] = None,
@@ -1407,6 +1422,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
+            pair_selector=pair_selector,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
             should_apply_projection_back=should_apply_projection_back,
