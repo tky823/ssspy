@@ -1256,6 +1256,51 @@ class TILRMA(ILRMAbase):
     def update_source_model(self) -> None:
         r"""Update NMF bases, activations, and latent variables.
         """
+        if self.partitioning:
+            self.update_latent()
+
+        self.update_basis()
+        self.update_activation()
+
+    def update_latent(self) -> None:
+        r"""Update latent variables in NMF.
+        """
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        pp2 = p / (p + 2)
+        nunu2 = nu / (nu + 2)
+
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+        ZTV2p = ZTV ** (2 / p)
+        R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+        RZTV = R_tilde * ZTV
+        TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
+        num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+        TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+        denom = np.sum(TV_ZTV, axis=(1, 3))
+
+        Z = ((num / denom) ** pp2) * Z
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
+
+    def update_basis(self) -> None:
+        r"""Update NMF bases.
+        """
         p = self.domain
         nu = self.dof
 
@@ -1273,23 +1318,6 @@ class TILRMA(ILRMAbase):
             Z = self.latent
             T, V = self.basis, self.activation
 
-            # Update latent
-            TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
-            ZTV = self.reconstruct_nmf(T, V, latent=Z)
-
-            ZTV2p = ZTV ** (2 / p)
-            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
-            RZTV = R_tilde * ZTV
-            TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
-            num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
-
-            TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(TV_ZTV, axis=(1, 3))
-
-            Z = ((num / denom) ** pp2) * Z
-            Z = Z / Z.sum(axis=0)
-
-            # Update basis
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
@@ -1301,32 +1329,9 @@ class TILRMA(ILRMAbase):
 
             ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
             denom = np.sum(ZV_ZTV, axis=(0, 3))
-
-            T = ((num / denom) ** pp2) * T
-            T = self.flooring_fn(T)
-
-            # Update activation
-            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
-            ZTV = self.reconstruct_nmf(T, V, latent=Z)
-
-            ZTV2p = ZTV ** (2 / p)
-            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
-            RZTV = R_tilde * ZTV
-            ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
-            num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
-
-            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
-            denom = np.sum(ZT_ZTV, axis=(0, 1))
-
-            V = ((num / denom) ** pp2) * V
-            V = self.flooring_fn(V)
-
-            self.latent = Z
-            self.basis, self.activation = T, V
         else:
             T, V = self.basis, self.activation
 
-            # Update basis
             TV = self.reconstruct_nmf(T, V)
 
             TV2p = TV ** (2 / p)
@@ -1338,10 +1343,45 @@ class TILRMA(ILRMAbase):
             V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
             denom = np.sum(V_TV, axis=3)
 
-            T = ((num / denom) ** pp2) * T
-            T = self.flooring_fn(T)
+        T = ((num / denom) ** pp2) * T
+        T = self.flooring_fn(T)
 
-            # Update activation
+        self.basis = T
+
+    def update_activation(self) -> None:
+        r"""Update NMF activations.
+        """
+        p = self.domain
+        nu = self.dof
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        pp2 = p / (p + 2)
+        nunu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+        else:
+            T, V = self.basis, self.activation
+
             TV = self.reconstruct_nmf(T, V)
 
             TV2p = TV ** (2 / p)
@@ -1353,10 +1393,10 @@ class TILRMA(ILRMAbase):
             T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
             denom = np.sum(T_TV, axis=1)
 
-            V = ((num / denom) ** pp2) * V
-            V = self.flooring_fn(V)
+        V = ((num / denom) ** pp2) * V
+        V = self.flooring_fn(V)
 
-            self.basis, self.activation = T, V
+        self.activation = V
 
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
