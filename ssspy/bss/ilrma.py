@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector as default_pair_selector
+from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -511,7 +511,7 @@ class GaussILRMA(ILRMAbase):
         self.normalization = normalization
 
         if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
-            self.pair_selector = functools.partial(default_pair_selector, sort=True)
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
 
@@ -1193,7 +1193,7 @@ class TILRMA(ILRMAbase):
         self.normalization = normalization
 
         if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
-            self.pair_selector = functools.partial(default_pair_selector, sort=True)
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
 

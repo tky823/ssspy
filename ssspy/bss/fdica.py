@@ -5,7 +5,7 @@ import functools
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector as default_pair_selector
+from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -775,7 +775,7 @@ class AuxFDICA(FDICAbase):
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
@@ -850,7 +850,7 @@ class AuxFDICA(FDICAbase):
         self.d_contrast_fn = d_contrast_fn
 
         if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
-            self.pair_selector = functools.partial(default_pair_selector, sort=True)
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
 
@@ -1376,7 +1376,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.

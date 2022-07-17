@@ -4,7 +4,7 @@ import functools
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector as default_pair_selector
+from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -962,7 +962,7 @@ class AuxIVA(AuxIVAbase):
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
@@ -1028,7 +1028,7 @@ class AuxIVA(AuxIVAbase):
         self.algorithm_spatial = algorithm_spatial
 
         if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
-            self.pair_selector = functools.partial(default_pair_selector, sort=True)
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
 
@@ -1989,7 +1989,7 @@ class AuxLaplaceIVA(AuxIVA):
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
@@ -2071,7 +2071,7 @@ class AuxGaussIVA(AuxIVA):
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(default_pair_selector, sort=True)`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
