@@ -9,9 +9,7 @@ from ._select_pair import pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
-__all__ = [
-    "GaussILRMA",
-]
+__all__ = ["GaussILRMA", "TILRMA"]
 
 algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
