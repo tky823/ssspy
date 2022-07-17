@@ -1,10 +1,10 @@
-from typing import Optional, Union, List, Callable
+from typing import Optional, Union, List, Tuple, Callable, Iterable
 import functools
 
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector
+from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -960,6 +960,10 @@ class AuxIVA(AuxIVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1001,6 +1005,7 @@ class AuxIVA(AuxIVAbase):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["AuxIVA"], None], List[Callable[["AuxIVA"], None]]]
         ] = None,
@@ -1021,6 +1026,11 @@ class AuxIVA(AuxIVAbase):
         assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
 
         self.algorithm_spatial = algorithm_spatial
+
+        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        else:
+            self.pair_selector = pair_selector
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -1254,7 +1264,7 @@ class AuxIVA(AuxIVAbase):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        for m, n in pair_selector(n_sources):
+        for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
 
@@ -1380,7 +1390,7 @@ class AuxIVA(AuxIVAbase):
         denom = self.flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom
 
-        for m, n in pair_selector(n_sources):
+        for m, n in self.pair_selector(n_sources):
             # Split into main and sub
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
             Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
@@ -1471,9 +1481,9 @@ class AuxIVA(AuxIVAbase):
 
 
 class GradLaplaceIVA(GradIVA):
-    r"""Independent vector analysis (IVA) using the gradient descent on a Laplacian distribution.
+    r"""Independent vector analysis (IVA) using the gradient descent on a Laplace distribution.
 
-    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplacian distribution.
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplace distribution.
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
@@ -1713,9 +1723,9 @@ class GradGaussIVA(GradIVA):
 
 class NaturalGradLaplaceIVA(NaturalGradIVA):
     r"""Independent vector analysis (IVA) using the natural gradient descent \
-    on a Laplacian distribution.
+    on a Laplace distribution.
 
-    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplacian distribution.
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplace distribution.
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
@@ -1961,9 +1971,9 @@ class NaturalGradGaussIVA(NaturalGradIVA):
 
 class AuxLaplaceIVA(AuxIVA):
     r"""Auxiliary-function-based independent vector analysis (IVA) \
-    on a Laplacian distribution.
+    on a Laplace distribution.
 
-    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplacian distribution.
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplace distribution.
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
@@ -1977,6 +1987,10 @@ class AuxLaplaceIVA(AuxIVA):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -2010,6 +2024,7 @@ class AuxLaplaceIVA(AuxIVA):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["AuxLaplaceIVA"], None], List[Callable[["AuxLaplaceIVA"], None]]]
         ] = None,
@@ -2028,6 +2043,7 @@ class AuxLaplaceIVA(AuxIVA):
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
+            pair_selector=pair_selector,
             callbacks=callbacks,
             should_apply_projection_back=should_apply_projection_back,
             should_record_loss=should_record_loss,
@@ -2036,12 +2052,61 @@ class AuxLaplaceIVA(AuxIVA):
 
 
 class AuxGaussIVA(AuxIVA):
+    r"""Auxiliary-function-based independent vector analysis (IVA) \
+    on a time-varying Gaussian distribution.
+
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
+
+    .. math::
+        p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+
+    Args:
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose from "IP", "IP1", or "IP2". Default: "IP".
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = AuxGaussIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
     def __init__(
         self,
         algorithm_spatial: str = "IP",
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["AuxGaussIVA"], None], List[Callable[["AuxGaussIVA"], None]]]
         ] = None,
@@ -2092,6 +2157,7 @@ class AuxGaussIVA(AuxIVA):
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
+            pair_selector=pair_selector,
             callbacks=callbacks,
             should_apply_projection_back=should_apply_projection_back,
             should_record_loss=should_record_loss,
@@ -2205,7 +2271,7 @@ class AuxGaussIVA(AuxIVA):
         E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
         E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
-        for m, n in pair_selector(n_sources):
+        for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
             Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
             R_mn = R[(m, n), :]

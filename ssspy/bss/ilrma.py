@@ -1,11 +1,11 @@
-from typing import Optional, Union, List, Callable
+from typing import Optional, Union, List, Tuple, Callable, Iterable
 import functools
 import warnings
 
 import numpy as np
 
 from ._flooring import max_flooring
-from ._select_pair import pair_selector
+from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -482,6 +482,7 @@ class GaussILRMA(ILRMAbase):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["GaussILRMA"], None], List[Callable[["GaussILRMA"], None]]]
         ] = None,
@@ -508,6 +509,11 @@ class GaussILRMA(ILRMAbase):
         self.algorithm_spatial = algorithm_spatial
         self.domain = domain
         self.normalization = normalization
+
+        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        else:
+            self.pair_selector = pair_selector
 
     def __repr__(self) -> str:
         s = "GaussILRMA("
@@ -875,7 +881,7 @@ class GaussILRMA(ILRMAbase):
 
         varphi = 1 / R
 
-        for m, n in pair_selector(n_sources, sort=True):
+        for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             varphi_mn = varphi[(m, n), :, :]
             Y_mn = self.separate(X, demix_filter=W_mn)
@@ -1015,7 +1021,7 @@ class GaussILRMA(ILRMAbase):
 
         varphi = 1 / R
 
-        for m, n in pair_selector(n_sources, sort=True):
+        for m, n in self.pair_selector(n_sources):
             # Split into main and sub
             Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
             Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
@@ -1157,6 +1163,7 @@ class TILRMA(ILRMAbase):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["TILRMA"], None], List[Callable[["TILRMA"], None]]]
         ] = None,
@@ -1184,6 +1191,11 @@ class TILRMA(ILRMAbase):
         self.algorithm_spatial = algorithm_spatial
         self.domain = domain
         self.normalization = normalization
+
+        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        else:
+            self.pair_selector = pair_selector
 
     def __repr__(self) -> str:
         s = "TILRMA("
