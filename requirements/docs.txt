@@ -1,5 +1,0 @@
-sphinx
-sphinx-autodoc-typehints
-furo
-
--e .
