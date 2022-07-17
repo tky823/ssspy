@@ -42,6 +42,9 @@ class ILRMAbase:
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+        rng (numpy.random.Generator):
+            Random number generator. This is mainly used to randomly initialize NMF.
+            Default: ``numpy.random.default_rng()``.
 
     .. [#kitamura2016determined]
         D. Kitamura et al.,
@@ -63,6 +66,7 @@ class ILRMAbase:
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
+        rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
         self.n_basis = n_basis
         self.partitioning = partitioning
@@ -87,6 +91,8 @@ class ILRMAbase:
             raise ValueError("Specify 'reference_id' if should_apply_projection_back=True.")
         else:
             self.reference_id = reference_id
+
+        self.rng = rng
 
         self.should_record_loss = should_record_loss
 
@@ -189,20 +195,24 @@ class ILRMAbase:
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
 
-        self._init_nmf()
+        self._init_nmf(rng=self.rng)
 
-    def _init_nmf(self) -> None:
+    def _init_nmf(self, rng: np.random.Generator = np.random.default_rng()) -> None:
         r"""Initialize NMF.
+
+        Args:
+            rng (numpy.random.Generator):
+                Random number generator. Default: ``numpy.random.default_rng()``.
         """
         n_basis = self.n_basis
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if self.partitioning:
-            Z = np.random.rand(n_sources, n_basis)
+            Z = rng.random((n_sources, n_basis))
             Z = Z / Z.sum(axis=0)
-            T = np.random.rand(n_bins, n_basis)
-            V = np.random.rand(n_basis, n_frames)
+            T = rng.random((n_bins, n_basis))
+            V = rng.random((n_basis, n_frames))
 
             Z = self.flooring_fn(Z)
             T = self.flooring_fn(T)
@@ -211,8 +221,8 @@ class ILRMAbase:
             self.latent = Z
             self.basis, self.activation = T, V
         else:
-            T = np.random.rand(n_sources, n_bins, n_basis)
-            V = np.random.rand(n_sources, n_basis, n_frames)
+            T = rng.random((n_sources, n_bins, n_basis))
+            V = rng.random((n_sources, n_basis, n_frames))
 
             T = self.flooring_fn(T)
             V = self.flooring_fn(V)
@@ -326,6 +336,7 @@ class GaussILRMA(ILRMAbase):
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
+        rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
         super().__init__(
             n_basis=n_basis,
@@ -335,6 +346,7 @@ class GaussILRMA(ILRMAbase):
             should_apply_projection_back=should_apply_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
+            rng=rng,
         )
 
         assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
@@ -1154,6 +1166,7 @@ class TILRMA(ILRMAbase):
         should_apply_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
+        rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
         super().__init__(
             n_basis=n_basis,
@@ -1163,6 +1176,7 @@ class TILRMA(ILRMAbase):
             should_apply_projection_back=should_apply_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
+            rng=rng,
         )
 
         assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)

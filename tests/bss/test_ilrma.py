@@ -45,8 +45,6 @@ def test_gauss_ilrma_latent(
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
 ):
-    np.random.seed(111)
-
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
     elif n_sources == 4:
@@ -75,6 +73,7 @@ def test_gauss_ilrma_latent(
         partitioning=True,
         callbacks=callbacks,
         normalization=normalization,
+        rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
 
@@ -97,8 +96,6 @@ def test_gauss_ilrma_wo_latent(
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
 ):
-    np.random.seed(111)
-
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
     elif n_sources == 4:
@@ -127,6 +124,7 @@ def test_gauss_ilrma_wo_latent(
         partitioning=False,
         callbacks=callbacks,
         normalization=normalization,
+        rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
 
@@ -149,8 +147,6 @@ def test_t_ilrma_latent(
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
 ):
-    np.random.seed(111)
-
     algorithm_spatial = "IP1"
 
     if n_sources < 4:
@@ -166,7 +162,7 @@ def test_t_ilrma_latent(
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
-        conv=True
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -182,6 +178,7 @@ def test_t_ilrma_latent(
         partitioning=True,
         callbacks=callbacks,
         normalization=normalization,
+        rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
 
@@ -203,9 +200,8 @@ def test_t_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    rng=np.random.default_rng(42),
 ):
-    np.random.seed(111)
-
     algorithm_spatial = "IP1"
 
     if n_sources < 4:
@@ -221,7 +217,7 @@ def test_t_ilrma_wo_latent(
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_samples=max_samples,
-        conv=True
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -237,6 +233,7 @@ def test_t_ilrma_wo_latent(
         partitioning=False,
         callbacks=callbacks,
         normalization=normalization,
+        rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
 
