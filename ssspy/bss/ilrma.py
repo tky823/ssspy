@@ -310,6 +310,36 @@ class ILRMAbase:
             raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
 
     def normalize_by_power(self):
+        r"""Normalize demixing filters and NMF parameters by power.
+
+        Demixing filters are normalized by
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+
+        where
+
+        .. math::
+            \psi_{in}
+            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+
+        For NMF parameters,
+
+        .. math::
+            t_{ik}
+            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
+            z_{nk}
+            &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
+            {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
+
+        if ``self.partitioning=True``. Otherwise,
+
+        .. math::
+            t_{ikn}
+            \leftarrow\frac{t_{ikn}}{\psi_{in}^{p}}.
+        """
         p = self.domain
 
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
@@ -347,6 +377,26 @@ class ILRMAbase:
             self.output = Y
 
     def normalize_by_projection_back(self):
+        r"""Normalize demixing filters and NMF parameters by projection back.
+
+        Demixing filters are normalized by
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+
+        where
+
+        .. math::
+            \boldsymbol{\psi}_{i}
+            = \boldsymbol{W}_{i}^{-1}\boldsymbol{e}_{m_{\mathrm{ref}}}.
+
+        For NMF parameters,
+
+        .. math::
+            t_{ikn}
+            \leftarrow\frac{t_{ikn}}{\psi_{in}^{p}}.
+        """
         p = self.domain
         reference_id = self.reference_id
 
@@ -1408,155 +1458,6 @@ class TILRMA(ILRMAbase):
             W[:, src_idx, :] = w_n_Hermite
 
         self.demix_filter = W
-
-    def normalize(self) -> None:
-        r"""Normalize demixing filters and NMF parameters.
-        """
-        normalization = self.normalization
-
-        assert normalization, "Set normalization."
-
-        if self.partitioning:
-            self.normalize_latent()
-        else:
-            self.normalize_wo_latent()
-
-    def normalize_latent(self) -> None:
-        r"""Normalize demixing filters and NMF parameters.
-
-        Demixing filters and NMF parameters are normalized by
-
-        .. math::
-            \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
-            t_{ik}
-            &\leftarrow t_{ik}\sum_{n}\frac{z_{nk}}{\psi_{in}^{p}}, \\
-            z_{nk}
-            &\leftarrow \frac{\frac{z_{nk}}{\psi_{in}^{p}}}
-            {\sum_{n'}\frac{z_{n'k}}{\psi_{in'}^{p}}},
-
-        where :math:`\psi_{in}` is normalization term.
-        :math:`0<p\leq 2` is a domain parameter.
-
-        If self.normalization="power", \
-        normalization term :math:`\psi_{in}` is computed as
-
-        .. math::
-            \psi_{in}
-            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
-            \boldsymbol{x}_{ij}|^{2}}.
-
-        """
-        normalization = self.normalization
-
-        p = self.domain
-        Z = self.latent
-        T, V = self.basis, self.activation
-
-        if type(normalization) is bool:
-            # when normalization is True
-            normalization = "power"
-
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-
-            if normalization == "power":
-                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
-                psi = np.sqrt(Y2)
-                psi = self.flooring_fn(psi)
-                W = W / psi[np.newaxis, :, np.newaxis]
-                Z_psi = Z / (psi[:, np.newaxis] ** p)
-                scale = np.sum(Z_psi, axis=0)
-                T = T * scale[np.newaxis, :]
-                Z = Z_psi / scale
-            else:
-                raise NotImplementedError(
-                    "Normalization {} is not implemented.".format(normalization)
-                )
-
-            self.demix_filter = W
-        else:
-            raise NotImplementedError(
-                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
-            )
-
-            self.output = Y
-
-        self.latent = Z
-        self.basis, self.activation = T, V
-
-    def normalize_wo_latent(self) -> None:
-        r"""Normalize demixing filters and NMF parameters.
-
-        Demixing filters and NMF parameters are normalized by
-
-        .. math::
-            \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}}, \\
-            t_{ikn}
-            &\leftarrow\frac{t_{ikn}}{\psi_{in}^{p}},
-
-        where :math:`\psi_{in}` is normalization term.
-        :math:`0<p\leq 2` is a domain parameter.
-
-        If self.normalization="power", \
-        normalization term :math:`\psi_{in}` is computed as
-
-        .. math::
-            \psi_{in}
-            = \sqrt{\frac{1}{IJ}|\boldsymbol{w}_{in}^{\mathsf{H}}
-            \boldsymbol{x}_{ij}|^{2}}.
-        """
-        normalization = self.normalization
-        reference_id = self.reference_id
-
-        p = self.domain
-        T, V = self.basis, self.activation
-
-        if type(normalization) is bool:
-            # when normalization is True
-            normalization = "power"
-
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-
-            if normalization == "power":
-                Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))  # (n_sources,)
-                psi = np.sqrt(Y2)
-                psi = self.flooring_fn(psi)
-                W = W / psi[np.newaxis, :, np.newaxis]
-                T = T / (psi[:, np.newaxis, np.newaxis] ** p)
-            elif normalization == "projection_back":
-                if reference_id is None:
-                    warnings.warn(
-                        "channel 0 is used for reference_id \
-                            of projection-back-based normalization.",
-                        UserWarning,
-                    )
-                    reference_id = 0
-
-                scale = np.linalg.inv(W)
-                scale = scale[:, reference_id, :]
-                W = W * scale[:, :, np.newaxis]
-                scale = scale.transpose(1, 0)
-                scale = np.abs(scale) ** p
-                T = T * scale[:, :, np.newaxis]
-            else:
-                raise NotImplementedError(
-                    "Normalization {} is not implemented.".format(normalization)
-                )
-
-            self.demix_filter = W
-        else:
-            raise NotImplementedError(
-                "Normalization for {} is not implemented.".format(self.algorithm_spatial)
-            )
-
-            self.output = Y
-
-        self.basis, self.activation = T, V
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
