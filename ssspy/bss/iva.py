@@ -11,8 +11,9 @@ from ..algorithm import projection_back
 __all__ = [
     "GradIVA",
     "NaturalGradIVA",
-    "AuxIVA",
+    "FastIVA",
     "FasterIVA",
+    "AuxIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
