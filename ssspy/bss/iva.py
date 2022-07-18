@@ -11,8 +11,9 @@ from ..algorithm import projection_back
 __all__ = [
     "GradIVA",
     "NaturalGradIVA",
-    "AuxIVA",
+    "FastIVA",
     "FasterIVA",
+    "AuxIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
@@ -420,6 +421,28 @@ class FastIVAbase(IVAbase):
 
         return s.format(**self.__dict__)
 
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            &= \frac{1}{J}\sum_{j,n}G(\vec{\boldsymbol{y}}_{jn}), \\
+            G(\vec{\boldsymbol{y}}_{jn}) \
+            &= - \log p(\vec{\boldsymbol{y}}_{jn})
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        G = self.contrast_fn(Y)  # (n_sources, n_frames)
+        loss = np.sum(np.mean(G, axis=1), axis=0)
+
+        return loss
+
 
 class AuxIVAbase(IVAbase):
     r"""Base class of auxiliary-function-based independent vector analysis (IVA).
@@ -788,6 +811,207 @@ class NaturalGradIVA(GradIVAbase):
 
         self.demix_filter = W
         self.output = Y
+
+
+class FastIVA(FastIVAbase):
+    r"""Fast independent vector analysis (FasterIVA) [#lee2007fast]_.
+
+    Args:
+        contrast_fn (callable):
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
+            and return (n_channels, n_frames).
+        d_contrast_fn (callable):
+            A derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_frames) \
+            and return (n_channels, n_frames).
+        dd_contrast_fn (callable):
+            Second order derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_frames) \
+            and return (n_channels, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used. \
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration. \
+            Default: ``None``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``. \
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back. \
+            Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            from ssspy.transform import whiten
+            from ssspy.algorithm import projection_back
+
+            def contrast_fn(y):
+                return 2 * np.linalg.norm(y, axis=1)
+
+            def d_contrast_fn(y):
+                return 2 * np.ones_like(y)
+
+            def dd_contrast_fn(y):
+                return 2 * np.zeros_like(y)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            spectrogram_mix_whitened = whiten(spectrogram_mix)
+            spectrogram_est = fast_iva(spectrogram_mix_whitened, n_iter=100)
+            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
+
+            iva = FastIVA(
+                    contrast_fn=contrast_fn,
+                    d_contrast_fn=d_contrast_fn,
+                    dd_contrast_fn=dd_contrast_fn,
+                    should_apply_projection_back=False,
+            )
+            spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#lee2007fast] I. Lee et al.,
+        "Fast fixed-point independent vector analysis algorithms \
+        for convolutive blind source separation," **Signal Processing**,
+        vol. 87, no. 8, pp. 1859-1871, 2007.
+
+    """
+
+    def __init__(
+        self,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        dd_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["FastIVA"], None], List[Callable[["FastIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+        if contrast_fn is None:
+            raise ValueError("Specify contrast function.")
+        else:
+            self.contrast_fn = contrast_fn
+
+        if d_contrast_fn is None:
+            raise ValueError("Specify derivative of contrast function.")
+        else:
+            self.d_contrast_fn = d_contrast_fn
+
+        if dd_contrast_fn is None:
+            raise ValueError("Specify second order derivative of contrast function.")
+        else:
+            self.dd_contrast_fn = dd_contrast_fn
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: ``100``.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        if self.should_record_loss:
+            loss = self.compute_loss()
+            self.loss.append(loss)
+
+        if self.callbacks is not None:
+            for callback in self.callbacks:
+                callback(self)
+
+        for _ in range(n_iter):
+            self.update_once()
+
+            if self.should_record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
+
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
+
+        if self.should_apply_projection_back:
+            self.apply_projection_back()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def __repr__(self) -> str:
+        s = "FastIVA("
+        s += "should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        norm = np.linalg.norm(Y, axis=1)
+        varphi = self.d_contrast_fn(norm) / self.flooring_fn(2 * norm)  # (n_sources, n_frames)
+
+        Y_conj = Y.conj()
+        YX = Y_conj[:, np.newaxis, :, :] * X
+        W_Hermite = W.transpose(1, 2, 0).conj()
+        W_YX = W_Hermite[:, :, :, np.newaxis] - YX
+        W_YX = np.mean(varphi[:, np.newaxis, np.newaxis, :] * W_YX, axis=-1)
+
+        Y_GG = (2 * varphi - self.dd_contrast_fn(norm)) / self.flooring_fn(2 * norm)
+        YY_GG = Y_GG[:, np.newaxis, :] * (np.abs(Y) ** 2)
+        YY_GGW = np.mean(W_Hermite[:, :, :, np.newaxis] * YY_GG[:, np.newaxis, :, :], axis=-1)
+
+        # Update
+        W_Hermite = W_YX - YY_GGW
+        W = W_Hermite.transpose(2, 0, 1).conj()
+
+        u, _, v_Hermite = np.linalg.svd(W)
+        W = u @ v_Hermite
+
+        self.demix_filter = W
 
 
 class FasterIVA(FastIVAbase):
