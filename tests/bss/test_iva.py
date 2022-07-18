@@ -8,6 +8,7 @@ from ssspy.bss.iva import (
     FastIVAbase,
     GradIVA,
     NaturalGradIVA,
+    FastIVA,
     FasterIVA,
     AuxIVA,
     GradLaplaceIVA,
@@ -200,6 +201,81 @@ def test_natural_grad_iva(
 
     iva = NaturalGradIVA(
         contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
+    )
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize("n_sources, sisec2010_tag, callbacks, reset_kwargs", parameters_fast_iva)
+def test_fast_iva(
+    n_sources: int,
+    sisec2010_tag: str,
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag=sisec2010_tag,
+        max_samples=max_samples,
+        conv=True,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
+
+    def contrast_fn(y: np.ndarray) -> np.ndarray:
+        r"""Contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_bins, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.linalg.norm(y, axis=1)
+
+    def d_contrast_fn(y) -> np.ndarray:
+        r"""Derivative of contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.ones_like(y)
+
+    def dd_contrast_fn(y) -> np.ndarray:
+        r"""Second order derivative of contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.zeros_like(y)
+
+    iva = FastIVA(
+        contrast_fn=contrast_fn,
+        d_contrast_fn=d_contrast_fn,
+        dd_contrast_fn=dd_contrast_fn,
+        callbacks=callbacks,
     )
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
