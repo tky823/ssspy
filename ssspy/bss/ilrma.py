@@ -622,8 +622,8 @@ class GaussILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        p2p = (p + 2) / p
-        pp2 = p / (p + 2)
+        p2_p = (p + 2) / p
+        p_p2 = p / (p + 2)
 
         Z = self.latent
         T, V = self.basis, self.activation
@@ -631,14 +631,14 @@ class GaussILRMA(ILRMAbase):
         TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
         ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-        ZTVp2p = ZTV ** p2p
+        ZTVp2p = ZTV ** p2_p
         TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
         num = np.sum(TV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(1, 3))
 
         TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
         denom = np.sum(TV_ZTV, axis=(1, 3))
 
-        Z = ((num / denom) ** pp2) * Z
+        Z = ((num / denom) ** p_p2) * Z
         Z = Z / Z.sum(axis=0)
 
         self.latent = Z
@@ -655,8 +655,8 @@ class GaussILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        p2p = (p + 2) / p
-        pp2 = p / (p + 2)
+        p2_p = (p + 2) / p
+        p_p2 = p / (p + 2)
 
         if self.partitioning:
             Z = self.latent
@@ -665,7 +665,7 @@ class GaussILRMA(ILRMAbase):
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVp2p = ZTV ** p2p
+            ZTVp2p = ZTV ** p2_p
             ZV_ZTVp2p = ZV[:, np.newaxis, :, :] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 3))
 
@@ -676,14 +676,14 @@ class GaussILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVp2p = TV ** p2p
+            TVp2p = TV ** p2_p
             V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
             num = np.sum(V_TVp2p * Y2[:, :, np.newaxis, :], axis=3)
 
             V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
             denom = np.sum(V_TV, axis=3)
 
-        T = ((num / denom) ** pp2) * T
+        T = ((num / denom) ** p_p2) * T
         T = self.flooring_fn(T)
 
         self.basis = T
@@ -700,8 +700,8 @@ class GaussILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        p2p = (p + 2) / p
-        pp2 = p / (p + 2)
+        p2_p = (p + 2) / p
+        p_p2 = p / (p + 2)
 
         if self.partitioning:
             Z = self.latent
@@ -710,7 +710,7 @@ class GaussILRMA(ILRMAbase):
             ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVp2p = ZTV ** p2p
+            ZTVp2p = ZTV ** p2_p
             ZT_ZTVp2p = ZT[:, :, :, np.newaxis] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZT_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 1))
 
@@ -721,14 +721,14 @@ class GaussILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVp2p = TV ** p2p
+            TVp2p = TV ** p2_p
             T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
             num = np.sum(T_TVp2p * Y2[:, :, np.newaxis, :], axis=1)
 
             T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
             denom = np.sum(T_TV, axis=1)
 
-        V = ((num / denom) ** pp2) * V
+        V = ((num / denom) ** p_p2) * V
         V = self.flooring_fn(V)
 
         self.activation = V
@@ -1340,7 +1340,7 @@ class TILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        pp2 = p / (p + 2)
+        p_p2 = p / (p + 2)
         nu_nu2 = nu / (nu + 2)
 
         Z = self.latent
@@ -1358,7 +1358,7 @@ class TILRMA(ILRMAbase):
         TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
         denom = np.sum(TV_ZTV, axis=(1, 3))
 
-        Z = ((num / denom) ** pp2) * Z
+        Z = ((num / denom) ** p_p2) * Z
         Z = Z / Z.sum(axis=0)
 
         self.latent = Z
@@ -1376,7 +1376,7 @@ class TILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        pp2 = p / (p + 2)
+        p_p2 = p / (p + 2)
         nu_nu2 = nu / (nu + 2)
 
         if self.partitioning:
@@ -1408,7 +1408,7 @@ class TILRMA(ILRMAbase):
             V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
             denom = np.sum(V_TV, axis=3)
 
-        T = ((num / denom) ** pp2) * T
+        T = ((num / denom) ** p_p2) * T
         T = self.flooring_fn(T)
 
         self.basis = T
@@ -1426,7 +1426,7 @@ class TILRMA(ILRMAbase):
             Y = self.output
 
         Y2 = np.abs(Y) ** 2
-        pp2 = p / (p + 2)
+        p_p2 = p / (p + 2)
         nu_nu2 = nu / (nu + 2)
 
         if self.partitioning:
@@ -1458,7 +1458,7 @@ class TILRMA(ILRMAbase):
             T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
             denom = np.sum(T_TV, axis=1)
 
-        V = ((num / denom) ** pp2) * V
+        V = ((num / denom) ** p_p2) * V
         V = self.flooring_fn(V)
 
         self.activation = V
