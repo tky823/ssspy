@@ -1341,7 +1341,7 @@ class TILRMA(ILRMAbase):
 
         Y2 = np.abs(Y) ** 2
         pp2 = p / (p + 2)
-        nunu2 = nu / (nu + 2)
+        nu_nu2 = nu / (nu + 2)
 
         Z = self.latent
         T, V = self.basis, self.activation
@@ -1350,7 +1350,7 @@ class TILRMA(ILRMAbase):
         ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
         ZTV2p = ZTV ** (2 / p)
-        R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+        R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
         RZTV = R_tilde * ZTV
         TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
         num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
@@ -1377,7 +1377,7 @@ class TILRMA(ILRMAbase):
 
         Y2 = np.abs(Y) ** 2
         pp2 = p / (p + 2)
-        nunu2 = nu / (nu + 2)
+        nu_nu2 = nu / (nu + 2)
 
         if self.partitioning:
             Z = self.latent
@@ -1387,7 +1387,7 @@ class TILRMA(ILRMAbase):
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTV2p = ZTV ** (2 / p)
-            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
             RZTV = R_tilde * ZTV
             ZV_RZTV = ZV[:, np.newaxis, :, :] / RZTV[:, :, np.newaxis, :]
             num = np.sum(ZV_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 3))
@@ -1400,7 +1400,7 @@ class TILRMA(ILRMAbase):
             TV = self.reconstruct_nmf(T, V)
 
             TV2p = TV ** (2 / p)
-            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
             RTV = R_tilde * TV
             V_RTV = V[:, np.newaxis, :, :] / RTV[:, :, np.newaxis, :]
             num = np.sum(V_RTV * Y2[:, :, np.newaxis, :], axis=3)
@@ -1427,7 +1427,7 @@ class TILRMA(ILRMAbase):
 
         Y2 = np.abs(Y) ** 2
         pp2 = p / (p + 2)
-        nunu2 = nu / (nu + 2)
+        nu_nu2 = nu / (nu + 2)
 
         if self.partitioning:
             Z = self.latent
@@ -1437,7 +1437,7 @@ class TILRMA(ILRMAbase):
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
             ZTV2p = ZTV ** (2 / p)
-            R_tilde = nunu2 * ZTV2p + (1 - nunu2) * Y2
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
             RZTV = R_tilde * ZTV
             ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
             num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
@@ -1450,7 +1450,7 @@ class TILRMA(ILRMAbase):
             TV = self.reconstruct_nmf(T, V)
 
             TV2p = TV ** (2 / p)
-            R_tilde = nunu2 * TV2p + (1 - nunu2) * Y2
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
             RTV = R_tilde * TV
             T_RTV = T[:, :, :, np.newaxis] / RTV[:, :, np.newaxis, :]
             num = np.sum(T_RTV * Y2[:, :, np.newaxis, :], axis=1)
