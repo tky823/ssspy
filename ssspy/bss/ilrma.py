@@ -1467,9 +1467,12 @@ class TILRMA(ILRMAbase):
         r"""Update demixing filters once.
 
         If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
+        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+            self.update_spatial_model_iss1()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -1513,11 +1516,8 @@ class TILRMA(ILRMAbase):
         p = self.domain
         nu = self.dof
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
@@ -1564,6 +1564,47 @@ class TILRMA(ILRMAbase):
             W[:, src_idx, :] = w_n_Hermite
 
         self.demix_filter = W
+
+    def update_spatial_model_iss1(self) -> None:
+        n_sources = self.n_sources
+
+        p = self.domain
+        nu = self.dof
+
+        Y = self.output
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
+
+        varphi = 1 / R_tilde
+
+        for src_idx in range(n_sources):
+            Y_n = Y[src_idx]  # (n_bins, n_frames)
+
+            YY_n_conj = Y * Y_n.conj()
+            YY_n = np.abs(Y_n) ** 2
+            num = np.mean(varphi * YY_n_conj, axis=-1)
+            denom = np.mean(varphi * YY_n, axis=-1)
+            denom = self.flooring_fn(denom)
+            v_n = num / denom
+            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
+
+            Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
