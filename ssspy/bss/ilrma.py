@@ -21,6 +21,8 @@ class ILRMAbase:
     Args:
         n_basis (int):
             Number of NMF bases.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -473,6 +475,51 @@ class ILRMAbase:
 
 
 class GaussILRMA(ILRMAbase):
+    r"""Independent low-rank matrix analysis (ILRMA) on Gaussian distribution.
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Default: "IP".
+        domain (float):
+            Domain parameter. Default: ``2``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        normalization (bool or str, optional):
+            Normalization of demixing filters and NMF parameters.
+            Choose "power" or "projection_back".
+            Default: ``"power"``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator):
+            Random number generator. This is mainly used to randomly initialize NMF.
+            Default: ``numpy.random.default_rng()``.
+    """
+
     def __init__(
         self,
         n_basis: int,
@@ -1153,6 +1200,53 @@ class GaussILRMA(ILRMAbase):
 
 
 class TILRMA(ILRMAbase):
+    r"""Independent low-rank matrix analysis (ILRMA) on student's-t distribution.
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        dof (float):
+            Degree of freedom parameter in student's-t distribution.
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Default: "IP".
+        domain (float):
+            Domain parameter. Default: ``2``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        normalization (bool or str, optional):
+            Normalization of demixing filters and NMF parameters.
+            Choose "power" or "projection_back".
+            Default: ``"power"``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator):
+            Random number generator. This is mainly used to randomly initialize NMF.
+            Default: ``numpy.random.default_rng()``.
+    """
+
     def __init__(
         self,
         n_basis: int,
