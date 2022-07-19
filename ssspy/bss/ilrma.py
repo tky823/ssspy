@@ -1668,3 +1668,16 @@ class TILRMA(ILRMAbase):
         loss = loss.sum(axis=0)
 
         return loss
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms.
+        """
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            super().apply_projection_back()
+        else:
+            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+
+            X, Y = self.input, self.output
+            Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
