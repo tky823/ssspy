@@ -1643,9 +1643,12 @@ class TILRMA(ILRMAbase):
             Y = self.separate(X, demix_filter=W)
             Y2 = np.abs(Y) ** 2
         else:
-            raise NotImplementedError(
-                "Loss for {} is not implemented.".format(self.algorithm_spatial)
-            )
+            X, Y = self.input, self.output
+            Y2 = np.abs(Y) ** 2
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
 
         if self.partitioning:
             Z = self.latent
