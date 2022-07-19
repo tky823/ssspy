@@ -1471,8 +1471,12 @@ class TILRMA(ILRMAbase):
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
+        elif self.algorithm_spatial in ["IP2"]:
+            self.update_spatial_model_ip2()
         elif self.algorithm_spatial in ["ISS", "ISS1"]:
             self.update_spatial_model_iss1()
+        elif self.algorithm_spatial in ["ISS2"]:
+            self.update_spatial_model_iss2()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -1565,6 +1569,143 @@ class TILRMA(ILRMAbase):
 
         self.demix_filter = W
 
+    def update_spatial_model_ip2(self) -> None:
+        r"""Update demixing filters once using pairwise iterative projection.
+
+        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
+            \boldsymbol{V}_{in}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+
+        where
+
+        .. math::
+            \boldsymbol{y}_{ij}^{(m,n)}
+            = \left(
+            \begin{array}{c}
+                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+            \end{array}
+            \right).
+
+        Compute generalized eigenvectors of
+        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}} + |y_{ijn}|^{2},
+
+        if ``partitioning=True``.
+        Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}} + |y_{ijn}|^{2}.
+
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        and :math:`\boldsymbol{h}_{in}`.
+
+        .. math::
+            \boldsymbol{h}_{im}
+            &\leftarrow\frac{\boldsymbol{h}_{im}}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{h}_{im}}}, \\
+            \boldsymbol{h}_{in}
+            &\leftarrow\frac{\boldsymbol{h}_{in}}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{h}_{in}}}.
+
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        simultaneously.
+
+        .. math::
+            (
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )\leftarrow(
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )(
+            \begin{array}{cc}
+                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+            \end{array}
+            )
+
+        At each iteration, we update for all pairs of :math:`m`
+        and :math:`n` (:math:`m<n`).
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        nu = self.dof
+        p = self.domain
+        X, W = self.input, self.demix_filter
+
+        nu_nu2 = nu / (nu + 2)
+        Y = self.separate(X, demix_filter=W)
+        Y2 = np.abs(Y) ** 2
+
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
+
+        varphi = 1 / R_tilde
+
+        for m, n in self.pair_selector(n_sources):
+            W_mn = W[:, (m, n), :]
+            varphi_mn = varphi[(m, n), :, :]
+            Y_mn = self.separate(X, demix_filter=W_mn)
+
+            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
+            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+
+            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
+            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
+
+            U_m, U_n = U_mn
+            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
+            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
+            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
+            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
+            hUh_mn = np.real(hUh_mn)
+            hUh_mn = np.maximum(hUh_mn, 0)
+            denom_mn = np.sqrt(hUh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            h_mn = h_mn / denom_mn
+            H_mn = h_mn.transpose(1, 2, 0)
+            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
+
+            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
+
+        self.demix_filter = W
+
     def update_spatial_model_iss1(self) -> None:
         n_sources = self.n_sources
 
@@ -1603,6 +1744,151 @@ class TILRMA(ILRMAbase):
             v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
 
             Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
+
+    def update_spatial_model_iss2(self) -> None:
+        r"""Update estimated spectrograms once using pairwise iterative source steering.
+
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
+        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+
+        .. math::
+            \begin{array}{rclc}
+                \boldsymbol{G}_{in}^{(m,m')}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{\tilde{r}_{ijn}}
+                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                &(n=1,\ldots,N), \\
+                \boldsymbol{f}_{in}^{(m,m')}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}
+                \frac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
+                &(n\neq m,m'),
+            \end{array}
+
+        where
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}
+
+        if ``partitioning=True``.
+        Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
+
+        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
+        we compute
+
+        .. math::
+            \begin{array}{rclc}
+                \boldsymbol{p}_{in}
+                &=& \dfrac{\boldsymbol{h}_{in}}
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
+                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                \boldsymbol{q}_{in}
+                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
+                & (n\neq m,m'),
+            \end{array}
+
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        a generalized eigenvector obtained from
+
+        .. math::
+            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+
+        Separated signal :math:`y_{ijn}` is updated as follows:
+
+        .. math::
+            y_{ijn}
+            &\leftarrow\begin{cases}
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            \end{cases}.
+        """
+        n_sources = self.n_sources
+
+        p = self.domain
+        nu = self.dof
+
+        Y = self.output
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTV2p = ZTV ** (2 / p)
+            R_tilde = nu_nu2 * ZTV2p + (1 - nu_nu2) * Y2
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TV2p = TV ** (2 / p)
+            R_tilde = nu_nu2 * TV2p + (1 - nu_nu2) * Y2
+
+        varphi = 1 / R_tilde
+
+        for m, n in self.pair_selector(n_sources):
+            # Split into main and sub
+            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
+            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
+
+            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
+                varphi, [m, m + 1, n, n + 1], axis=0
+            )
+            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
+            varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
+
+            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
+            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
+            YY_main = YY_main.transpose(2, 0, 1, 3)
+            YY_sub = YY_sub.transpose(1, 2, 0, 3)
+
+            Y_main = Y_main.transpose(1, 0, 2)
+
+            # Sub
+            G_sub = np.mean(
+                varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
+                axis=-1,
+            )
+            F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
+            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
+            Q = Q.squeeze(axis=-1)
+            Q = Q.transpose(1, 0, 2)
+            QY = Q.conj() @ Y_main
+            Y_sub = Y_sub + QY.transpose(1, 0, 2)
+
+            # Main
+            G_main = np.mean(
+                varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
+                axis=-1,
+            )
+            G_m, G_n = G_main
+            _, H_mn = eigh(G_m, G_n)
+            h_mn = H_mn.transpose(2, 0, 1)
+            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
+            hGh_mn = np.squeeze(hGh_mn, axis=-1)
+            hGh_mn = np.real(hGh_mn)
+            hGh_mn = np.maximum(hGh_mn, 0)
+            denom_mn = np.sqrt(hGh_mn)
+            denom_mn = self.flooring_fn(denom_mn)
+            P = h_mn / denom_mn
+            P = P.transpose(1, 0, 2)
+            Y_main = P.conj() @ Y_main
+            Y_main = Y_main.transpose(1, 0, 2)
+
+            # Concat
+            Y_m, Y_n = np.split(Y_main, [1], axis=0)
+            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
+            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
 
         self.output = Y
 
