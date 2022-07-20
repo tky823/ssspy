@@ -216,12 +216,27 @@ class FDICAbase:
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
-        logdet = np.log(np.abs(np.linalg.det(W)))  # (n_bins,)
+        logdet = self.compute_logdet(W)  # (n_bins,)
         G = self.contrast_fn(Y)  # (n_sources, n_bins, n_frames)
         loss = np.sum(np.mean(G, axis=2), axis=0) - 2 * logdet
         loss = loss.sum(axis=0)
 
         return loss
+
+    def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant of demixing filter
+
+        Args:
+            demix_filter (numpy.ndarray):
+                Demixing filters with shape of (n_bins, n_sources, n_channels).
+
+        Returns:
+            numpy.ndarray:
+                Computed log-determinant values.
+        """
+        _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
+
+        return logdet
 
     def solve_permutation(self) -> None:
         r"""Solve permutaion of estimated spectrograms.

@@ -219,8 +219,18 @@ class IVAbase:
 
     def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
         r"""Compute log-determinant of demixing filter
+
+        Args:
+            demix_filter (numpy.ndarray):
+                Demixing filters with shape of (n_bins, n_sources, n_channels).
+
+        Returns:
+            numpy.ndarray:
+                Computed log-determinant values.
         """
-        return np.log(np.abs(np.linalg.det(demix_filter)))  # (n_bins,)
+        _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
+
+        return logdet
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
