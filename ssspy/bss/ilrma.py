@@ -1468,6 +1468,8 @@ class TILRMA(ILRMAbase):
 
         If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
         If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.algorithm_spatial`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
