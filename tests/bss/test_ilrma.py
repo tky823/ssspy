@@ -137,18 +137,18 @@ def test_gauss_ilrma_wo_latent(
     "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 def test_t_ilrma_latent(
     n_sources: int,
     n_basis: int,
     dof: float,
+    algorithm_spatial: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
 ):
-    algorithm_spatial = "IP1"
-
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
     elif n_sources == 4:
@@ -191,19 +191,19 @@ def test_t_ilrma_latent(
     "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 def test_t_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
     dof: float,
+    algorithm_spatial: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
     rng=np.random.default_rng(42),
 ):
-    algorithm_spatial = "IP1"
-
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
     elif n_sources == 4:
