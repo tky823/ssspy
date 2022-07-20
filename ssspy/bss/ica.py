@@ -195,11 +195,26 @@ class GradICAbase:
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_channels, n_samples)
-        logdet = np.log(np.abs(np.linalg.det(W)))
+        logdet = self.compute_logdet(W)
         G = self.contrast_fn(Y)
         loss = np.sum(np.mean(G, axis=1)) - logdet
 
         return loss
+
+    def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant of demixing filter
+
+        Args:
+            demix_filter (numpy.ndarray):
+                Demixing filter with shape of (n_sources, n_channels).
+
+        Returns:
+            numpy.ndarray:
+                Computed log-determinant value.
+        """
+        _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
+
+        return logdet
 
 
 class FastICAbase:
