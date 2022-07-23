@@ -1490,13 +1490,9 @@ class AuxIVA(AuxIVAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
+        n_sources = self.n_sources
 
         X, W = self.input, self.demix_filter
-
-        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
@@ -2496,14 +2492,10 @@ class AuxGaussIVA(AuxIVA):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
+        n_sources = self.n_sources
 
         X, W = self.input, self.demix_filter
         R = self.variance
-
-        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
 
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
