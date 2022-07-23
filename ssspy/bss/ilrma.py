@@ -2248,6 +2248,8 @@ class GGDILRMA(ILRMAbase):
             self.update_spatial_model_ip1()
         elif self.algorithm_spatial in ["IP2"]:
             self.update_spatial_model_ip2()
+        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+            self.update_spatial_model_iss1()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
@@ -2442,6 +2444,48 @@ class GGDILRMA(ILRMAbase):
             W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
 
         self.demix_filter = W
+
+    def update_spatial_model_iss1(self) -> None:
+        n_sources = self.n_sources
+
+        p = self.domain
+        beta = self.beta
+
+        Y = self.output
+
+        Y2b = np.abs(Y) ** (2 - beta)
+        Y2b = self.flooring_fn(Y2b)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTVbp = ZTV ** (beta / p)
+            R_bar = Y2b * ZTVbp
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TVbp = TV ** (beta / p)
+            R_bar = Y2b * TVbp
+
+        varphi = 1 / R_bar
+
+        for src_idx in range(n_sources):
+            Y_n = Y[src_idx]  # (n_bins, n_frames)
+
+            YY_n_conj = Y * Y_n.conj()
+            YY_n = np.abs(Y_n) ** 2
+            num = np.mean(varphi * YY_n_conj, axis=-1)
+            denom = np.mean(varphi * YY_n, axis=-1)
+            denom = self.flooring_fn(denom)
+            v_n = num / denom
+            v_n[src_idx] = 1 - 1 / np.sqrt((beta / 2) * denom[src_idx])
+
+            Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+        self.output = Y
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
