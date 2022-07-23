@@ -917,14 +917,11 @@ class GaussILRMA(ILRMAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
+        n_sources = self.n_sources
 
         p = self.domain
-        X, W = self.input, self.demix_filter
 
-        E = np.eye(n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))
+        X, W = self.input, self.demix_filter
 
         if self.partitioning:
             Z = self.latent
@@ -1660,19 +1657,16 @@ class TILRMA(ILRMAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
+        n_sources = self.n_sources
 
         nu = self.dof
         p = self.domain
+
         X, W = self.input, self.demix_filter
 
         nu_nu2 = nu / (nu + 2)
         Y = self.separate(X, demix_filter=W)
         Y2 = np.abs(Y) ** 2
-
-        E = np.eye(n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))
 
         if self.partitioning:
             Z = self.latent
