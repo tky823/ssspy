@@ -2479,7 +2479,12 @@ class GGDILRMA(ILRMAbase):
             Y = self.separate(X, demix_filter=W)
             Yb = np.abs(Y) ** beta
         else:
-            raise NotImplementedError
+            X, Y = self.input, self.output
+            Yb = np.abs(Y) ** beta
+            X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
+            X_Hermite = X.transpose(0, 2, 1).conj()
+            XX_Hermite = X @ X_Hermite
+            W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
 
         if self.partitioning:
             Z = self.latent
