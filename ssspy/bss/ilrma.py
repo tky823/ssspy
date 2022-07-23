@@ -9,7 +9,7 @@ from ._select_pair import sequential_pair_selector
 from ..linalg import eigh
 from ..algorithm import projection_back
 
-__all__ = ["GaussILRMA", "TILRMA"]
+__all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
 
 algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
@@ -1979,3 +1979,385 @@ class TILRMA(ILRMAbase):
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+
+
+class GGDILRMA(ILRMAbase):
+    r"""Independent low-rank matrix analysis (ILRMA) on generalized Gaussian distribution.
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        beta (float):
+            Shape parameter in generalized Gaussian distribution.
+        algorithm_spatial (str):
+            Algorithm for demixing filter updates.
+            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Default: "IP".
+        domain (float):
+            Domain parameter. Default: ``2``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        normalization (bool or str, optional):
+            Normalization of demixing filters and NMF parameters.
+            Choose "power" or "projection_back".
+            Default: ``"power"``.
+        should_apply_projection_back (bool):
+            If ``should_apply_projection_back=True``, the projection back is applied to \
+            estimated spectrograms. Default: ``True``.
+        should_record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``should_record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator):
+            Random number generator. This is mainly used to randomly initialize NMF.
+            Default: ``numpy.random.default_rng()``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        beta: float,
+        algorithm_spatial: str = "IP",
+        domain: float = 2,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
+        callbacks: Optional[
+            Union[Callable[["GGDILRMA"], None], List[Callable[["GGDILRMA"], None]]]
+        ] = None,
+        normalization: Optional[Union[bool, str]] = True,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+        rng: np.random.Generator = np.random.default_rng(),
+    ) -> None:
+        super().__init__(
+            n_basis=n_basis,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+        assert 0 < beta < 2, "Shape parameter {} shoule be chosen from (0, 2).".format(beta)
+        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+
+        self.beta = beta
+        self.algorithm_spatial = algorithm_spatial
+        self.domain = domain
+        self.normalization = normalization
+
+        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+            self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        else:
+            self.pair_selector = pair_selector
+
+    def __repr__(self) -> str:
+        s = "GGDILRMA("
+        s += "n_basis={n_basis}"
+        s += ", beta={beta}"
+        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", domain={domain}"
+        s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
+        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", should_record_loss={should_record_loss}"
+
+        if self.should_apply_projection_back:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update NMF parameters and demixing filters once.
+        """
+        self.update_source_model()
+        self.update_spatial_model()
+
+        if self.normalization:
+            self.normalize()
+
+    def update_source_model(self) -> None:
+        r"""Update NMF bases, activations, and latent variables.
+        """
+        if self.partitioning:
+            self.update_latent()
+
+        self.update_basis()
+        self.update_activation()
+
+    def update_latent(self) -> None:
+        r"""Update latent variables in NMF.
+        """
+        p = self.domain
+        beta = self.beta
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            raise NotImplementedError
+
+        Yb = np.abs(Y) ** beta
+        p_bp = p / (beta + p)
+        bp_p = (beta + p) / p
+
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+        ZTVbpp = ZTV ** bp_p
+        TV_RZTV = TV[np.newaxis, :, :, :] / ZTVbpp[:, :, np.newaxis, :]
+        num = (beta / 2) * np.sum(TV_RZTV * Yb[:, :, np.newaxis, :], axis=(1, 3))
+
+        TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+        denom = np.sum(TV_ZTV, axis=(1, 3))
+
+        Z = ((num / denom) ** p_bp) * Z
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
+
+    def update_basis(self) -> None:
+        r"""Update NMF bases.
+        """
+        p = self.domain
+        beta = self.beta
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            raise NotImplementedError
+
+        Yb = np.abs(Y) ** beta
+        p_bp = p / (beta + p)
+        bp_p = (beta + p) / p
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTVbpp = ZTV ** bp_p
+            ZV_ZTVbpp = ZV[:, np.newaxis, :, :] / ZTVbpp[:, :, np.newaxis, :]
+            num = (beta / 2) * np.sum(ZV_ZTVbpp * Yb[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TVbpp = TV ** bp_p
+            V_TVbpp = V[:, np.newaxis, :, :] / TVbpp[:, :, np.newaxis, :]
+            num = (beta / 2) * np.sum(V_TVbpp * Yb[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+        T = ((num / denom) ** p_bp) * T
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation(self) -> None:
+        r"""Update NMF activations.
+        """
+        p = self.domain
+        beta = self.beta
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Yb = np.abs(Y) ** beta
+        p_bp = p / (beta + p)
+        bp_p = (beta + p) / p
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTVbpp = ZTV ** bp_p
+            ZT_ZTVbpp = ZT[:, :, :, np.newaxis] / ZTVbpp[:, :, np.newaxis, :]
+            num = (beta / 2) * np.sum(ZT_ZTVbpp * Yb[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TVbpp = TV ** bp_p
+            T_TVbpp = T[:, :, :, np.newaxis] / TVbpp[:, :, np.newaxis, :]
+            num = (beta / 2) * np.sum(T_TVbpp * Yb[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+        V = ((num / denom) ** p_bp) * V
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once.
+
+        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.algorithm_spatial`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        """
+        if self.algorithm_spatial in ["IP", "IP1"]:
+            self.update_spatial_model_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+
+    def update_spatial_model_ip1(self) -> None:
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        p = self.domain
+        beta = self.beta
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        Y2b = np.abs(Y) ** (2 - beta)
+        Y2b = self.flooring_fn(Y2b)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            ZTVbp = ZTV ** (beta / p)
+            R_tilde = (2 / beta) * Y2b * ZTVbp
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+            TVbp = TV ** (beta / p)
+            R_tilde = (2 / beta) * Y2b * TVbp
+
+        varphi = 1 / R_tilde
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        E = np.eye(n_sources, n_channels)
+        E = np.tile(E, reps=(n_bins, 1, 1))
+
+        for src_idx in range(n_sources):
+            w_n_Hermite = W[:, src_idx, :]
+            U_n = U[:, src_idx, :, :]
+            e_n = E[:, src_idx, :]
+
+            WU = W @ U_n
+            w_n = np.linalg.solve(WU, e_n)
+            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
+            wUw = np.real(wUw[..., 0])
+            wUw = np.maximum(wUw, 0)
+            denom = np.sqrt(wUw)
+            denom = self.flooring_fn(denom)
+            w_n_Hermite = w_n.conj() / denom
+            W[:, src_idx, :] = w_n_Hermite
+
+        self.demix_filter = W
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L}
+            = \frac{1}{J}\sum_{i,j,n}
+            \left\{\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}\right)^{\frac{\beta}{2}}
+            + \log r_{ijn}\right\}
+            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|,
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+        if ``partitioning=False``, otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        beta = self.beta
+        p = self.domain
+
+        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Yb = np.abs(Y) ** beta
+        else:
+            raise NotImplementedError
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+            R = ZTV ** (beta / p)
+            loss = Yb / R + (2 / p) * np.log(ZTV)
+        else:
+            T, V = self.basis, self.activation
+            TV = self.reconstruct_nmf(T, V)
+            R = TV ** (beta / p)
+            loss = Yb / R + (2 / p) * np.log(TV)
+
+        logdet = self.compute_logdet(W)  # (n_bins,)
+
+        loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
+        loss = loss.sum(axis=0)
+
+        return loss
