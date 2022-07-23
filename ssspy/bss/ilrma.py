@@ -2246,6 +2246,8 @@ class GGDILRMA(ILRMAbase):
         """
         if self.algorithm_spatial in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
+        elif self.algorithm_spatial in ["IP2"]:
+            self.update_spatial_model_ip2()
         else:
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
