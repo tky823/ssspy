@@ -2120,7 +2120,7 @@ class GGDILRMA(ILRMAbase):
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
-            raise NotImplementedError
+            Y = self.output
 
         Yb = np.abs(Y) ** beta
         p_bp = p / (beta + p)
@@ -2154,7 +2154,7 @@ class GGDILRMA(ILRMAbase):
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
-            raise NotImplementedError
+            Y = self.output
 
         Yb = np.abs(Y) ** beta
         p_bp = p / (beta + p)
