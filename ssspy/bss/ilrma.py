@@ -242,8 +242,8 @@ class ILRMAbase:
                 T = self.basis.copy()
 
             if not hasattr(self, "activation"):
-                V = rng.random((n_basis, n_frames))
                 V = rng.random((n_sources, n_basis, n_frames))
+                V = self.flooring_fn(V)
             else:
                 # To avoid overwriting.
                 V = self.activation.copy()
