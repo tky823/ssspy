@@ -1,4 +1,4 @@
-from typing import Optional, Union, Callable, List
+from typing import Optional, Union, Callable, Any, List, Dict
 
 import pytest
 import numpy as np
@@ -15,25 +15,43 @@ n_bins = n_fft // 2 + 1
 n_iter = 5
 sisec2010_root = "./tests/.data/SiSEC2010"
 mird_root = "./tests/.data/MIRD"
+rng = np.random.default_rng(42)
 
 parameters_dof = [1, 100]
 parameters_beta = [0.5, 1.5]
 parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
-parameters_gauss_ilrma_latent = [
-    (2, 4, 2),
-    (3, 3, 1),
+parameters_ilrma_latent = [
+    (
+        2,
+        4,
+        2,
+        {
+            "demix_filter": np.tile(np.eye(2, dtype=np.complex128), (n_bins, 1, 1)),
+            "latent": rng.random((2, 4)),
+            "basis": rng.random((n_bins, 4)),
+        },
+    ),
+    (3, 3, 1, {}),
 ]
-parameters_gauss_ilrma_wo_latent = [
-    (2, 2, 2),
-    (3, 1, 1),
+parameters_ilrma_wo_latent = [
+    (
+        2,
+        2,
+        2,
+        {
+            "demix_filter": np.tile(np.eye(2, dtype=np.complex128), (n_bins, 1, 1)),
+            "basis": rng.random((2, n_bins, 2)),
+        },
+    ),
+    (3, 1, 1, {},),
 ]
 parameters_normalization_latent = [True, False, "power"]
 parameters_normalization_wo_latent = [True, False, "power", "projection_back"]
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
@@ -45,6 +63,7 @@ def test_gauss_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -76,7 +95,7 @@ def test_gauss_ilrma_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
@@ -84,7 +103,7 @@ def test_gauss_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
@@ -96,6 +115,7 @@ def test_gauss_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -127,7 +147,7 @@ def test_gauss_ilrma_wo_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
@@ -135,7 +155,7 @@ def test_gauss_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
@@ -149,6 +169,7 @@ def test_t_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -181,7 +202,7 @@ def test_t_ilrma_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
@@ -189,7 +210,7 @@ def test_t_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
@@ -203,7 +224,7 @@ def test_t_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
-    rng=np.random.default_rng(42),
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -236,7 +257,7 @@ def test_t_ilrma_wo_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
@@ -244,7 +265,7 @@ def test_t_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
@@ -258,6 +279,7 @@ def test_ggd_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -290,7 +312,7 @@ def test_ggd_ilrma_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
@@ -298,7 +320,7 @@ def test_ggd_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain", parameters_gauss_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
@@ -312,7 +334,7 @@ def test_ggd_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
-    rng=np.random.default_rng(42),
+    reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
         sisec2010_tag = "dev1_female3"
@@ -345,7 +367,7 @@ def test_ggd_ilrma_wo_latent(
         normalization=normalization,
         rng=np.random.default_rng(42),
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 

@@ -209,23 +209,44 @@ class ILRMAbase:
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if self.partitioning:
-            Z = rng.random((n_sources, n_basis))
-            Z = Z / Z.sum(axis=0)
-            T = rng.random((n_bins, n_basis))
-            V = rng.random((n_basis, n_frames))
+            if not hasattr(self, "latent"):
+                Z = rng.random((n_sources, n_basis))
+                Z = Z / Z.sum(axis=0)
+                Z = self.flooring_fn(Z)
+            else:
+                # To avoid overwriting.
+                Z = self.latent.copy()
 
-            Z = self.flooring_fn(Z)
-            T = self.flooring_fn(T)
-            V = self.flooring_fn(V)
+            if not hasattr(self, "basis"):
+                T = rng.random((n_bins, n_basis))
+                T = self.flooring_fn(T)
+            else:
+                # To avoid overwriting.
+                T = self.basis.copy()
+
+            if not hasattr(self, "activation"):
+                V = rng.random((n_basis, n_frames))
+                V = self.flooring_fn(V)
+            else:
+                # To avoid overwriting.
+                V = self.activation.copy()
 
             self.latent = Z
             self.basis, self.activation = T, V
         else:
-            T = rng.random((n_sources, n_bins, n_basis))
-            V = rng.random((n_sources, n_basis, n_frames))
+            if not hasattr(self, "basis"):
+                T = rng.random((n_sources, n_bins, n_basis))
+                T = self.flooring_fn(T)
+            else:
+                # To avoid overwriting.
+                T = self.basis.copy()
 
-            T = self.flooring_fn(T)
-            V = self.flooring_fn(V)
+            if not hasattr(self, "activation"):
+                V = rng.random((n_basis, n_frames))
+                V = rng.random((n_sources, n_basis, n_frames))
+            else:
+                # To avoid overwriting.
+                V = self.activation.copy()
 
             self.basis, self.activation = T, V
 
