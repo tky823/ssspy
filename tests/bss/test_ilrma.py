@@ -27,7 +27,7 @@ parameters_ilrma_latent = [
         4,
         2,
         {
-            "demix_filter": np.tile(np.eye(2), (n_bins, 1, 1)),
+            "demix_filter": np.tile(np.eye(2, dtype=np.complex128), (n_bins, 1, 1)),
             "latent": rng.random((2, 4)),
             "basis": rng.random((n_bins, 4)),
         },
@@ -39,7 +39,10 @@ parameters_ilrma_wo_latent = [
         2,
         2,
         2,
-        {"demix_filter": np.tile(np.eye(2), (n_bins, 1, 1)), "basis": rng.random((2, n_bins, 2))},
+        {
+            "demix_filter": np.tile(np.eye(2, dtype=np.complex128), (n_bins, 1, 1)),
+            "basis": rng.random((2, n_bins, 2)),
+        },
     ),
     (3, 1, 1, {},),
 ]
