@@ -2250,7 +2250,7 @@ class AuxGaussIVA(AuxIVA):
 
             return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
-        def d_contrast_fn(y: np.ndarray, variance=None) -> np.ndarray:
+        def d_contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
             Args:
                 y (numpy.ndarray):
@@ -2266,10 +2266,7 @@ class AuxGaussIVA(AuxIVA):
                     Computed contrast function.
                     The shape is (n_sources, n_frames).
             """
-            if variance is None:
-                variance = self.variance
-
-            return 2 * y / variance
+            return 2 * y / self.variance
 
         super().__init__(
             algorithm_spatial=algorithm_spatial,
@@ -2304,96 +2301,6 @@ class AuxGaussIVA(AuxIVA):
         self.update_source_model()
 
         super().update_once()
-
-    def update_once_ip2(self) -> None:
-        r"""Update demixing filters once using pairwise iterative projection.
-
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
-        compute weighted covariance matrix as follows:
-
-        .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
-
-        where
-
-        .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
-
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
-
-        .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
-
-        where
-
-        .. math::
-            G(\vec{\boldsymbol{y}}_{jn})
-            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
-            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
-            &= G(\vec{\boldsymbol{y}}_{jn}).
-
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
-
-        .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
-
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
-        simultaneously.
-
-        .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
-            \end{array}
-            )
-
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
-        """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
-
-        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
-        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
-        norm = np.linalg.norm(Y, axis=1)
-        weight = self.d_contrast_fn(norm) / self.flooring_fn(2 * norm)  # (n_sources, n_frames)
-        GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
-        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
-
-        self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
-        )
 
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution.
