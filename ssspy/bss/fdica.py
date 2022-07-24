@@ -6,6 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
+from ._update_spatial_model import update_by_ip1
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -970,9 +971,6 @@ class AuxFDICA(FDICAbase):
             G_{\mathbb{R}}(|y_{ijn}|)
             &= G(y_{ijn}).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
@@ -985,25 +983,7 @@ class AuxFDICA(FDICAbase):
         GXX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
-
-        for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
-            U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]  # (n_bins, n_n_channels)
-
-            WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
-            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
-            wUw = np.real(wUw[..., 0])
-            wUw = np.maximum(wUw, 0)
-            denom = np.sqrt(wUw)
-            denom = self.flooring_fn(denom)
-            w_n_Hermite = w_n.conj() / denom
-            W[:, src_idx, :] = w_n_Hermite
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.

@@ -6,6 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
+from ._update_spatial_model import update_by_ip1, update_by_iss1
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -964,8 +965,6 @@ class GaussILRMA(ILRMAbase):
         self.demix_filter = W
 
     def update_spatial_model_iss1(self) -> None:
-        n_sources = self.n_sources
-
         p = self.domain
         Y = self.output
 
@@ -981,20 +980,7 @@ class GaussILRMA(ILRMAbase):
 
         varphi = 1 / R
 
-        for src_idx in range(n_sources):
-            Y_n = Y[src_idx]  # (n_bins, n_frames)
-
-            YY_n_conj = Y * Y_n.conj()
-            YY_n = np.abs(Y_n) ** 2
-            num = np.mean(varphi * YY_n_conj, axis=-1)
-            denom = np.mean(varphi * YY_n, axis=-1)
-            denom = self.flooring_fn(denom)
-            v_n = num / denom
-            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
-
-            Y = Y - v_n[:, :, np.newaxis] * Y_n
-
-        self.output = Y
+        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
@@ -1523,9 +1509,6 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
         p = self.domain
         nu = self.dof
 
@@ -1558,25 +1541,7 @@ class TILRMA(ILRMAbase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        E = np.eye(n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))
-
-        for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]
-            U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]
-
-            WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)
-            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
-            wUw = np.real(wUw[..., 0])
-            wUw = np.maximum(wUw, 0)
-            denom = np.sqrt(wUw)
-            denom = self.flooring_fn(denom)
-            w_n_Hermite = w_n.conj() / denom
-            W[:, src_idx, :] = w_n_Hermite
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
@@ -1713,8 +1678,6 @@ class TILRMA(ILRMAbase):
         self.demix_filter = W
 
     def update_spatial_model_iss1(self) -> None:
-        n_sources = self.n_sources
-
         p = self.domain
         nu = self.dof
 
@@ -1738,20 +1701,7 @@ class TILRMA(ILRMAbase):
 
         varphi = 1 / R_tilde
 
-        for src_idx in range(n_sources):
-            Y_n = Y[src_idx]  # (n_bins, n_frames)
-
-            YY_n_conj = Y * Y_n.conj()
-            YY_n = np.abs(Y_n) ** 2
-            num = np.mean(varphi * YY_n_conj, axis=-1)
-            denom = np.mean(varphi * YY_n, axis=-1)
-            denom = self.flooring_fn(denom)
-            v_n = num / denom
-            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
-
-            Y = Y - v_n[:, :, np.newaxis] * Y_n
-
-        self.output = Y
+        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
@@ -2442,8 +2392,6 @@ class GGDILRMA(ILRMAbase):
         self.demix_filter = W
 
     def update_spatial_model_iss1(self) -> None:
-        n_sources = self.n_sources
-
         p = self.domain
         beta = self.beta
 
@@ -2468,20 +2416,7 @@ class GGDILRMA(ILRMAbase):
 
         varphi = 1 / R_bar
 
-        for src_idx in range(n_sources):
-            Y_n = Y[src_idx]  # (n_bins, n_frames)
-
-            YY_n_conj = Y * Y_n.conj()
-            YY_n = np.abs(Y_n) ** 2
-            num = np.mean(varphi * YY_n_conj, axis=-1)
-            denom = np.mean(varphi * YY_n, axis=-1)
-            denom = self.flooring_fn(denom)
-            v_n = num / denom
-            v_n[src_idx] = 1 - 1 / np.sqrt((beta / 2) * denom[src_idx])
-
-            Y = Y - v_n[:, :, np.newaxis] * Y_n
-
-        self.output = Y
+        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
