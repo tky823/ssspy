@@ -119,7 +119,7 @@ def update_by_ip2(
     n_bins, n_sources, n_channels = W.shape
 
     for m, n in pair_selector(n_sources):
-        W_mn = W[:, (m, n), :, np.newaxis]  # (n_bins, 2, n_channels, 1)
+        W_mn = W[:, np.newaxis, (m, n), :]  # (n_bins, 1, 2, n_channels)
         U_mn = U[:, (m, n), :, :]  # (n_bins, 2, n_channels, n_channels)
 
         V_mn = W_mn @ U_mn @ W_mn.transpose(0, 1, 3, 2).conj()  # (n_bins, 2, 2, 2)
