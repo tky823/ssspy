@@ -109,6 +109,9 @@ def update_by_ip2(
             Updated demixing filters. \
             The shape is (n_bins, n_sources, n_channels).
     """
+    if pair_selector is None:
+        pair_selector = functools.partial(sequential_pair_selector, sort=True)
+
     if overwrite:
         W = demix_filter
     else:
