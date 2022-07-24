@@ -2256,10 +2256,6 @@ class AuxGaussIVA(AuxIVA):
                 y (numpy.ndarray):
                     Norm of separated signal.
                     The shape is (n_sources, n_frames).
-                variance (numpy.ndarray, optional):
-                    Estimated variance with the shape of (n_sources, n_frames).
-                    If None is given, self.variance is used.
-                    This argument is mainly used for IP2.
 
             Returns:
                 numpy.ndarray:
