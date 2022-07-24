@@ -6,8 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._update_spatial_model import update_by_ip1
-from ..linalg import eigh
+from ._update_spatial_model import update_by_ip1, update_by_ip2
 from ..algorithm import projection_back
 
 __all__ = [
@@ -1057,40 +1056,21 @@ class AuxFDICA(FDICAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources = self.n_sources
-
         X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
 
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
-            Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        Y_abs = np.abs(Y)
+        denom = self.flooring_fn(2 * Y_abs)
+        varphi = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
+        varphi = varphi.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
+        GXX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
-
-            Y_mn_abs = np.abs(Y_mn)  # (2, n_bins, n_frames)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            varphi_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
-
-            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip2(
+            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
 
 class GradLaplaceFDICA(GradFDICA):
