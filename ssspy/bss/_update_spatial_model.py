@@ -73,7 +73,7 @@ def update_by_ip1(
 
 
 def update_by_iss1(
-    output: np.ndarray,
+    separated: np.ndarray,
     weight: np.ndarray,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
@@ -82,7 +82,7 @@ def update_by_iss1(
     r"""Update estimated spectrogram by iterative source steering.
 
     Args:
-        output (numpy.ndarray):
+        separated (numpy.ndarray):
             Estimated spectrograms to be updated. \
             The shape is (n_sources, n_bins, n_frames).
         weight (numpy.ndarray):
@@ -100,7 +100,7 @@ def update_by_iss1(
             Updated spectrograms. \
             The shape is (n_sources, n_bins, n_frames).
     """
-    Y = output
+    Y = separated
     varphi = weight
 
     n_sources = Y.shape[0]
@@ -122,7 +122,7 @@ def update_by_iss1(
 
 
 def update_by_iss2(
-    output: np.ndarray,
+    separated: np.ndarray,
     weight: np.ndarray,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
@@ -132,7 +132,7 @@ def update_by_iss2(
     r"""Update estimated spectrogram by pairwise iterative source steering.
 
     Args:
-        output (numpy.ndarray):
+        separated (numpy.ndarray):
             Estimated spectrograms to be updated. \
             The shape is (n_sources, n_bins, n_frames).
         weight (numpy.ndarray):
@@ -157,7 +157,7 @@ def update_by_iss2(
     if pair_selector is None:
         pair_selector = functools.partial(sequential_pair_selector, sort=True)
 
-    Y = output
+    Y = separated
     varphi = weight
 
     n_sources = Y.shape[0]
