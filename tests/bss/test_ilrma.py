@@ -155,7 +155,7 @@ def test_gauss_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
@@ -265,7 +265,7 @@ def test_t_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
