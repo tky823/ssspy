@@ -5,6 +5,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
+from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -1380,9 +1381,6 @@ class AuxIVA(AuxIVAbase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
@@ -1394,25 +1392,7 @@ class AuxIVA(AuxIVAbase):
         GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-        E = np.eye(n_sources, n_channels)  # (n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))  # (n_bins, n_sources, n_channels)
-
-        for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]  # (n_bins, n_channels)
-            U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]  # (n_bins, n_n_channels)
-
-            WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)  # (n_bins, n_channels)
-            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
-            wUw = np.real(wUw[..., 0])
-            wUw = np.maximum(wUw, 0)
-            denom = np.sqrt(wUw)
-            denom = self.flooring_fn(denom)
-            w_n_Hermite = w_n.conj() / denom
-            W[:, src_idx, :] = w_n_Hermite
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
@@ -1490,63 +1470,28 @@ class AuxIVA(AuxIVAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources = self.n_sources
-
         X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
 
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
-            Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        norm = np.linalg.norm(Y, axis=1)
+        denom = self.flooring_fn(2 * norm)
+        weight = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
+        GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
-
-            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)  # (2, n_frames)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
-
-            G_mn_YY = weight_mn[:, np.newaxis, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip2(
+            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def update_once_iss1(self) -> None:
-        n_sources = self.n_sources
-
         Y = self.output
         r = np.linalg.norm(Y, axis=1)
         denom = self.flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom  # (n_sources, n_frames)
 
-        for src_idx in range(n_sources):
-            Y_n = Y[src_idx]  # (n_bins, n_frames)
-
-            YY_n_conj = Y * Y_n.conj()
-            YY_n = np.abs(Y_n) ** 2
-            num = np.mean(varphi[:, np.newaxis, :] * YY_n_conj, axis=-1)
-            denom = np.mean(varphi[:, np.newaxis, :] * YY_n, axis=-1)
-            denom = self.flooring_fn(denom)
-            v_n = num / denom
-            v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
-
-            Y = Y - v_n[:, :, np.newaxis] * Y_n
-
-        self.output = Y
+        self.output = update_by_iss1(Y, varphi[:, np.newaxis, :], flooring_fn=self.flooring_fn)
 
     def update_once_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
@@ -1612,74 +1557,18 @@ class AuxIVA(AuxIVAbase):
             \end{cases}.
 
         """
-        n_sources = self.n_sources
         Y = self.output
 
         # Auxiliary variables
         r = np.linalg.norm(Y, axis=1)
-        denom = self.flooring_fn(2 * r)
-        varphi = self.d_contrast_fn(r) / denom
+        varphi = self.d_contrast_fn(r) / self.flooring_fn(2 * r)
 
-        for m, n in self.pair_selector(n_sources):
-            # Split into main and sub
-            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
-            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
-            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
-                varphi, [m, m + 1, n, n + 1], axis=0
-            )
-            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)  # (2, n_frames)
-            varphi_sub = np.concatenate(
-                [varphi_1, varphi_2, varphi_3], axis=0
-            )  # (n_sources - 2, n_frames)
-
-            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
-            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
-            YY_main = YY_main.transpose(2, 0, 1, 3)
-            YY_sub = YY_sub.transpose(1, 2, 0, 3)
-
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Sub
-            G_sub = np.mean(
-                varphi_sub[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            F = np.mean(varphi_sub[:, np.newaxis, np.newaxis, :] * YY_sub, axis=-1)
-            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
-            Q = Q.squeeze(axis=-1)
-            Q = Q.transpose(1, 0, 2)
-            QY = Q.conj() @ Y_main
-            Y_sub = Y_sub + QY.transpose(1, 0, 2)
-
-            # Main
-            G_main = np.mean(
-                varphi_main[:, np.newaxis, np.newaxis, np.newaxis, :]
-                * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            G_m, G_n = G_main
-            _, H_mn = eigh(G_m, G_n)
-            h_mn = H_mn.transpose(2, 0, 1)
-            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
-            hGh_mn = np.squeeze(hGh_mn, axis=-1)
-            hGh_mn = np.real(hGh_mn)
-            hGh_mn = np.maximum(hGh_mn, 0)
-            denom_mn = np.sqrt(hGh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            P = h_mn / denom_mn
-            P = P.transpose(1, 0, 2)
-            Y_main = P.conj() @ Y_main
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Concat
-            Y_m, Y_n = np.split(Y_main, [1], axis=0)
-            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
-
-        self.output = Y
+        self.output = update_by_iss2(
+            Y,
+            varphi[:, np.newaxis, :],
+            flooring_fn=self.flooring_fn,
+            pair_selector=self.pair_selector,
+        )
 
     def compute_loss(self) -> float:
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
@@ -2361,26 +2250,19 @@ class AuxGaussIVA(AuxIVA):
 
             return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
-        def d_contrast_fn(y: np.ndarray, variance=None) -> np.ndarray:
+        def d_contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
             Args:
                 y (numpy.ndarray):
                     Norm of separated signal.
                     The shape is (n_sources, n_frames).
-                variance (numpy.ndarray, optional):
-                    Estimated variance with the shape of (n_sources, n_frames).
-                    If None is given, self.variance is used.
-                    This argument is mainly used for IP2.
 
             Returns:
                 numpy.ndarray:
                     Computed contrast function.
                     The shape is (n_sources, n_frames).
             """
-            if variance is None:
-                variance = self.variance
-
-            return 2 * y / variance
+            return 2 * y / self.variance
 
         super().__init__(
             algorithm_spatial=algorithm_spatial,
@@ -2415,119 +2297,6 @@ class AuxGaussIVA(AuxIVA):
         self.update_source_model()
 
         super().update_once()
-
-    def update_once_ip2(self) -> None:
-        r"""Update demixing filters once using pairwise iterative projection.
-
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
-        compute weighted covariance matrix as follows:
-
-        .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
-
-        where
-
-        .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
-
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
-
-        .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
-
-        where
-
-        .. math::
-            G(\vec{\boldsymbol{y}}_{jn})
-            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
-            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
-            &= G(\vec{\boldsymbol{y}}_{jn}).
-
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
-
-        .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
-
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
-        simultaneously.
-
-        .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
-            \end{array}
-            )
-
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
-        """
-        n_sources = self.n_sources
-
-        X, W = self.input, self.demix_filter
-        R = self.variance
-
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
-            Y_mn = self.separate(X, demix_filter=W_mn)  # (2, n_bins, n_frames)
-            R_mn = R[(m, n), :]
-
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
-
-            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)  # (2, n_frames)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs, variance=R_mn) / denom_mn
-
-            G_mn_YY = weight_mn[:, np.newaxis, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
 
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution.
