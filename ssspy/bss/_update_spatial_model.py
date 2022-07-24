@@ -1,9 +1,11 @@
-from typing import Optional, Callable
+from typing import Optional, Tuple, Callable, Iterable
 import functools
 
 import numpy as np
 
 from ._flooring import max_flooring
+from ._select_pair import sequential_pair_selector
+from ..linalg import eigh
 
 EPS = 1e-10
 
@@ -115,5 +117,102 @@ def update_by_iss1(
         v_n[src_idx] = 1 - 1 / np.sqrt(denom[src_idx])
 
         Y = Y - v_n[:, :, np.newaxis] * Y_n
+
+    return Y
+
+
+def update_by_iss2(
+    output: np.ndarray,
+    weight: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+    pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
+) -> np.ndarray:
+    r"""Update estimated spectrogram by pairwise iterative source steering.
+
+    Args:
+        output (numpy.ndarray):
+            Estimated spectrograms to be updated. \
+            The shape is (n_sources, n_bins, n_frames).
+        weight (numpy.ndarray):
+            Weights for estimated spectrogram. \
+            The shape is (n_sources, n_bins, n_frames).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used. \
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        pair_selector (callable, optional):
+            Selector to choose updaing pair. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            Default: ``None``.
+
+    Returns:
+        numpy.ndarray:
+            Updated spectrograms. \
+            The shape is (n_sources, n_bins, n_frames).
+    """
+    if pair_selector is None:
+        pair_selector = functools.partial(sequential_pair_selector, sort=True)
+
+    Y = output
+    varphi = weight
+
+    n_sources = Y.shape[0]
+
+    for m, n in pair_selector(n_sources):
+        # Split into main and sub
+        Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
+        Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+        Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
+
+        varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
+            varphi, [m, m + 1, n, n + 1], axis=0
+        )
+        varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
+        varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
+
+        YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
+        YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
+        YY_main = YY_main.transpose(2, 0, 1, 3)
+        YY_sub = YY_sub.transpose(1, 2, 0, 3)
+
+        Y_main = Y_main.transpose(1, 0, 2)
+
+        # Sub
+        G_sub = np.mean(
+            varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :], axis=-1,
+        )
+        F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
+        Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
+        Q = Q.squeeze(axis=-1)
+        Q = Q.transpose(1, 0, 2)
+        QY = Q.conj() @ Y_main
+        Y_sub = Y_sub + QY.transpose(1, 0, 2)
+
+        # Main
+        G_main = np.mean(
+            varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :], axis=-1,
+        )
+        G_m, G_n = G_main
+        _, H_mn = eigh(G_m, G_n)
+        h_mn = H_mn.transpose(2, 0, 1)
+        hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
+        hGh_mn = np.squeeze(hGh_mn, axis=-1)
+        hGh_mn = np.real(hGh_mn)
+        hGh_mn = np.maximum(hGh_mn, 0)
+        denom_mn = np.sqrt(hGh_mn)
+        denom_mn = flooring_fn(denom_mn)
+        P = h_mn / denom_mn
+        P = P.transpose(1, 0, 2)
+        Y_main = P.conj() @ Y_main
+        Y_main = Y_main.transpose(1, 0, 2)
+
+        # Concat
+        Y_m, Y_n = np.split(Y_main, [1], axis=0)
+        Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
+        Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
 
     return Y

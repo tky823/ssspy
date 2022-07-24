@@ -6,7 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._update_spatial_model import update_by_ip1, update_by_iss1
+from ._update_spatial_model import update_by_ip1, update_by_iss1, update_by_iss2
 from ..linalg import eigh
 from ..algorithm import projection_back
 
@@ -1044,8 +1044,6 @@ class GaussILRMA(ILRMAbase):
             \end{cases}.
 
         """
-        n_sources = self.n_sources
-
         p = self.domain
         Y = self.output
 
@@ -1061,62 +1059,9 @@ class GaussILRMA(ILRMAbase):
 
         varphi = 1 / R
 
-        for m, n in self.pair_selector(n_sources):
-            # Split into main and sub
-            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
-            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
-            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
-                varphi, [m, m + 1, n, n + 1], axis=0
-            )
-            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
-            varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
-
-            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
-            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
-            YY_main = YY_main.transpose(2, 0, 1, 3)
-            YY_sub = YY_sub.transpose(1, 2, 0, 3)
-
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Sub
-            G_sub = np.mean(
-                varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
-            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
-            Q = Q.squeeze(axis=-1)
-            Q = Q.transpose(1, 0, 2)
-            QY = Q.conj() @ Y_main
-            Y_sub = Y_sub + QY.transpose(1, 0, 2)
-
-            # Main
-            G_main = np.mean(
-                varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            G_m, G_n = G_main
-            _, H_mn = eigh(G_m, G_n)
-            h_mn = H_mn.transpose(2, 0, 1)
-            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
-            hGh_mn = np.squeeze(hGh_mn, axis=-1)
-            hGh_mn = np.real(hGh_mn)
-            hGh_mn = np.maximum(hGh_mn, 0)
-            denom_mn = np.sqrt(hGh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            P = h_mn / denom_mn
-            P = P.transpose(1, 0, 2)
-            Y_main = P.conj() @ Y_main
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Concat
-            Y_m, Y_n = np.split(Y_main, [1], axis=0)
-            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
-
-        self.output = Y
+        self.output = update_by_iss2(
+            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
@@ -1766,8 +1711,6 @@ class TILRMA(ILRMAbase):
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
             \end{cases}.
         """
-        n_sources = self.n_sources
-
         p = self.domain
         nu = self.dof
 
@@ -1791,62 +1734,9 @@ class TILRMA(ILRMAbase):
 
         varphi = 1 / R_tilde
 
-        for m, n in self.pair_selector(n_sources):
-            # Split into main and sub
-            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
-            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
-            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
-                varphi, [m, m + 1, n, n + 1], axis=0
-            )
-            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
-            varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
-
-            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
-            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
-            YY_main = YY_main.transpose(2, 0, 1, 3)
-            YY_sub = YY_sub.transpose(1, 2, 0, 3)
-
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Sub
-            G_sub = np.mean(
-                varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
-            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
-            Q = Q.squeeze(axis=-1)
-            Q = Q.transpose(1, 0, 2)
-            QY = Q.conj() @ Y_main
-            Y_sub = Y_sub + QY.transpose(1, 0, 2)
-
-            # Main
-            G_main = np.mean(
-                varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            G_m, G_n = G_main
-            _, H_mn = eigh(G_m, G_n)
-            h_mn = H_mn.transpose(2, 0, 1)
-            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
-            hGh_mn = np.squeeze(hGh_mn, axis=-1)
-            hGh_mn = np.real(hGh_mn)
-            hGh_mn = np.maximum(hGh_mn, 0)
-            denom_mn = np.sqrt(hGh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            P = h_mn / denom_mn
-            P = P.transpose(1, 0, 2)
-            Y_main = P.conj() @ Y_main
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Concat
-            Y_m, Y_n = np.split(Y_main, [1], axis=0)
-            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
-
-        self.output = Y
+        self.output = update_by_iss2(
+            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
@@ -2481,8 +2371,6 @@ class GGDILRMA(ILRMAbase):
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
             \end{cases}.
         """
-        n_sources = self.n_sources
-
         p = self.domain
         beta = self.beta
 
@@ -2507,62 +2395,9 @@ class GGDILRMA(ILRMAbase):
 
         varphi = 1 / R_tilde
 
-        for m, n in self.pair_selector(n_sources):
-            # Split into main and sub
-            Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
-            Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
-            varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
-                varphi, [m, m + 1, n, n + 1], axis=0
-            )
-            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
-            varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
-
-            YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
-            YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
-            YY_main = YY_main.transpose(2, 0, 1, 3)
-            YY_sub = YY_sub.transpose(1, 2, 0, 3)
-
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Sub
-            G_sub = np.mean(
-                varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
-            Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
-            Q = Q.squeeze(axis=-1)
-            Q = Q.transpose(1, 0, 2)
-            QY = Q.conj() @ Y_main
-            Y_sub = Y_sub + QY.transpose(1, 0, 2)
-
-            # Main
-            G_main = np.mean(
-                varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
-                axis=-1,
-            )
-            G_m, G_n = G_main
-            _, H_mn = eigh(G_m, G_n)
-            h_mn = H_mn.transpose(2, 0, 1)
-            hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
-            hGh_mn = np.squeeze(hGh_mn, axis=-1)
-            hGh_mn = np.real(hGh_mn)
-            hGh_mn = np.maximum(hGh_mn, 0)
-            denom_mn = np.sqrt(hGh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            P = h_mn / denom_mn
-            P = P.transpose(1, 0, 2)
-            Y_main = P.conj() @ Y_main
-            Y_main = Y_main.transpose(1, 0, 2)
-
-            # Concat
-            Y_m, Y_n = np.split(Y_main, [1], axis=0)
-            Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
-
-        self.output = Y
+        self.output = update_by_iss2(
+            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
