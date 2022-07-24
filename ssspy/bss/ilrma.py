@@ -6,8 +6,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._update_spatial_model import update_by_ip1, update_by_iss1, update_by_iss2
-from ..linalg import eigh
+from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from ..algorithm import projection_back
 
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
@@ -792,9 +791,6 @@ class GaussILRMA(ILRMAbase):
             \frac{1}{\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}}
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
         """
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
         p = self.domain
         X, W = self.input, self.demix_filter
 
@@ -819,25 +815,7 @@ class GaussILRMA(ILRMAbase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        E = np.eye(n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))
-
-        for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]
-            U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]
-
-            WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)
-            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
-            wUw = np.real(wUw[..., 0])
-            wUw = np.maximum(wUw, 0)
-            denom = np.sqrt(wUw)
-            denom = self.flooring_fn(denom)
-            w_n_Hermite = w_n.conj() / denom
-            W[:, src_idx, :] = w_n_Hermite
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
@@ -918,8 +896,6 @@ class GaussILRMA(ILRMAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources = self.n_sources
-
         p = self.domain
 
         X, W = self.input, self.demix_filter
@@ -936,33 +912,16 @@ class GaussILRMA(ILRMAbase):
 
         varphi = 1 / R
 
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]
-            varphi_mn = varphi[(m, n), :, :]
-            Y_mn = self.separate(X, demix_filter=W_mn)
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
 
-            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip2(
+            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def update_spatial_model_iss1(self) -> None:
         p = self.domain
@@ -1567,8 +1526,6 @@ class TILRMA(ILRMAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources = self.n_sources
-
         nu = self.dof
         p = self.domain
 
@@ -1594,33 +1551,16 @@ class TILRMA(ILRMAbase):
 
         varphi = 1 / R_tilde
 
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]
-            varphi_mn = varphi[(m, n), :, :]
-            Y_mn = self.separate(X, demix_filter=W_mn)
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
 
-            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip2(
+            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def update_spatial_model_iss1(self) -> None:
         p = self.domain
@@ -2090,9 +2030,6 @@ class GGDILRMA(ILRMAbase):
             raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
 
     def update_spatial_model_ip1(self) -> None:
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
         p = self.domain
         beta = self.beta
 
@@ -2125,25 +2062,7 @@ class GGDILRMA(ILRMAbase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        E = np.eye(n_sources, n_channels)
-        E = np.tile(E, reps=(n_bins, 1, 1))
-
-        for src_idx in range(n_sources):
-            w_n_Hermite = W[:, src_idx, :]
-            U_n = U[:, src_idx, :, :]
-            e_n = E[:, src_idx, :]
-
-            WU = W @ U_n
-            w_n = np.linalg.solve(WU, e_n)
-            wUw = w_n[:, np.newaxis, :].conj() @ U_n @ w_n[:, :, np.newaxis]
-            wUw = np.real(wUw[..., 0])
-            wUw = np.maximum(wUw, 0)
-            denom = np.sqrt(wUw)
-            denom = self.flooring_fn(denom)
-            w_n_Hermite = w_n.conj() / denom
-            W[:, src_idx, :] = w_n_Hermite
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
@@ -2226,8 +2145,6 @@ class GGDILRMA(ILRMAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
-        n_sources = self.n_sources
-
         p = self.domain
         beta = self.beta
 
@@ -2253,33 +2170,16 @@ class GGDILRMA(ILRMAbase):
 
         varphi = 1 / R_tilde
 
-        for m, n in self.pair_selector(n_sources):
-            W_mn = W[:, (m, n), :]
-            varphi_mn = varphi[(m, n), :, :]
-            Y_mn = self.separate(X, demix_filter=W_mn)
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+        varphi = varphi.transpose(1, 0, 2)
+        varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
 
-            G_mn_YY = varphi_mn[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-            U_mn = np.mean(G_mn_YY, axis=-1)  # (2, n_bins, 2, 2)
-
-            U_m, U_n = U_mn
-            _, H_mn = eigh(U_m, U_n)  # (n_bins, 2, 2)
-            h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-            hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-            hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-            hUh_mn = np.real(hUh_mn)
-            hUh_mn = np.maximum(hUh_mn, 0)
-            denom_mn = np.sqrt(hUh_mn)
-            denom_mn = self.flooring_fn(denom_mn)
-            h_mn = h_mn / denom_mn
-            H_mn = h_mn.transpose(1, 2, 0)
-            W_mn_conj = W_mn.transpose(0, 2, 1).conj() @ H_mn
-
-            W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
-
-        self.demix_filter = W
+        self.demix_filter = update_by_ip2(
+            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def update_spatial_model_iss1(self) -> None:
         p = self.domain
