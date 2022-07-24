@@ -10,6 +10,10 @@ from ..linalg import eigh
 EPS = 1e-10
 
 
+def _identity(x: np.ndarray):
+    return x
+
+
 def update_by_ip1(
     demix_filter: np.ndarray,
     weighted_covariance: np.ndarray,
@@ -42,6 +46,9 @@ def update_by_ip1(
             Updated demixing filters. \
             The shape is (n_bins, n_sources, n_channels).
     """
+    if flooring_fn is None:
+        flooring_fn = _identity
+
     if overwrite:
         W = demix_filter
     else:
@@ -109,6 +116,9 @@ def update_by_ip2(
             Updated demixing filters. \
             The shape is (n_bins, n_sources, n_channels).
     """
+    if flooring_fn is None:
+        flooring_fn = _identity
+
     if pair_selector is None:
         pair_selector = functools.partial(sequential_pair_selector, sort=True)
 
@@ -173,6 +183,9 @@ def update_by_iss1(
             Updated spectrograms. \
             The shape is (n_sources, n_bins, n_frames).
     """
+    if flooring_fn is None:
+        flooring_fn = _identity
+
     Y = separated
     varphi = weight
 
@@ -227,6 +240,9 @@ def update_by_iss2(
             Updated spectrograms. \
             The shape is (n_sources, n_bins, n_frames).
     """
+    if flooring_fn is None:
+        flooring_fn = _identity
+
     if pair_selector is None:
         pair_selector = functools.partial(sequential_pair_selector, sort=True)
 
