@@ -8,6 +8,8 @@ from ssspy.bss._select_pair import sequential_pair_selector, combination_pair_se
 from ssspy.bss._update_spatial_model import (
     update_by_ip1,
     update_by_ip2,
+    update_by_iss1,
+    update_by_iss2,
 )
 
 parameters = [(31, 20)]
@@ -72,3 +74,47 @@ def test_update_by_ip2(
     W_updated = update_by_ip2(W, U, flooring_fn=flooring_fn, pair_selector=pair_selector)
 
     assert W_updated.shape == W.shape
+
+
+@pytest.mark.parametrize("n_bins, n_frames", parameters)
+@pytest.mark.parametrize("n_sources", parameters_n_sources)
+@pytest.mark.parametrize("flooring_fn", parameters_flooring_fn)
+def test_update_by_iss1(
+    n_bins: int,
+    n_frames: int,
+    n_sources: int,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]],
+):
+    rng = np.random.default_rng(42)
+
+    varphi = 1 / rng.random((n_sources, n_bins, n_frames))
+    real = rng.standard_normal((n_sources, n_bins, n_frames))
+    imag = rng.standard_normal((n_sources, n_bins, n_frames))
+    Y = real + 1j * imag
+
+    Y_updated = update_by_iss1(Y, varphi, flooring_fn=flooring_fn)
+
+    assert Y_updated.shape == Y.shape
+
+
+@pytest.mark.parametrize("n_bins, n_frames", parameters)
+@pytest.mark.parametrize("n_sources", parameters_n_sources)
+@pytest.mark.parametrize("flooring_fn", parameters_flooring_fn)
+@pytest.mark.parametrize("pair_selector", parameters_pair_selector)
+def test_update_by_iss2(
+    n_bins: int,
+    n_frames: int,
+    n_sources: int,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]],
+    pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]],
+):
+    rng = np.random.default_rng(42)
+
+    varphi = 1 / rng.random((n_sources, n_bins, n_frames))
+    real = rng.standard_normal((n_sources, n_bins, n_frames))
+    imag = rng.standard_normal((n_sources, n_bins, n_frames))
+    Y = real + 1j * imag
+
+    Y_updated = update_by_iss2(Y, varphi, flooring_fn=flooring_fn, pair_selector=pair_selector)
+
+    assert Y_updated.shape == Y.shape
