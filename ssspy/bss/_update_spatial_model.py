@@ -114,25 +114,24 @@ def update_by_ip2(
     else:
         W = demix_filter.copy()
 
-    U = weighted_covariance
+    U = weighted_covariance.transpose(1, 0, 2, 3)
 
     n_bins, n_sources, n_channels = W.shape
 
     for m, n in pair_selector(n_sources):
-        W_mn = W[:, np.newaxis, (m, n), :]  # (n_bins, 1, 2, n_channels)
-        U_mn = U[:, (m, n), :, :]  # (n_bins, 2, n_channels, n_channels)
+        W_mn = W[:, (m, n), :]  # (1, n_bins, 2, n_channels)
+        U_mn = U[(m, n), :, :, :]  # (2, n_bins, n_channels, n_channels)
 
-        V_mn = W_mn @ U_mn @ W_mn.transpose(0, 1, 3, 2).conj()  # (n_bins, 2, 2, 2)
-        V_mn = V_mn.transpose(1, 0, 2, 3)  # (2, n_bins, 2, 2)
+        V_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
 
         V_m, V_n = V_mn
         _, H_mn = eigh(V_m, V_n)  # (n_bins, 2, 2)
         h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-        hUh_mn = h_mn[:, :, np.newaxis, :].conj() @ U_mn @ h_mn[:, :, :, np.newaxis]
-        hUh_mn = np.squeeze(hUh_mn, axis=-1)  # (2, n_bins, 1)
-        hUh_mn = np.real(hUh_mn)
-        hUh_mn = np.maximum(hUh_mn, 0)
-        denom_mn = np.sqrt(hUh_mn)
+        hVh_mn = h_mn[:, :, np.newaxis, :].conj() @ V_mn @ h_mn[:, :, :, np.newaxis]
+        hVh_mn = np.squeeze(hVh_mn, axis=-1)  # (2, n_bins, 1)
+        hVh_mn = np.real(hVh_mn)
+        hVh_mn = np.maximum(hVh_mn, 0)
+        denom_mn = np.sqrt(hVh_mn)
         denom_mn = flooring_fn(denom_mn)
         h_mn = h_mn / denom_mn
         H_mn = h_mn.transpose(1, 2, 0)
