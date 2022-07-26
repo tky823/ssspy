@@ -321,7 +321,7 @@ class FastICAbase:
                     callback(self)
 
         self.output = self.separate(
-            self.whitened_input, demix_filter=self.demix_filter, should_whiten=False
+            self.whitened_input, demix_filter=self.demix_filter, whiten=False
         )
 
         return self.output
@@ -379,12 +379,10 @@ class FastICAbase:
         """
         raise NotImplementedError("Implement 'update_once' method.")
 
-    def separate(
-        self, input: np.ndarray, demix_filter: np.ndarray, should_whiten=True
-    ) -> np.ndarray:
+    def separate(self, input: np.ndarray, demix_filter: np.ndarray, whiten=True) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
-        If ``should_whiten=True``,
+        If ``whiten=True``,
 
         .. math::
             \boldsymbol{y}_{t}
@@ -405,7 +403,7 @@ class FastICAbase:
         :math:`\sum_{t}\boldsymbol{x}_{t}\boldsymbol{x}_{t}^{\mathsf{T}}`,
         respectively.
 
-        Otherwise (``should_whiten=False``),
+        Otherwise (``whiten=False``),
 
         .. math::
             \boldsymbol{y}_{t}
@@ -418,8 +416,8 @@ class FastICAbase:
             demix_filter (numpy.ndarray):
                 The demixing filters to separate ``input``.
                 The shape is (n_sources, n_channels).
-            should_whiten (bool):
-                If ``should_whiten=True``, whitening (sphering) is applied to ``input``.
+            whiten (bool):
+                If ``whiten=True``, whitening (sphering) is applied to ``input``.
                 Default: True.
 
         Returns:
@@ -427,7 +425,7 @@ class FastICAbase:
                 The separated signal in time-domain.
                 The shape is (n_sources, n_samples).
         """
-        if should_whiten:
+        if whiten:
             X = input
             XX_trans = np.mean(X[:, np.newaxis, :] * X[np.newaxis, :, :], axis=-1)
             lamb, Gamma = np.linalg.eigh(XX_trans)  # (n_channels,), (n_channels, n_channels)
@@ -457,7 +455,7 @@ class FastICAbase:
                 Computed loss.
         """
         Z, W = self.whitened_input, self.demix_filter
-        Y = self.separate(Z, demix_filter=W, should_whiten=False)
+        Y = self.separate(Z, demix_filter=W, whiten=False)
 
         loss = np.mean(self.contrast_fn(Y), axis=-1)
         loss = loss.sum()
@@ -844,7 +842,7 @@ class FastICA(FastICAbase):
             norm = np.linalg.norm(w_n)
             W[src_idx] = w_n / norm
 
-        Y = self.separate(Z, demix_filter=W, should_whiten=False)
+        Y = self.separate(Z, demix_filter=W, whiten=False)
 
         self.demix_filter = W
         self.output = Y
