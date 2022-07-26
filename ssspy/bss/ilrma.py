@@ -32,8 +32,8 @@ class ILRMAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
@@ -63,7 +63,7 @@ class ILRMAbase:
         callbacks: Optional[
             Union[Callable[["ILRMAbase"], None], List[Callable[["ILRMAbase"], None]]]
         ] = None,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -85,10 +85,10 @@ class ILRMAbase:
             self.callbacks = None
 
         self.input = None
-        self.should_apply_projection_back = should_apply_projection_back
+        self.use_projection_back = use_projection_back
 
-        if reference_id is None and should_apply_projection_back:
-            raise ValueError("Specify 'reference_id' if should_apply_projection_back=True.")
+        if reference_id is None and use_projection_back:
+            raise ValueError("Specify 'reference_id' if use_projection_back=True.")
         else:
             self.reference_id = reference_id
 
@@ -140,7 +140,7 @@ class ILRMAbase:
                 for callback in self.callbacks:
                     callback(self)
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             self.apply_projection_back()
 
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
@@ -152,10 +152,10 @@ class ILRMAbase:
         s = "ILRMA("
         s += "n_basis={n_basis}"
         s += ", partitioning={partitioning}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -496,7 +496,7 @@ class ILRMAbase:
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+        assert self.use_projection_back, "Set self.use_projection_back=True."
 
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
@@ -536,8 +536,8 @@ class GaussILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
@@ -565,7 +565,7 @@ class GaussILRMA(ILRMAbase):
             Union[Callable[["GaussILRMA"], None], List[Callable[["GaussILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -575,7 +575,7 @@ class GaussILRMA(ILRMAbase):
             partitioning=partitioning,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
             rng=rng,
@@ -600,10 +600,10 @@ class GaussILRMA(ILRMAbase):
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -1109,7 +1109,7 @@ class GaussILRMA(ILRMAbase):
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
-            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+            assert self.use_projection_back, "Set self.use_projection_back=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
@@ -1150,8 +1150,8 @@ class TILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
@@ -1180,7 +1180,7 @@ class TILRMA(ILRMAbase):
             Union[Callable[["TILRMA"], None], List[Callable[["TILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -1190,7 +1190,7 @@ class TILRMA(ILRMAbase):
             partitioning=partitioning,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
             rng=rng,
@@ -1217,10 +1217,10 @@ class TILRMA(ILRMAbase):
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -1768,7 +1768,7 @@ class TILRMA(ILRMAbase):
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
-            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+            assert self.use_projection_back, "Set self.use_projection_back=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
@@ -1809,8 +1809,8 @@ class GGDILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
@@ -1839,7 +1839,7 @@ class GGDILRMA(ILRMAbase):
             Union[Callable[["GGDILRMA"], None], List[Callable[["GGDILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -1849,7 +1849,7 @@ class GGDILRMA(ILRMAbase):
             partitioning=partitioning,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
             rng=rng,
@@ -1877,10 +1877,10 @@ class GGDILRMA(ILRMAbase):
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -2388,7 +2388,7 @@ class GGDILRMA(ILRMAbase):
         if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
-            assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+            assert self.use_projection_back, "Set self.use_projection_back=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)

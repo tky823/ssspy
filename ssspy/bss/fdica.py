@@ -43,8 +43,8 @@ class FDICAbase:
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the update algorithm \
@@ -65,7 +65,7 @@ class FDICAbase:
             Union[Callable[["FDICAbase"], None], List[Callable[["FDICAbase"], None]]]
         ] = None,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -88,10 +88,10 @@ class FDICAbase:
 
         self.input = None
         self.should_solve_permutation = should_solve_permutation
-        self.should_apply_projection_back = should_apply_projection_back
+        self.use_projection_back = use_projection_back
 
-        if reference_id is None and should_apply_projection_back:
-            raise ValueError("Specify 'reference_id' if should_apply_projection_back=True.")
+        if reference_id is None and use_projection_back:
+            raise ValueError("Specify 'reference_id' if use_projection_back=True.")
         else:
             self.reference_id = reference_id
 
@@ -127,10 +127,10 @@ class FDICAbase:
     def __repr__(self) -> str:
         s = "FDICA("
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -287,7 +287,7 @@ class FDICAbase:
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+        assert self.use_projection_back, "Set self.use_projection_back=True."
 
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
@@ -324,8 +324,8 @@ class GradFDICAbase(FDICAbase):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -348,7 +348,7 @@ class GradFDICAbase(FDICAbase):
             Union[Callable[["GradFDICAbase"], None], List[Callable[["GradFDICAbase"], None]]]
         ] = None,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -357,7 +357,7 @@ class GradFDICAbase(FDICAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -411,7 +411,7 @@ class GradFDICAbase(FDICAbase):
         if self.should_solve_permutation:
             self.solve_permutation()
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             self.apply_projection_back()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
@@ -422,10 +422,10 @@ class GradFDICAbase(FDICAbase):
         s = "GradFDICA("
         s += "step_size={step_size}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -469,8 +469,8 @@ class GradFDICA(GradFDICAbase):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -514,7 +514,7 @@ class GradFDICA(GradFDICAbase):
         ] = None,
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -525,7 +525,7 @@ class GradFDICA(GradFDICAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -537,10 +537,10 @@ class GradFDICA(GradFDICAbase):
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -633,8 +633,8 @@ class NaturalGradFDICA(GradFDICAbase):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -678,7 +678,7 @@ class NaturalGradFDICA(GradFDICAbase):
         ] = None,
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -689,7 +689,7 @@ class NaturalGradFDICA(GradFDICAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -701,10 +701,10 @@ class NaturalGradFDICA(GradFDICAbase):
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -798,8 +798,8 @@ class AuxFDICA(FDICAbase):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -846,7 +846,7 @@ class AuxFDICA(FDICAbase):
             Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
         ] = None,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -855,7 +855,7 @@ class AuxFDICA(FDICAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -911,7 +911,7 @@ class AuxFDICA(FDICAbase):
         if self.should_solve_permutation:
             self.solve_permutation()
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             self.apply_projection_back()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
@@ -922,10 +922,10 @@ class AuxFDICA(FDICAbase):
         s = "AuxFDICA("
         s += "algorithm_spatial={algorithm_spatial}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -1101,8 +1101,8 @@ class GradLaplaceFDICA(GradFDICA):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -1137,7 +1137,7 @@ class GradLaplaceFDICA(GradFDICA):
         ] = None,
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1176,7 +1176,7 @@ class GradLaplaceFDICA(GradFDICA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -1186,10 +1186,10 @@ class GradLaplaceFDICA(GradFDICA):
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -1225,8 +1225,8 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -1264,7 +1264,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         ] = None,
         is_holonomic: bool = False,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1303,7 +1303,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -1313,10 +1313,10 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -1355,8 +1355,8 @@ class AuxLaplaceFDICA(AuxFDICA):
         should_solve_permutation (bool):
             If ``should_solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
+        use_projection_back (bool):
+            If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
         should_record_loss (bool):
             Record the loss at each iteration of the gradient descent \
@@ -1378,7 +1378,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
         ] = None,
         should_solve_permutation: bool = True,
-        should_apply_projection_back: bool = True,
+        use_projection_back: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1396,7 +1396,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             pair_selector=pair_selector,
             callbacks=callbacks,
             should_solve_permutation=should_solve_permutation,
-            should_apply_projection_back=should_apply_projection_back,
+            use_projection_back=use_projection_back,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
@@ -1405,10 +1405,10 @@ class AuxLaplaceFDICA(AuxFDICA):
         s = "AuxLaplaceFDICA("
         s += "algorithm_spatial={algorithm_spatial}"
         s += ", should_solve_permutation={should_solve_permutation}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
+        s += ", use_projection_back={use_projection_back}"
         s += ", should_record_loss={should_record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.use_projection_back:
             s += ", reference_id={reference_id}"
 
         s += ")"
