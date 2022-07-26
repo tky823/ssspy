@@ -2225,7 +2225,7 @@ class GGDILRMA(ILRMAbase):
             TVbp = TV ** (beta / p)
             R_bar = Y2b * TVbp
 
-        varphi = 1 / R_bar
+        varphi = beta / (2 * R_bar)
 
         self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
 
