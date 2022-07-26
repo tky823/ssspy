@@ -1,5 +1,4 @@
 from typing import Optional, Union, List, Tuple, Callable, Iterable
-import itertools
 import functools
 
 import numpy as np
@@ -7,6 +6,7 @@ import numpy as np
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2
+from ._solve_permutation import correlation_based_permutation_solver
 from ..algorithm import projection_back
 
 __all__ = [
@@ -40,8 +40,8 @@ class FDICAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -64,7 +64,7 @@ class FDICAbase:
         callbacks: Optional[
             Union[Callable[["FDICAbase"], None], List[Callable[["FDICAbase"], None]]]
         ] = None,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -87,7 +87,7 @@ class FDICAbase:
             self.callbacks = None
 
         self.input = None
-        self.should_solve_permutation = should_solve_permutation
+        self.solve_permutation = solve_permutation
         self.use_projection_back = use_projection_back
 
         if reference_id is None and use_projection_back:
@@ -126,7 +126,7 @@ class FDICAbase:
 
     def __repr__(self) -> str:
         s = "FDICA("
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -238,52 +238,6 @@ class FDICAbase:
 
         return logdet
 
-    def solve_permutation(self) -> None:
-        r"""Solve permutaion of estimated spectrograms.
-
-        Group channels at each frequency bin according to correlations
-        between frequencies [#sawada2010underdetermined]_.
-
-        .. [#sawada2010underdetermined]
-            H. Sawada, S. Araki, and S. Makino,
-            "Underdetermined convolutive blind source separation \
-            via frequency bin-wise clustering and permutation alignment,"
-            in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
-        """
-        assert self.should_solve_permutation, "Set self.should_solve_permutation=True."
-
-        n_sources, n_bins = self.n_sources, self.n_bins
-        Y, W = self.output, self.demix_filter
-
-        permutations = list(itertools.permutations(range(n_sources)))
-
-        P = np.abs(Y).transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
-        norm = np.sqrt(np.sum(P ** 2, axis=1, keepdims=True))
-        norm = self.flooring_fn(norm)
-        P = P / norm
-        correlation = np.sum(P @ P.transpose(0, 2, 1), axis=(1, 2))
-        indices = np.argsort(correlation)
-
-        min_idx = indices[0]
-        P_criteria = P[min_idx]
-
-        for bin_idx in range(1, n_bins):
-            min_idx = indices[bin_idx]
-            P_max = None
-            perm_max = None
-
-            for perm in permutations:
-                P_perm = np.sum(P_criteria * P[min_idx, perm, :])
-
-                if P_max is None or P_perm > P_max:
-                    P_max = P_perm
-                    perm_max = perm
-
-            P_criteria = P_criteria + P[min_idx, perm_max, :]
-            W[min_idx, :, :] = W[min_idx, perm_max, :]
-
-        self.demix_filter = W
-
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
@@ -321,8 +275,8 @@ class GradFDICAbase(FDICAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -347,7 +301,7 @@ class GradFDICAbase(FDICAbase):
         callbacks: Optional[
             Union[Callable[["GradFDICAbase"], None], List[Callable[["GradFDICAbase"], None]]]
         ] = None,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -356,7 +310,7 @@ class GradFDICAbase(FDICAbase):
             contrast_fn=contrast_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -408,8 +362,12 @@ class GradFDICAbase(FDICAbase):
                 for callback in self.callbacks:
                     callback(self)
 
-        if self.should_solve_permutation:
-            self.solve_permutation()
+        if self.solve_permutation:
+            Y, W = self.output, self.demix_filter
+
+            self.demix_filter = correlation_based_permutation_solver(
+                Y, demix_filter=W, flooring_fn=self.flooring_fn
+            )
 
         if self.use_projection_back:
             self.apply_projection_back()
@@ -421,7 +379,7 @@ class GradFDICAbase(FDICAbase):
     def __repr__(self) -> str:
         s = "GradFDICA("
         s += "step_size={step_size}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -466,8 +424,8 @@ class GradFDICA(GradFDICAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -513,7 +471,7 @@ class GradFDICA(GradFDICAbase):
             Union[Callable[["GradFDICA"], None], List[Callable[["GradFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -524,7 +482,7 @@ class GradFDICA(GradFDICAbase):
             score_fn=score_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -536,7 +494,7 @@ class GradFDICA(GradFDICAbase):
         s = "GradFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -630,8 +588,8 @@ class NaturalGradFDICA(GradFDICAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -677,7 +635,7 @@ class NaturalGradFDICA(GradFDICAbase):
             Union[Callable[["NaturalGradFDICA"], None], List[Callable[["NaturalGradFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -688,7 +646,7 @@ class NaturalGradFDICA(GradFDICAbase):
             score_fn=score_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -700,7 +658,7 @@ class NaturalGradFDICA(GradFDICAbase):
         s = "NaturalGradFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -795,8 +753,8 @@ class AuxFDICA(FDICAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -845,7 +803,7 @@ class AuxFDICA(FDICAbase):
         callbacks: Optional[
             Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
         ] = None,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -854,7 +812,7 @@ class AuxFDICA(FDICAbase):
             contrast_fn=contrast_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -908,8 +866,12 @@ class AuxFDICA(FDICAbase):
                 for callback in self.callbacks:
                     callback(self)
 
-        if self.should_solve_permutation:
-            self.solve_permutation()
+        if self.solve_permutation:
+            Y, W = self.output, self.demix_filter
+
+            self.demix_filter = correlation_based_permutation_solver(
+                Y, demix_filter=W, flooring_fn=self.flooring_fn
+            )
 
         if self.use_projection_back:
             self.apply_projection_back()
@@ -921,7 +883,7 @@ class AuxFDICA(FDICAbase):
     def __repr__(self) -> str:
         s = "AuxFDICA("
         s += "algorithm_spatial={algorithm_spatial}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -1098,8 +1060,8 @@ class GradLaplaceFDICA(GradFDICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -1136,7 +1098,7 @@ class GradLaplaceFDICA(GradFDICA):
             Union[Callable[["GradLaplaceFDICA"], None], List[Callable[["GradLaplaceFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1175,7 +1137,7 @@ class GradLaplaceFDICA(GradFDICA):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1185,7 +1147,7 @@ class GradLaplaceFDICA(GradFDICA):
         s = "GradLaplaceFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -1222,8 +1184,8 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -1263,7 +1225,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             ]
         ] = None,
         is_holonomic: bool = False,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1302,7 +1264,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1312,7 +1274,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         s = "NaturalGradLaplaceFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -1352,8 +1314,8 @@ class AuxLaplaceFDICA(AuxFDICA):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_solve_permutation (bool):
-            If ``should_solve_permutation=True``, a permutation solver is used to align \
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
@@ -1377,7 +1339,7 @@ class AuxLaplaceFDICA(AuxFDICA):
         callbacks: Optional[
             Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
         ] = None,
-        should_solve_permutation: bool = True,
+        solve_permutation: bool = True,
         use_projection_back: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1395,7 +1357,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             flooring_fn=flooring_fn,
             pair_selector=pair_selector,
             callbacks=callbacks,
-            should_solve_permutation=should_solve_permutation,
+            solve_permutation=solve_permutation,
             use_projection_back=use_projection_back,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1404,7 +1366,7 @@ class AuxLaplaceFDICA(AuxFDICA):
     def __repr__(self) -> str:
         s = "AuxLaplaceFDICA("
         s += "algorithm_spatial={algorithm_spatial}"
-        s += ", should_solve_permutation={should_solve_permutation}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
