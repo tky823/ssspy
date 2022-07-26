@@ -35,9 +35,9 @@ class ILRMAbase:
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -64,7 +64,7 @@ class ILRMAbase:
             Union[Callable[["ILRMAbase"], None], List[Callable[["ILRMAbase"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
@@ -94,9 +94,9 @@ class ILRMAbase:
 
         self.rng = rng
 
-        self.should_record_loss = should_record_loss
+        self.record_loss = record_loss
 
-        if self.should_record_loss:
+        if self.record_loss:
             self.loss = []
         else:
             self.loss = None
@@ -121,7 +121,7 @@ class ILRMAbase:
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -132,7 +132,7 @@ class ILRMAbase:
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -153,7 +153,7 @@ class ILRMAbase:
         s += "n_basis={n_basis}"
         s += ", partitioning={partitioning}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -539,9 +539,9 @@ class GaussILRMA(ILRMAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -566,7 +566,7 @@ class GaussILRMA(ILRMAbase):
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
@@ -576,7 +576,7 @@ class GaussILRMA(ILRMAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
             rng=rng,
         )
@@ -601,7 +601,7 @@ class GaussILRMA(ILRMAbase):
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -1153,9 +1153,9 @@ class TILRMA(ILRMAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1181,7 +1181,7 @@ class TILRMA(ILRMAbase):
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
@@ -1191,7 +1191,7 @@ class TILRMA(ILRMAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
             rng=rng,
         )
@@ -1218,7 +1218,7 @@ class TILRMA(ILRMAbase):
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -1812,9 +1812,9 @@ class GGDILRMA(ILRMAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1840,7 +1840,7 @@ class GGDILRMA(ILRMAbase):
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
@@ -1850,7 +1850,7 @@ class GGDILRMA(ILRMAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
             rng=rng,
         )
@@ -1878,7 +1878,7 @@ class GGDILRMA(ILRMAbase):
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"

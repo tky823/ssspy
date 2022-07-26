@@ -22,9 +22,9 @@ class GradICAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
     """
 
@@ -36,7 +36,7 @@ class GradICAbase:
         callbacks: Optional[
             Union[Callable[["GradICAbase"], None], List[Callable[["GradICAbase"], None]]]
         ] = None,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         self.step_size = step_size
 
@@ -58,9 +58,9 @@ class GradICAbase:
             self.callbacks = None
 
         self.input = None
-        self.should_record_loss = should_record_loss
+        self.record_loss = record_loss
 
-        if self.should_record_loss:
+        if self.record_loss:
             self.loss = []
         else:
             self.loss = None
@@ -85,7 +85,7 @@ class GradICAbase:
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -96,7 +96,7 @@ class GradICAbase:
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -111,7 +111,7 @@ class GradICAbase:
     def __repr__(self) -> str:
         s = "GradICA("
         s += "step_size={step_size}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -235,9 +235,9 @@ class FastICAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each of the fixed-point iteration \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
     """
 
@@ -249,7 +249,7 @@ class FastICAbase:
         callbacks: Optional[
             Union[Callable[["FastICAbase"], None], List[Callable[["FastICAbase"], None]]]
         ] = None,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         if contrast_fn is None:
             raise ValueError("Specify contrast function.")
@@ -274,9 +274,9 @@ class FastICAbase:
             self.callbacks = None
 
         self.input = None
-        self.should_record_loss = should_record_loss
+        self.record_loss = record_loss
 
-        if self.should_record_loss:
+        if self.record_loss:
             self.loss = []
         else:
             self.loss = None
@@ -301,7 +301,7 @@ class FastICAbase:
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -312,7 +312,7 @@ class FastICAbase:
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -328,7 +328,7 @@ class FastICAbase:
 
     def __repr__(self) -> str:
         s = "FastICA("
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -485,9 +485,9 @@ class GradICA(GradICAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -517,14 +517,14 @@ class GradICA(GradICAbase):
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         super().__init__(
             step_size=step_size,
             contrast_fn=contrast_fn,
             score_fn=score_fn,
             callbacks=callbacks,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
         )
 
         self.is_holonomic = is_holonomic
@@ -533,7 +533,7 @@ class GradICA(GradICAbase):
         s = "GradICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -609,9 +609,9 @@ class NaturalGradICA(GradICAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -645,14 +645,14 @@ class NaturalGradICA(GradICAbase):
             Union[Callable[["GradICA"], None], List[Callable[["GradICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         super().__init__(
             step_size=step_size,
             contrast_fn=contrast_fn,
             score_fn=score_fn,
             callbacks=callbacks,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
         )
 
         self.is_holonomic = is_holonomic
@@ -661,7 +661,7 @@ class NaturalGradICA(GradICAbase):
         s = "NaturalGradICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -758,9 +758,9 @@ class FastICA(FastICAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each of the fixed-point iteration \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -797,14 +797,14 @@ class FastICA(FastICAbase):
         callbacks: Optional[
             Union[Callable[["FastICA"], None], List[Callable[["FastICA"], None]]]
         ] = None,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
             score_fn=score_fn,
             d_score_fn=d_score_fn,
             callbacks=callbacks,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
         )
 
     def update_once(self) -> None:
@@ -867,9 +867,9 @@ class GradLaplaceICA(GradICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -891,7 +891,7 @@ class GradLaplaceICA(GradICA):
             Union[Callable[["GradLaplaceICA"], None], List[Callable[["GradLaplaceICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         def contrast_fn(input):
             return np.abs(input)
@@ -905,14 +905,14 @@ class GradLaplaceICA(GradICA):
             score_fn=score_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
         )
 
     def __repr__(self) -> str:
         s = "GradLaplaceICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -980,9 +980,9 @@ class NaturalGradLaplaceICA(NaturalGradICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
@@ -1007,7 +1007,7 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             ]
         ] = None,
         is_holonomic: bool = False,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
     ) -> None:
         def contrast_fn(input):
             return np.abs(input)
@@ -1021,14 +1021,14 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             score_fn=score_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
         )
 
     def __repr__(self) -> str:
         s = "NaturalGradLaplaceICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)

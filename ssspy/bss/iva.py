@@ -43,9 +43,9 @@ class IVAbase:
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -66,7 +66,7 @@ class IVAbase:
             Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         if flooring_fn is None:
@@ -89,9 +89,9 @@ class IVAbase:
         else:
             self.reference_id = reference_id
 
-        self.should_record_loss = should_record_loss
+        self.record_loss = record_loss
 
-        if self.should_record_loss:
+        if self.record_loss:
             self.loss = []
         else:
             self.loss = None
@@ -121,7 +121,7 @@ class IVAbase:
     def __repr__(self) -> str:
         s = "IVA("
         s += "use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -274,9 +274,9 @@ class GradIVAbase(IVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -296,14 +296,14 @@ class GradIVAbase(IVAbase):
         ] = None,
         is_holonomic: bool = False,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
         self.step_size = step_size
@@ -340,7 +340,7 @@ class GradIVAbase(IVAbase):
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -351,7 +351,7 @@ class GradIVAbase(IVAbase):
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -371,7 +371,7 @@ class GradIVAbase(IVAbase):
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -394,9 +394,9 @@ class FastIVAbase(IVAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
     """
 
@@ -409,21 +409,21 @@ class FastIVAbase(IVAbase):
             Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
     def __repr__(self) -> str:
         s = "FastIVA("
         s += "use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -478,9 +478,9 @@ class AuxIVAbase(IVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -498,14 +498,14 @@ class AuxIVAbase(IVAbase):
             Union[Callable[["AuxIVAbase"], None], List[Callable[["AuxIVAbase"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
         self.contrast_fn = contrast_fn
@@ -532,7 +532,7 @@ class AuxIVAbase(IVAbase):
     def __repr__(self) -> str:
         s = "AuxIVA("
         s += "use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -571,9 +571,9 @@ class GradIVA(GradIVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -612,7 +612,7 @@ class GradIVA(GradIVAbase):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
@@ -623,7 +623,7 @@ class GradIVA(GradIVAbase):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -713,9 +713,9 @@ class NaturalGradIVA(GradIVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -754,7 +754,7 @@ class NaturalGradIVA(GradIVAbase):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
@@ -765,7 +765,7 @@ class NaturalGradIVA(GradIVAbase):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -852,9 +852,9 @@ class FastIVA(FastIVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``. \
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back. \
@@ -912,14 +912,14 @@ class FastIVA(FastIVAbase):
             Union[Callable[["FastIVA"], None], List[Callable[["FastIVA"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -958,7 +958,7 @@ class FastIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -969,7 +969,7 @@ class FastIVA(FastIVAbase):
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -987,7 +987,7 @@ class FastIVA(FastIVAbase):
     def __repr__(self) -> str:
         s = "FastIVA("
         s += "use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -1049,9 +1049,9 @@ class FasterIVA(FastIVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1074,14 +1074,14 @@ class FasterIVA(FastIVAbase):
             Union[Callable[["FasterIVA"], None], List[Callable[["FasterIVA"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
         if contrast_fn is None:
@@ -1114,7 +1114,7 @@ class FasterIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -1125,7 +1125,7 @@ class FasterIVA(FastIVAbase):
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -1143,7 +1143,7 @@ class FasterIVA(FastIVAbase):
     def __repr__(self) -> str:
         s = "FasterIVA("
         s += "use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -1205,9 +1205,9 @@ class AuxIVA(AuxIVAbase):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1245,7 +1245,7 @@ class AuxIVA(AuxIVAbase):
             Union[Callable[["AuxIVA"], None], List[Callable[["AuxIVA"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ):
         super().__init__(
@@ -1254,7 +1254,7 @@ class AuxIVA(AuxIVAbase):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -1287,7 +1287,7 @@ class AuxIVA(AuxIVAbase):
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -1298,7 +1298,7 @@ class AuxIVA(AuxIVAbase):
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -1318,7 +1318,7 @@ class AuxIVA(AuxIVAbase):
         s = "AuxIVA("
         s += "algorithm_spatial={algorithm_spatial}"
         s += ", use_projection_back={use_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", record_loss={record_loss}"
 
         if self.use_projection_back:
             s += ", reference_id={reference_id}"
@@ -1625,9 +1625,9 @@ class GradLaplaceIVA(GradIVA):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1657,7 +1657,7 @@ class GradLaplaceIVA(GradIVA):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -1696,7 +1696,7 @@ class GradLaplaceIVA(GradIVA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -1762,7 +1762,7 @@ class GradGaussIVA(GradIVA):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -1805,7 +1805,7 @@ class GradGaussIVA(GradIVA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -1867,9 +1867,9 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -1902,7 +1902,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -1941,7 +1941,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -2010,7 +2010,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
         ] = None,
         is_holonomic: bool = True,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -2053,7 +2053,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             callbacks=callbacks,
             is_holonomic=is_holonomic,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -2116,9 +2116,9 @@ class AuxLaplaceIVA(AuxIVA):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -2148,7 +2148,7 @@ class AuxLaplaceIVA(AuxIVA):
             Union[Callable[["AuxLaplaceIVA"], None], List[Callable[["AuxLaplaceIVA"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ):
         def contrast_fn(y):
@@ -2165,7 +2165,7 @@ class AuxLaplaceIVA(AuxIVA):
             pair_selector=pair_selector,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -2198,9 +2198,9 @@ class AuxGaussIVA(AuxIVA):
         use_projection_back (bool):
             If ``use_projection_back=True``, the projection back is applied to \
             estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -2230,7 +2230,7 @@ class AuxGaussIVA(AuxIVA):
             Union[Callable[["AuxGaussIVA"], None], List[Callable[["AuxGaussIVA"], None]]]
         ] = None,
         use_projection_back: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ):
         def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -2272,7 +2272,7 @@ class AuxGaussIVA(AuxIVA):
             pair_selector=pair_selector,
             callbacks=callbacks,
             use_projection_back=use_projection_back,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
