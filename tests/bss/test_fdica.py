@@ -54,9 +54,7 @@ def test_grad_fdica_base(
         denominator = np.maximum(np.abs(y), 1e-10)
         return y / denominator
 
-    fdica = GradFDICAbase(
-        contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
-    )
+    fdica = GradFDICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
 
     print(fdica)
 
