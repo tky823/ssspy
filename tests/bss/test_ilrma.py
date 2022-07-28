@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
-from ssspy.bss.ilrma import GaussILRMA, TILRMA, GGDILRMA
+from ssspy.bss.ilrma import ILRMAbase, GaussILRMA, TILRMA, GGDILRMA
 from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
@@ -21,6 +21,7 @@ parameters_dof = [1, 100]
 parameters_beta = [0.5, 1.5]
 parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_ilrma_base = [4, 3]
 parameters_ilrma_latent = [
     (
         2,
@@ -48,6 +49,21 @@ parameters_ilrma_wo_latent = [
 ]
 parameters_normalization_latent = [True, False, "power"]
 parameters_normalization_wo_latent = [True, False, "power", "projection_back"]
+
+
+@pytest.mark.parametrize(
+    "n_basis", parameters_ilrma_base,
+)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+def test_ilrma_base(
+    n_basis: int,
+    callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
+):
+    ilrma = ILRMAbase(
+        n_basis, partitioning=True, callbacks=callbacks, rng=np.random.default_rng(42),
+    )
+
+    print(ilrma)
 
 
 @pytest.mark.parametrize(
