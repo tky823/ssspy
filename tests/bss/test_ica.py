@@ -3,7 +3,8 @@ from typing import Optional, Union, Callable, List, Dict, Any
 import pytest
 import numpy as np
 
-from ssspy.bss.ica import GradICA, NaturalGradICA, GradLaplaceICA, NaturalGradLaplaceICA
+from ssspy.bss.ica import GradICAbase, GradICA, GradLaplaceICA
+from ssspy.bss.ica import NaturalGradICA, NaturalGradLaplaceICA
 from ssspy.bss.ica import FastICA
 from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
@@ -21,6 +22,24 @@ parameters_fast_ica = [
     (3, dummy_function, {"demix_filter": -np.eye(3)}),
     (2, [DummyCallback(), dummy_function], {"demix_filter": None}),
 ]
+
+
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+def test_grad_ica_base(
+    n_sources: int,
+    callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
+    is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
+):
+    def contrast_fn(x):
+        return np.log(1 + np.exp(x))
+
+    def score_fn(x):
+        return 1 / (1 + np.exp(-x))
+
+    ica = GradICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+
+    print(ica)
 
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
@@ -49,10 +68,11 @@ def test_grad_ica(
     ica = GradICA(
         contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
     )
-
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+
+    print(ica)
 
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
@@ -81,10 +101,11 @@ def test_natural_grad_ica(
     ica = NaturalGradICA(
         contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
     )
-
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+
+    print(ica)
 
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
@@ -109,6 +130,8 @@ def test_grad_laplace_ica(
 
     assert waveform_mix.shape == waveform_est.shape
 
+    print(ica)
+
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
 def test_natural_grad_laplace_ica(
@@ -131,6 +154,8 @@ def test_natural_grad_laplace_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+
+    print(ica)
 
 
 @pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_fast_ica)
@@ -162,7 +187,8 @@ def test_fast_ica(
     ica = FastICA(
         contrast_fn=contrast_fn, score_fn=score_fn, d_score_fn=d_score_fn, callbacks=callbacks
     )
-
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+
+    print(ica)

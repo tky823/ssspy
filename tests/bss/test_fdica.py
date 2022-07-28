@@ -4,14 +4,9 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
-from ssspy.bss.fdica import (
-    GradFDICA,
-    NaturalGradFDICA,
-    GradLaplaceFDICA,
-    NaturalGradLaplaceFDICA,
-    AuxFDICA,
-    AuxLaplaceFDICA,
-)
+from ssspy.bss.fdica import GradFDICAbase, GradFDICA, GradLaplaceFDICA
+from ssspy.bss.fdica import NaturalGradFDICA, NaturalGradLaplaceFDICA
+from ssspy.bss.fdica import AuxFDICA, AuxLaplaceFDICA
 from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
@@ -41,6 +36,27 @@ parameters_aux_fdica = [
     ),
     (2, "IP2", [DummyCallback(), dummy_function], {"demix_filter": None}),
 ]
+
+
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+def test_grad_fdica_base(
+    n_sources: int,
+    callbacks: Optional[Union[Callable[[GradFDICA], None], List[Callable[[GradFDICA], None]]]],
+    is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    def contrast_fn(y):
+        return 2 * np.abs(y)
+
+    def score_fn(y):
+        denominator = np.maximum(np.abs(y), 1e-10)
+        return y / denominator
+
+    fdica = GradFDICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+
+    print(fdica)
 
 
 @pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
