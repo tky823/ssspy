@@ -4,17 +4,12 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
+from ssspy.bss.iva import FastIVAbase, FastIVA, FasterIVA
+from ssspy.bss.iva import GradIVAbase, GradIVA, GradLaplaceIVA, GradGaussIVA
+from ssspy.bss.iva import NaturalGradIVA, NaturalGradLaplaceIVA, NaturalGradGaussIVA
 from ssspy.bss.iva import (
-    FastIVAbase,
-    GradIVA,
-    NaturalGradIVA,
-    FastIVA,
-    FasterIVA,
+    AuxIVAbase,
     AuxIVA,
-    GradLaplaceIVA,
-    GradGaussIVA,
-    NaturalGradLaplaceIVA,
-    NaturalGradGaussIVA,
     AuxLaplaceIVA,
     AuxGaussIVA,
 )
@@ -81,6 +76,50 @@ def test_fast_iva_base(
     np.random.seed(111)
 
     iva = FastIVAbase(callbacks=callbacks)
+
+    print(iva)
+
+
+@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+def test_grad_iva_base(
+    n_sources: int,
+    callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
+    is_holonomic: bool,
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    def contrast_fn(y: np.ndarray) -> np.ndarray:
+        r"""Contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_bins, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.linalg.norm(y, axis=1)
+
+    def score_fn(y) -> np.ndarray:
+        r"""Score function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_bins, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_bins, n_frames).
+        """
+        norm = np.linalg.norm(y, axis=1, keepdims=True)
+        norm = np.maximum(norm, 1e-10)
+        return y / norm
+
+    iva = GradIVAbase(
+        contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
+    )
 
     print(iva)
 
@@ -337,6 +376,49 @@ def test_faster_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(iva)
+
+
+@pytest.mark.parametrize(
+    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
+)
+def test_aux_iva_base(
+    n_sources: int,
+    sisec2010_tag: str,
+    algorithm_spatial: str,
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    def contrast_fn(y: np.ndarray) -> np.ndarray:
+        r"""Contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_bins, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.linalg.norm(y, axis=1)
+
+    def d_contrast_fn(y) -> np.ndarray:
+        r"""Derivative of contrast function.
+
+        Args:
+            y (np.ndarray):
+                The shape is (n_sources, n_frames).
+
+        Returns:
+            np.ndarray:
+                The shape is (n_sources, n_frames).
+        """
+        return 2 * np.ones_like(y)
+
+    iva = AuxIVAbase(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn, callbacks=callbacks)
 
     print(iva)
 
