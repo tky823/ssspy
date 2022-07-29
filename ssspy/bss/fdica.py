@@ -5,7 +5,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._update_spatial_model import update_by_ip1, update_by_ip2
+from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from ._solve_permutation import correlation_based_permutation_solver
 from ..algorithm import projection_back
 
@@ -1018,21 +1018,23 @@ class AuxFDICA(FDICAbase):
         At each iteration, we update for all pairs of :math:`m`
         and :math:`n` (:math:`m<n`).
         """
+        n_sources = self.n_sources
+
         X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
 
-        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
-        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
-        Y_abs = np.abs(Y)
-        denom = self.flooring_fn(2 * Y_abs)
-        varphi = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
-        varphi = varphi.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
-        GXX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
-        U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
+        for m, n in self.pair_selector(n_sources):
+            W_mn = W[:, (m, n), :]
+            Y_mn = self.separate(X, demix_filter=W_mn)
 
-        self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
-        )
+            Y_mn_abs = np.abs(Y_mn)
+            denom_mn = self.flooring_fn(2 * Y_mn_abs)
+            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
+
+            W[:, (m, n), :] = update_by_ip2_one_pair(
+                Y_mn, demix_filter_pair=W_mn, weight_pair=weight_mn, flooring_fn=self.flooring_fn,
+            )
+
+        self.demix_filter = W
 
 
 class GradLaplaceFDICA(GradFDICA):
