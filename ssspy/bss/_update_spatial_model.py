@@ -132,7 +132,7 @@ def update_by_ip2(
     n_bins, n_sources, n_channels = W.shape
 
     for m, n in pair_selector(n_sources):
-        W_mn = W[:, (m, n), :]  # (1, n_bins, 2, n_channels)
+        W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
         U_mn = U[(m, n), :, :, :]  # (2, n_bins, n_channels, n_channels)
 
         V_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
@@ -305,3 +305,66 @@ def update_by_iss2(
         Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
 
     return Y
+
+
+def update_by_ip2_one_pair(
+    separated_pair: np.ndarray,
+    demix_filter_pair: np.ndarray,
+    weight_pair: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+) -> np.ndarray:
+    r"""Update demixing filters by pairwise iterative projection.
+
+    Args:
+        separated_pair (numpy.ndarray):
+            Separated spectrograms. \
+            The shape is (2, n_bins, n_frames).
+        demix_filter_pair (numpy.ndarray):
+            Demixing filters to be updated. \
+            The shape is (n_bins, 2, n_channels).
+        weight_pair (numpy.ndarray):
+            Weights of covariance at each frame. \
+            (2, n_bins, n_frames)
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used. \
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+
+    Returns:
+        numpy.ndarray:
+            Updated demixing filter pair. \
+            The shape is (n_bins, 2, n_channels).
+    """
+    if flooring_fn is None:
+        flooring_fn = _identity
+
+    W = demix_filter_pair
+    Y = separated_pair
+    varphi = weight_pair
+
+    YY_Hermite = Y[:, np.newaxis, :, :] * Y[np.newaxis, :, :, :].conj()
+    YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
+
+    G_YY = varphi[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
+    V = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
+
+    V_m, V_n = V
+    _, H = eigh(V_m, V_n)  # (n_bins, 2, 2)
+    h = H.transpose(2, 0, 1)  # (2, n_bins, 2)
+    hVh = h[:, :, np.newaxis, :].conj() @ V @ h[:, :, :, np.newaxis]
+    hVh = np.squeeze(hVh, axis=-1)  # (2, n_bins, 1)
+    hVh = np.real(hVh)
+    hVh = np.maximum(hVh, 0)
+    denom = np.sqrt(hVh)
+    denom = flooring_fn(denom)
+    h = h / denom
+    H = h.transpose(1, 2, 0)
+    W_conj = W.transpose(0, 2, 1).conj() @ H
+
+    W = W_conj.transpose(0, 2, 1).conj()
+
+    return W
