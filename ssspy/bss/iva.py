@@ -1483,9 +1483,6 @@ class AuxIVA(AuxIVAbase):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
 
-            YY_Hermite = Y_mn[:, np.newaxis, :, :] * Y_mn[np.newaxis, :, :, :].conj()
-            YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)
-
             Y_mn_abs = np.linalg.norm(Y_mn, axis=1)
             denom_mn = self.flooring_fn(2 * Y_mn_abs)
             weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
@@ -1496,6 +1493,8 @@ class AuxIVA(AuxIVAbase):
                 weight_pair=weight_mn[:, np.newaxis, :],
                 flooring_fn=self.flooring_fn,
             )
+
+        self.demix_filter = W
 
     def update_once_iss1(self) -> None:
         Y = self.output
@@ -2262,7 +2261,7 @@ class AuxGaussIVA(AuxIVA):
 
             return n_bins * np.log(alpha) + (norm ** 2) / alpha
 
-        def d_contrast_fn(y: np.ndarray) -> np.ndarray:
+        def d_contrast_fn(y: np.ndarray, variance: np.ndarray = None) -> np.ndarray:
             r"""
             Args:
                 y (numpy.ndarray):
@@ -2274,7 +2273,12 @@ class AuxGaussIVA(AuxIVA):
                     Computed contrast function.
                     The shape is (n_sources, n_frames).
             """
-            return 2 * y / self.variance
+            if variance is None:
+                alpha = self.variance
+            else:
+                alpha = variance
+
+            return 2 * y / alpha
 
         super().__init__(
             algorithm_spatial=algorithm_spatial,
@@ -2309,6 +2313,30 @@ class AuxGaussIVA(AuxIVA):
         self.update_source_model()
 
         super().update_once()
+
+    def update_once_ip2(self) -> None:
+        n_sources = self.n_sources
+
+        X, W = self.input, self.demix_filter
+        R = self.variance
+
+        for m, n in self.pair_selector(n_sources):
+            W_mn = W[:, (m, n), :]
+            Y_mn = self.separate(X, demix_filter=W_mn)
+            R_mn = R[(m, n), :]
+
+            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)
+            denom_mn = self.flooring_fn(2 * Y_mn_abs)
+            weight_mn = self.d_contrast_fn(Y_mn_abs, variance=R_mn) / denom_mn
+
+            W[:, (m, n), :] = update_by_ip2_one_pair(
+                Y_mn,
+                demix_filter_pair=W_mn,
+                weight_pair=weight_mn[:, np.newaxis, :],
+                flooring_fn=self.flooring_fn,
+            )
+
+        self.demix_filter = W
 
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution.
