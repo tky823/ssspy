@@ -2315,6 +2315,81 @@ class AuxGaussIVA(AuxIVA):
         super().update_once()
 
     def update_once_ip2(self) -> None:
+        r"""Update demixing filters once using pairwise iterative projection.
+
+        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
+            \boldsymbol{V}_{in}^{(m,n)}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
+            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+
+        where
+
+        .. math::
+            \boldsymbol{y}_{ij}^{(m,n)}
+            = \left(
+            \begin{array}{c}
+                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+            \end{array}
+            \right).
+
+        Compute generalized eigenvectors of
+        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+
+        .. math::
+            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            G(\vec{\boldsymbol{y}}_{jn})
+            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
+            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+            &= G(\vec{\boldsymbol{y}}_{jn}).
+
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        and :math:`\boldsymbol{h}_{in}`.
+
+        .. math::
+            \boldsymbol{h}_{im}
+            &\leftarrow\frac{\boldsymbol{h}_{im}}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{h}_{im}}}, \\
+            \boldsymbol{h}_{in}
+            &\leftarrow\frac{\boldsymbol{h}_{in}}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{h}_{in}}}.
+
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        simultaneously.
+
+        .. math::
+            (
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )\leftarrow(
+            \begin{array}{cc}
+                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+            \end{array}
+            )(
+            \begin{array}{cc}
+                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+            \end{array}
+            )
+
+        At each iteration, we update for all pairs of :math:`m`
+        and :math:`n` (:math:`m<n`).
+        """
         n_sources = self.n_sources
 
         X, W = self.input, self.demix_filter
