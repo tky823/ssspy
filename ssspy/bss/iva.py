@@ -517,7 +517,7 @@ class FastIVAbase(IVAbase):
         X, Z = self.input, self.whitened_input
         W = self.demix_filter
 
-        Y = self.separate(Z, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
         Y_scaled = projection_back(Y, reference=X, reference_id=reference_id)
 
         Z = Z.transpose(1, 0, 2)
