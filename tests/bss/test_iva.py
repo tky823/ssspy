@@ -20,7 +20,7 @@ max_samples = 8000
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
-n_iter = 5
+n_iter = 3
 
 parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
