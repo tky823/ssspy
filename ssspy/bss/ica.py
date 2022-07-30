@@ -2,6 +2,8 @@ from typing import Optional, Union, List, Callable
 
 import numpy as np
 
+from ..transform import whiten
+
 __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGradLaplaceICA"]
 
 
@@ -321,14 +323,14 @@ class FastICAbase:
                     callback(self)
 
         self.output = self.separate(
-            self.whitened_input, demix_filter=self.demix_filter, whiten=False
+            self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
         )
 
         return self.output
 
     def __repr__(self) -> str:
         s = "FastICA("
-        s += ", record_loss={record_loss}"
+        s += "record_loss={record_loss}"
         s += ")"
 
         return s.format(**self.__dict__)
@@ -362,27 +364,24 @@ class FastICAbase:
                 # To avoid overwriting ``demix_filter`` given by keyword arguments.
                 W = self.demix_filter.copy()
 
-        XX_trans = np.mean(X[:, np.newaxis, :] * X[np.newaxis, :, :], axis=-1)
-        lamb, Gamma = np.linalg.eigh(XX_trans)  # (n_channels,), (n_channels, n_channels)
-        Lamb = np.diag(1 / np.sqrt(lamb))
-        P = Lamb @ Gamma.transpose(1, 0)
-        Z = P @ X
+        Z = whiten(X)
 
-        self.proj_matrix = P
         self.whitened_input = Z
         self.demix_filter = W
 
-        self.output = self.separate(Z, demix_filter=W)
+        self.output = self.separate(Z, demix_filter=W, use_whitening=False)
 
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
         raise NotImplementedError("Implement 'update_once' method.")
 
-    def separate(self, input: np.ndarray, demix_filter: np.ndarray, whiten=True) -> np.ndarray:
+    def separate(
+        self, input: np.ndarray, demix_filter: np.ndarray, use_whitening=True
+    ) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
-        If ``whiten=True``,
+        If ``use_whitening=True``,
 
         .. math::
             \boldsymbol{y}_{t}
@@ -403,7 +402,7 @@ class FastICAbase:
         :math:`\sum_{t}\boldsymbol{x}_{t}\boldsymbol{x}_{t}^{\mathsf{T}}`,
         respectively.
 
-        Otherwise (``whiten=False``),
+        Otherwise (``use_whitening=False``),
 
         .. math::
             \boldsymbol{y}_{t}
@@ -416,8 +415,8 @@ class FastICAbase:
             demix_filter (numpy.ndarray):
                 The demixing filters to separate ``input``.
                 The shape is (n_sources, n_channels).
-            whiten (bool):
-                If ``whiten=True``, whitening (sphering) is applied to ``input``.
+            use_whitening (bool):
+                If ``use_whitening=True``, use_whitening (sphering) is applied to ``input``.
                 Default: True.
 
         Returns:
@@ -425,13 +424,8 @@ class FastICAbase:
                 The separated signal in time-domain.
                 The shape is (n_sources, n_samples).
         """
-        if whiten:
-            X = input
-            XX_trans = np.mean(X[:, np.newaxis, :] * X[np.newaxis, :, :], axis=-1)
-            lamb, Gamma = np.linalg.eigh(XX_trans)  # (n_channels,), (n_channels, n_channels)
-            Lamb = np.diag(1 / np.sqrt(lamb))
-            proj_matrix = Lamb @ Gamma.transpose(1, 0)
-            whitened_input = proj_matrix @ X
+        if use_whitening:
+            whitened_input = whiten(input)
         else:
             whitened_input = input
 
@@ -455,7 +449,7 @@ class FastICAbase:
                 Computed loss.
         """
         Z, W = self.whitened_input, self.demix_filter
-        Y = self.separate(Z, demix_filter=W, whiten=False)
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         loss = np.mean(self.contrast_fn(Y), axis=-1)
         loss = loss.sum()
@@ -842,7 +836,7 @@ class FastICA(FastICAbase):
             norm = np.linalg.norm(w_n)
             W[src_idx] = w_n / norm
 
-        Y = self.separate(Z, demix_filter=W, whiten=False)
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         self.demix_filter = W
         self.output = Y
