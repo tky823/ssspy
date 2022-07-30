@@ -55,13 +55,9 @@ parameters_aux_iva = [
 ]
 
 
-@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_fast_iva)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_fast_iva_base(
-    n_sources: int,
-    sisec2010_tag: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -70,14 +66,11 @@ def test_fast_iva_base(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_iva_base(
-    n_sources: int,
     callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
     is_holonomic: bool,
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
