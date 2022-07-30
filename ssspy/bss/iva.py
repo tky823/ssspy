@@ -13,6 +13,7 @@ from ._update_spatial_model import (
 )
 from ..linalg import eigh
 from ..algorithm import projection_back
+from ..transform import whiten
 
 __all__ = [
     "GradIVA",
@@ -437,6 +438,52 @@ class FastIVAbase(IVAbase):
 
         return s.format(**self.__dict__)
 
+    def _reset(self, **kwargs) -> None:
+        super()._reset(**kwargs)
+
+        X, W = self.input, self.demix_filter
+
+        Z = whiten(X)
+
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
+
+        self.whitened_input = Z
+        self.output = Y
+
+    def separate(
+        self, input: np.ndarray, demix_filter: np.ndarray, use_whitening: bool = True
+    ) -> np.ndarray:
+        r"""Separate ``input`` using ``demixing_filter``.
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            = \boldsymbol{W}_{i}\boldsymbol{x}_{ij}
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+            demix_filter (numpy.ndarray):
+                The demixing filters to separate ``input``. \
+                The shape is (n_bins, n_sources, n_channels).
+            use_whitening (bool):
+                If ``use_whitening=True``, use_whitening (sphering) is applied to ``input``. \
+                Default: True.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain.
+                The shape is (n_sources, n_bins, n_frames).
+        """
+        if use_whitening:
+            whitened_input = whiten(input)
+        else:
+            whitened_input = input
+
+        output = super().separate(whitened_input, demix_filter=demix_filter)
+
+        return output
+
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
 
@@ -452,12 +499,33 @@ class FastIVAbase(IVAbase):
             float:
                 Computed loss.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        Z, W = self.whitened_input, self.demix_filter
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)  # (n_sources, n_bins, n_frames)
+
         G = self.contrast_fn(Y)  # (n_sources, n_frames)
         loss = np.sum(np.mean(G, axis=1), axis=0)
 
         return loss
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms.
+        """
+        assert self.use_projection_back, "Set self.use_projection_back=True."
+
+        reference_id = self.reference_id
+
+        X, Z = self.input, self.whitened_input
+        W = self.demix_filter
+
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
+        Y_scaled = projection_back(Y, reference=X, reference_id=reference_id)
+
+        Z = Z.transpose(1, 0, 2)
+        Z_Hermite = Z.transpose(0, 2, 1).conj()
+        ZZ_Hermite = Z @ Z_Hermite
+        W_scaled = Y_scaled.transpose(1, 0, 2) @ Z_Hermite @ np.linalg.inv(ZZ_Hermite)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
 
 
 class AuxIVAbase(IVAbase):
@@ -985,7 +1053,9 @@ class FastIVA(FastIVAbase):
         if self.use_projection_back:
             self.apply_projection_back()
 
-        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+        self.output = self.separate(
+            self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
+        )
 
         return self.output
 
@@ -1004,24 +1074,24 @@ class FastIVA(FastIVAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
+        Z, W = self.whitened_input, self.demix_filter
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         norm = np.linalg.norm(Y, axis=1)
         varphi = self.d_contrast_fn(norm) / self.flooring_fn(2 * norm)  # (n_sources, n_frames)
 
         Y_conj = Y.conj()
-        YX = Y_conj[:, np.newaxis, :, :] * X
+        YZ = Y_conj[:, np.newaxis, :, :] * Z
         W_Hermite = W.transpose(1, 2, 0).conj()
-        W_YX = W_Hermite[:, :, :, np.newaxis] - YX
-        W_YX = np.mean(varphi[:, np.newaxis, np.newaxis, :] * W_YX, axis=-1)
+        W_YZ = W_Hermite[:, :, :, np.newaxis] - YZ
+        W_YZ = np.mean(varphi[:, np.newaxis, np.newaxis, :] * W_YZ, axis=-1)
 
         Y_GG = (2 * varphi - self.dd_contrast_fn(norm)) / self.flooring_fn(2 * norm)
         YY_GG = Y_GG[:, np.newaxis, :] * (np.abs(Y) ** 2)
         YY_GGW = np.mean(W_Hermite[:, :, :, np.newaxis] * YY_GG[:, np.newaxis, :, :], axis=-1)
 
         # Update
-        W_Hermite = W_YX - YY_GGW
+        W_Hermite = W_YZ - YY_GGW
         W = W_Hermite.transpose(2, 0, 1).conj()
 
         u, _, v_Hermite = np.linalg.svd(W)
@@ -1141,7 +1211,9 @@ class FasterIVA(FastIVAbase):
         if self.use_projection_back:
             self.apply_projection_back()
 
-        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+        self.output = self.separate(
+            self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
+        )
 
         return self.output
 
@@ -1160,16 +1232,16 @@ class FasterIVA(FastIVAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
         """
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
+        Z, W = self.whitened_input, self.demix_filter
+        Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
-        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
-        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
+        ZZ_Hermite = Z[:, np.newaxis, :, :] * Z[np.newaxis, :, :, :].conj()
+        ZZ_Hermite = ZZ_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         norm = np.linalg.norm(Y, axis=1)
         denom = self.flooring_fn(2 * norm)
         varphi = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
-        varphi_XX = varphi[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
-        U = np.mean(varphi_XX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
+        varphi_ZZ = varphi[:, np.newaxis, np.newaxis, :] * ZZ_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(varphi_ZZ, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
         _, w = eigh(U)  # (n_bins, n_sources, n_channels, n_channels)
         W = w[..., -1].conj()  # eigenvector that corresponds to largest eigenvalue
