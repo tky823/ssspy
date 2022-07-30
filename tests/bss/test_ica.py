@@ -10,21 +10,23 @@ from ssspy.utils.dataset import download_sample_speech_data
 from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
-n_iter = 5
+n_iter = 3
 
+parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_is_holonomic = [True, False]
 parameters_grad_ica = [
-    (2, None, True, {}),
-    (3, dummy_function, False, {"demix_filter": -np.eye(3)}),
-    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
+    (2, {}),
+    (3, {"demix_filter": -np.eye(3)}),
 ]
 parameters_fast_ica = [
-    (2, None, {}),
-    (3, dummy_function, {"demix_filter": -np.eye(3)}),
-    (2, [DummyCallback(), dummy_function], {"demix_filter": None}),
+    (2, {}),
+    (3, {"demix_filter": -np.eye(3)}),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_ica_base(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
@@ -42,7 +44,9 @@ def test_grad_ica_base(
     print(ica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
@@ -75,7 +79,9 @@ def test_grad_ica(
     print(ica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
@@ -108,7 +114,9 @@ def test_natural_grad_ica(
     print(ica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_laplace_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
@@ -133,7 +141,9 @@ def test_grad_laplace_ica(
     print(ica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_laplace_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradICA], None], List[Callable[[GradICA], None]]]],
@@ -158,7 +168,8 @@ def test_natural_grad_laplace_ica(
     print(ica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_fast_ica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_fast_ica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_fast_ica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]],

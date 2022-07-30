@@ -20,58 +20,44 @@ max_samples = 8000
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
-n_iter = 5
+n_iter = 3
 
+parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_is_holonomic = [True, False]
 parameters_grad_iva = [
-    (2, None, True, {}),
-    (
-        3,
-        dummy_function,
-        False,
-        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
-    ),
-    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
+    (2, {}),
+    (3, {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},),
 ]
-
 parameters_fast_iva = [
-    (2, "dev1_female3", None, {}),
+    (2, "dev1_female3", {}),
     (
         3,
         "dev1_female3",
-        dummy_function,
         {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
     ),
-    (2, "dev1_female3", [DummyCallback(), dummy_function], {"demix_filter": None}),
+    (2, "dev1_female3", {"demix_filter": None}),
 ]
-
 parameters_aux_iva = [
-    (2, "dev1_female3", "IP", None, {}),
+    (2, "dev1_female3", {}),
     (
         3,
         "dev1_female3",
-        "IP2",
-        dummy_function,
         {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
     ),
-    (2, "dev1_female3", "IP1", [DummyCallback(), dummy_function], {"demix_filter": None}),
-    (2, "dev1_female3", "ISS", None, {}),
+    (2, "dev1_female3", {"demix_filter": None}),
     (
         3,
         "dev1_female3",
-        "ISS1",
-        dummy_function,
         {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
     ),
-    (4, "dev1_female4", "ISS2", [DummyCallback(), dummy_function], {"demix_filter": None}),
+    (4, "dev1_female4", {"demix_filter": None}),
 ]
 
 
-@pytest.mark.parametrize("n_sources, sisec2010_tag, callbacks, reset_kwargs", parameters_fast_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_fast_iva_base(
-    n_sources: int,
-    sisec2010_tag: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -80,12 +66,11 @@ def test_fast_iva_base(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_iva_base(
-    n_sources: int,
     callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
     is_holonomic: bool,
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -124,7 +109,9 @@ def test_grad_iva_base(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_iva(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradIVA], None], List[Callable[[GradIVA], None]]]],
@@ -185,7 +172,9 @@ def test_grad_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_iva(
     n_sources: int,
     callbacks: Optional[
@@ -248,7 +237,8 @@ def test_natural_grad_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, sisec2010_tag, callbacks, reset_kwargs", parameters_fast_iva)
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_fast_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_fast_iva(
     n_sources: int,
     sisec2010_tag: str,
@@ -323,7 +313,8 @@ def test_fast_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, sisec2010_tag, callbacks, reset_kwargs", parameters_fast_iva)
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_fast_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_faster_iva(
     n_sources: int,
     sisec2010_tag: str,
@@ -380,15 +371,9 @@ def test_faster_iva(
     print(iva)
 
 
-@pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
-)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_iva_base(
-    n_sources: int,
-    sisec2010_tag: str,
-    algorithm_spatial: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -423,9 +408,9 @@ def test_aux_iva_base(
     print(iva)
 
 
-@pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
-)
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_iva(
     n_sources: int,
     sisec2010_tag: str,
@@ -488,7 +473,9 @@ def test_aux_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_laplace_iva(
     n_sources: int,
     callbacks: Optional[
@@ -521,7 +508,9 @@ def test_grad_laplace_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_gauss_iva(
     n_sources: int,
     callbacks: Optional[
@@ -554,7 +543,9 @@ def test_grad_gauss_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_laplace_iva(
     n_sources: int,
     callbacks: Optional[
@@ -589,7 +580,9 @@ def test_natural_grad_laplace_iva(
     print(iva)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_gauss_iva(
     n_sources: int,
     callbacks: Optional[
@@ -622,9 +615,9 @@ def test_natural_grad_gauss_iva(
     print(iva)
 
 
-@pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
-)
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_laplace_iva(
     n_sources: int,
     sisec2010_tag: str,
@@ -660,9 +653,9 @@ def test_aux_laplace_iva(
     print(iva)
 
 
-@pytest.mark.parametrize(
-    "n_sources, sisec2010_tag, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_iva
-)
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_gauss_iva(
     n_sources: int,
     sisec2010_tag: str,
