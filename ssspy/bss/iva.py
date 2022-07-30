@@ -507,6 +507,26 @@ class FastIVAbase(IVAbase):
 
         return loss
 
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms.
+        """
+        assert self.use_projection_back, "Set self.use_projection_back=True."
+
+        reference_id = self.reference_id
+
+        X, Z = self.input, self.whitened_input
+        W = self.demix_filter
+
+        Y = self.separate(Z, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        Y_scaled = projection_back(Y, reference=X, reference_id=reference_id)
+
+        X = X.transpose(1, 0, 2)
+        X_Hermite = X.transpose(0, 2, 1).conj()
+        XX_Hermite = X @ X_Hermite
+        W_scaled = Y_scaled.transpose(1, 0, 2) @ X_Hermite @ np.linalg.inv(XX_Hermite)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
+
 
 class AuxIVAbase(IVAbase):
     r"""Base class of auxiliary-function-based independent vector analysis (IVA).
