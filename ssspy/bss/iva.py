@@ -520,10 +520,10 @@ class FastIVAbase(IVAbase):
         Y = self.separate(Z, demix_filter=W)  # (n_sources, n_bins, n_frames)
         Y_scaled = projection_back(Y, reference=X, reference_id=reference_id)
 
-        X = X.transpose(1, 0, 2)
-        X_Hermite = X.transpose(0, 2, 1).conj()
-        XX_Hermite = X @ X_Hermite
-        W_scaled = Y_scaled.transpose(1, 0, 2) @ X_Hermite @ np.linalg.inv(XX_Hermite)
+        Z = Z.transpose(1, 0, 2)
+        Z_Hermite = Z.transpose(0, 2, 1).conj()
+        ZZ_Hermite = Z @ Z_Hermite
+        W_scaled = Y_scaled.transpose(1, 0, 2) @ Z_Hermite @ np.linalg.inv(ZZ_Hermite)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
 
