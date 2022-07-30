@@ -16,34 +16,22 @@ hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 5
 
+parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_is_holonomic = [True, False]
+parameters_algorithm_spatial = ["IP", "IP1", "IP2"]
 parameters_grad_fdica = [
-    (2, None, True, {}),
-    (
-        3,
-        dummy_function,
-        False,
-        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
-    ),
-    (2, [DummyCallback(), dummy_function], False, {"demix_filter": None}),
+    (2, {}),
+    (3, {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},),
 ]
 parameters_aux_fdica = [
-    (2, "IP", None, {}),
-    (
-        3,
-        "IP1",
-        dummy_function,
-        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
-    ),
-    (2, "IP2", [DummyCallback(), dummy_function], {"demix_filter": None}),
+    (2, {}),
+    (3, {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},),
 ]
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_grad_fdica_base(
-    n_sources: int,
     callbacks: Optional[Union[Callable[[GradFDICA], None], List[Callable[[GradFDICA], None]]]],
-    is_holonomic: bool,
-    reset_kwargs: Dict[Any, Any],
 ):
     np.random.seed(111)
 
@@ -59,7 +47,9 @@ def test_grad_fdica_base(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_fdica(
     n_sources: int,
     callbacks: Optional[Union[Callable[[GradFDICA], None], List[Callable[[GradFDICA], None]]]],
@@ -99,7 +89,9 @@ def test_grad_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_fdica(
     n_sources: int,
     callbacks: Optional[
@@ -141,9 +133,9 @@ def test_natural_grad_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize(
-    "n_sources, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_fdica
-)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_aux_fdica)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_fdica(
     n_sources: int,
     algorithm_spatial: str,
@@ -185,7 +177,9 @@ def test_aux_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_grad_laplace_fdica(
     n_sources: int,
     callbacks: Optional[
@@ -218,7 +212,9 @@ def test_grad_laplace_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize("n_sources, callbacks, is_holonomic, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_fdica)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
 def test_natural_grad_laplace_fdica(
     n_sources: int,
     callbacks: Optional[
@@ -254,9 +250,9 @@ def test_natural_grad_laplace_fdica(
     print(fdica)
 
 
-@pytest.mark.parametrize(
-    "n_sources, algorithm_spatial, callbacks, reset_kwargs", parameters_aux_fdica
-)
+@pytest.mark.parametrize("n_sources, reset_kwargs", parameters_aux_fdica)
+@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_laplace_fdica(
     n_sources: int,
     algorithm_spatial: str,
