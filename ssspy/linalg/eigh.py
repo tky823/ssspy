@@ -26,7 +26,12 @@ def eigh(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
 
     L = np.linalg.cholesky(B)
     L_inv = np.linalg.inv(L)
-    L_inv_Hermite = np.swapaxes(L_inv, -2, -1).conj()
+
+    L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
+
+    if np.iscomplexobj(L_inv_Hermite):
+        L_inv_Hermite = L_inv_Hermite.conj()
+
     C = L_inv @ A @ L_inv_Hermite
     lamb, y = np.linalg.eigh(C)
     z = L_inv_Hermite @ y
@@ -84,7 +89,11 @@ def eigh2(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
 
     L = np.linalg.cholesky(B)
     L_inv = inv2(L)
-    L_inv_Hermite = np.swapaxes(L_inv, -2, -1).conj()
+    L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
+
+    if np.iscomplexobj(L_inv_Hermite):
+        L_inv_Hermite = L_inv_Hermite.conj()
+
     C = L_inv @ A @ L_inv_Hermite
     lamb, y = eigh2(C)
     z = L_inv_Hermite @ y
