@@ -24,7 +24,7 @@ def inv2(X: np.ndarray) -> np.ndarray:
     det = a * d - b * c
 
     X_adj = np.stack([d, -b, -c, a], axis=-1)
-    X_adj = X_adj.reshape(shape[:-1] + (2, 2))
+    X_adj = X_adj.reshape(shape[:-2] + (2, 2))
     X_inv = X_adj / det[..., None, None]
 
     return X_inv
