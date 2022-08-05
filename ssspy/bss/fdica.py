@@ -18,7 +18,7 @@ __all__ = [
     "AuxLaplaceFDICA",
 ]
 
-algorithms_spatial = ["IP", "IP1", "IP2"]
+spatial_algorithms = ["IP", "IP1", "IP2"]
 EPS = 1e-10
 
 
@@ -727,7 +727,7 @@ class AuxFDICA(FDICAbase):
     (AuxFDICA) [#ono2010auxiliary]_.
 
     Args:
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm to update demixing filters.
             Choose from "IP", "IP1", "IP2".
             Default: "IP".
@@ -793,7 +793,7 @@ class AuxFDICA(FDICAbase):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -817,12 +817,12 @@ class AuxFDICA(FDICAbase):
             record_loss=record_loss,
             reference_id=reference_id,
         )
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
 
-        self.algorithm_spatial = algorithm_spatial
+        self.spatial_algorithm = spatial_algorithm
         self.d_contrast_fn = d_contrast_fn
 
-        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
             self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
@@ -882,7 +882,7 @@ class AuxFDICA(FDICAbase):
 
     def __repr__(self) -> str:
         s = "AuxFDICA("
-        s += "algorithm_spatial={algorithm_spatial}"
+        s += "spatial_algorithm={spatial_algorithm}"
         s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
@@ -897,15 +897,15 @@ class AuxFDICA(FDICAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
         """
-        if self.algorithm_spatial in ["IP", "IP1"]:
+        if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
-        elif self.algorithm_spatial in ["IP2"]:
+        elif self.spatial_algorithm in ["IP2"]:
             self.update_once_ip2()
         else:
-            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_once_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
@@ -1298,7 +1298,7 @@ class AuxLaplaceFDICA(AuxFDICA):
         p(y_{ijn})\propto\exp(|y_{ijn}|)
 
     Args:
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm to update demixing filters.
             Choose from "IP", "IP1", or "IP2".
             Default: "IP".
@@ -1333,7 +1333,7 @@ class AuxLaplaceFDICA(AuxFDICA):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
@@ -1353,7 +1353,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             return 2 * np.ones_like(y)
 
         super().__init__(
-            algorithm_spatial=algorithm_spatial,
+            spatial_algorithm=spatial_algorithm,
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
@@ -1367,7 +1367,7 @@ class AuxLaplaceFDICA(AuxFDICA):
 
     def __repr__(self) -> str:
         s = "AuxLaplaceFDICA("
-        s += "algorithm_spatial={algorithm_spatial}"
+        s += "spatial_algorithm={spatial_algorithm}"
         s += ", solve_permutation={solve_permutation}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"

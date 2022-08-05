@@ -29,7 +29,7 @@ __all__ = [
     "AuxGaussIVA",
 ]
 
-algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
@@ -1255,7 +1255,7 @@ class AuxIVA(AuxIVAbase):
     r"""Auxiliary-function-based independent vector analysis (IVA).
 
     Args:
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose from "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
             Default: "IP".
@@ -1311,7 +1311,7 @@ class AuxIVA(AuxIVAbase):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         d_contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -1335,11 +1335,11 @@ class AuxIVA(AuxIVAbase):
             reference_id=reference_id,
         )
 
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
 
-        self.algorithm_spatial = algorithm_spatial
+        self.spatial_algorithm = spatial_algorithm
 
-        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
             self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
@@ -1386,14 +1386,14 @@ class AuxIVA(AuxIVAbase):
         if self.use_projection_back:
             self.apply_projection_back()
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
 
     def __repr__(self) -> str:
         s = "AuxIVA("
-        s += "algorithm_spatial={algorithm_spatial}"
+        s += "spatial_algorithm={spatial_algorithm}"
         s += ", use_projection_back={use_projection_back}"
         s += ", record_loss={record_loss}"
 
@@ -1413,25 +1413,25 @@ class AuxIVA(AuxIVAbase):
         """
         super()._reset(**kwargs)
 
-        if self.algorithm_spatial in ["ISS", "ISS1", "ISS2"]:
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
         """
-        if self.algorithm_spatial in ["IP", "IP1"]:
+        if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
-        elif self.algorithm_spatial in ["IP2"]:
+        elif self.spatial_algorithm in ["IP2"]:
             self.update_once_ip2()
-        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+        elif self.spatial_algorithm in ["ISS", "ISS1"]:
             self.update_once_iss1()
-        elif self.algorithm_spatial in ["ISS2"]:
+        elif self.spatial_algorithm in ["ISS2"]:
             self.update_once_iss2()
         else:
-            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_once_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
@@ -1654,7 +1654,7 @@ class AuxIVA(AuxIVAbase):
         )
 
     def compute_loss(self) -> float:
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             return super().compute_loss()
         else:
             X, Y = self.input, self.output
@@ -1671,7 +1671,7 @@ class AuxIVA(AuxIVAbase):
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.use_projection_back, "Set self.use_projection_back=True."
@@ -2181,7 +2181,7 @@ class AuxLaplaceIVA(AuxIVA):
         p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
 
     Args:
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose from "IP", "IP1", or "IP2". Default: "IP".
         flooring_fn (callable, optional):
@@ -2222,7 +2222,7 @@ class AuxLaplaceIVA(AuxIVA):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
@@ -2241,7 +2241,7 @@ class AuxLaplaceIVA(AuxIVA):
             return 2 * np.ones_like(y)
 
         super().__init__(
-            algorithm_spatial=algorithm_spatial,
+            spatial_algorithm=spatial_algorithm,
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
@@ -2263,7 +2263,7 @@ class AuxGaussIVA(AuxIVA):
         p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
 
     Args:
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose from "IP", "IP1", or "IP2". Default: "IP".
         flooring_fn (callable, optional):
@@ -2304,7 +2304,7 @@ class AuxGaussIVA(AuxIVA):
 
     def __init__(
         self,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
@@ -2353,7 +2353,7 @@ class AuxGaussIVA(AuxIVA):
             return 2 * y / alpha
 
         super().__init__(
-            algorithm_spatial=algorithm_spatial,
+            spatial_algorithm=spatial_algorithm,
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
             flooring_fn=flooring_fn,
@@ -2488,7 +2488,7 @@ class AuxGaussIVA(AuxIVA):
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
