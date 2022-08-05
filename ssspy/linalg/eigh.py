@@ -56,6 +56,7 @@ def eigh2(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
 
     Solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`, \
     and return :math:`\boldsymbol{z}`.
+    See also https://github.com/tky823/ssspy/issues/115 for this implementation.
     """
     assert A.shape[-2:] == (2, 2), "2x2 matrix is expected, but given shape of {}.".format(A.shape)
 
