@@ -22,7 +22,7 @@ hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 3
 
-parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_is_holonomic = [True, False]
 parameters_grad_iva = [
@@ -409,12 +409,12 @@ def test_aux_iva_base(
 
 
 @pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_iva(
     n_sources: int,
     sisec2010_tag: str,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
     reset_kwargs: Dict[Any, Any],
 ):
@@ -461,7 +461,7 @@ def test_aux_iva(
         return 2 * np.ones_like(y)
 
     iva = AuxIVA(
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         contrast_fn=contrast_fn,
         d_contrast_fn=d_contrast_fn,
         callbacks=callbacks,
@@ -616,12 +616,12 @@ def test_natural_grad_gauss_iva(
 
 
 @pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_laplace_iva(
     n_sources: int,
     sisec2010_tag: str,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     callbacks: Optional[
         Union[
             Callable[[NaturalGradLaplaceIVA], None], List[Callable[[NaturalGradLaplaceIVA], None]]
@@ -645,7 +645,7 @@ def test_aux_laplace_iva(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    iva = AuxLaplaceIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
+    iva = AuxLaplaceIVA(spatial_algorithm=spatial_algorithm, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
@@ -654,12 +654,12 @@ def test_aux_laplace_iva(
 
 
 @pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_aux_iva)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_gauss_iva(
     n_sources: int,
     sisec2010_tag: str,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     callbacks: Optional[
         Union[Callable[[NaturalGradGaussIVA], None], List[Callable[[NaturalGradGaussIVA], None]]]
     ],
@@ -681,7 +681,7 @@ def test_aux_gauss_iva(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    iva = AuxGaussIVA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
+    iva = AuxGaussIVA(spatial_algorithm=spatial_algorithm, callbacks=callbacks)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape

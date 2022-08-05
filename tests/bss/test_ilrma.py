@@ -19,7 +19,7 @@ rng = np.random.default_rng(42)
 
 parameters_dof = [1, 100]
 parameters_beta = [0.5, 1.5]
-parameters_algorithm_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_ilrma_base = [4, 3]
 parameters_ilrma_latent = [
@@ -69,13 +69,13 @@ def test_ilrma_base(
 @pytest.mark.parametrize(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 def test_gauss_ilrma_latent(
     n_sources: int,
     n_basis: int,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -104,7 +104,7 @@ def test_gauss_ilrma_latent(
 
     ilrma = GaussILRMA(
         n_basis,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=True,
         callbacks=callbacks,
@@ -121,13 +121,13 @@ def test_gauss_ilrma_latent(
 @pytest.mark.parametrize(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 def test_gauss_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -156,7 +156,7 @@ def test_gauss_ilrma_wo_latent(
 
     ilrma = GaussILRMA(
         n_basis,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=False,
         callbacks=callbacks,
@@ -174,14 +174,14 @@ def test_gauss_ilrma_wo_latent(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 def test_t_ilrma_latent(
     n_sources: int,
     n_basis: int,
     dof: float,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -211,7 +211,7 @@ def test_t_ilrma_latent(
     ilrma = TILRMA(
         n_basis,
         dof=dof,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=True,
         callbacks=callbacks,
@@ -229,14 +229,14 @@ def test_t_ilrma_latent(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 def test_t_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
     dof: float,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -266,7 +266,7 @@ def test_t_ilrma_wo_latent(
     ilrma = TILRMA(
         n_basis,
         dof=dof,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=False,
         callbacks=callbacks,
@@ -284,14 +284,14 @@ def test_t_ilrma_wo_latent(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 def test_ggd_ilrma_latent(
     n_sources: int,
     n_basis: int,
     beta: float,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -321,7 +321,7 @@ def test_ggd_ilrma_latent(
     ilrma = GGDILRMA(
         n_basis,
         beta=beta,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=True,
         callbacks=callbacks,
@@ -339,14 +339,14 @@ def test_ggd_ilrma_latent(
     "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 def test_ggd_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
     beta: float,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -376,7 +376,7 @@ def test_ggd_ilrma_wo_latent(
     ilrma = GGDILRMA(
         n_basis,
         beta=beta,
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         domain=domain,
         partitioning=False,
         callbacks=callbacks,

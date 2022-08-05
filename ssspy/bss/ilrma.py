@@ -11,7 +11,7 @@ from ..algorithm import projection_back
 
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
 
-algorithms_spatial = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
@@ -143,7 +143,7 @@ class ILRMAbase:
         if self.use_projection_back:
             self.apply_projection_back()
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -365,7 +365,7 @@ class ILRMAbase:
         """
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -391,7 +391,7 @@ class ILRMAbase:
 
             self.basis = T
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             W = self.demix_filter
             W = W / psi[np.newaxis, :, np.newaxis]
             self.demix_filter = W
@@ -440,7 +440,7 @@ class ILRMAbase:
         else:
             T = self.basis
 
-            if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+            if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
                 W = self.demix_filter
 
                 scale = np.linalg.inv(W)
@@ -511,7 +511,7 @@ class GaussILRMA(ILRMAbase):
     Args:
         n_basis (int):
             Number of NMF bases.
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
             Default: "IP".
@@ -554,7 +554,7 @@ class GaussILRMA(ILRMAbase):
     def __init__(
         self,
         n_basis: int,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -581,14 +581,14 @@ class GaussILRMA(ILRMAbase):
             rng=rng,
         )
 
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
         assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
 
-        self.algorithm_spatial = algorithm_spatial
+        self.spatial_algorithm = spatial_algorithm
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
             self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
@@ -596,7 +596,7 @@ class GaussILRMA(ILRMAbase):
     def __repr__(self) -> str:
         s = "GaussILRMA("
         s += "n_basis={n_basis}"
-        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", spatial_algorithm={spatial_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -619,7 +619,7 @@ class GaussILRMA(ILRMAbase):
         """
         super()._reset(**kwargs)
 
-        if self.algorithm_spatial in ["ISS", "ISS1", "ISS2"]:
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
     def update_once(self) -> None:
@@ -646,7 +646,7 @@ class GaussILRMA(ILRMAbase):
         """
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -679,7 +679,7 @@ class GaussILRMA(ILRMAbase):
         """
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -724,7 +724,7 @@ class GaussILRMA(ILRMAbase):
         """
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -767,21 +767,21 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
-        if self.algorithm_spatial in ["IP", "IP1"]:
+        if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
-        elif self.algorithm_spatial in ["IP2"]:
+        elif self.spatial_algorithm in ["IP2"]:
             self.update_spatial_model_ip2()
-        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+        elif self.spatial_algorithm in ["ISS", "ISS1"]:
             self.update_spatial_model_iss1()
-        elif self.algorithm_spatial in ["ISS2"]:
+        elif self.spatial_algorithm in ["ISS2"]:
             self.update_spatial_model_iss2()
         else:
-            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
@@ -1072,7 +1072,7 @@ class GaussILRMA(ILRMAbase):
         """
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
             Y2 = np.abs(Y) ** 2
@@ -1106,7 +1106,7 @@ class GaussILRMA(ILRMAbase):
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.use_projection_back, "Set self.use_projection_back=True."
@@ -1125,7 +1125,7 @@ class TILRMA(ILRMAbase):
             Number of NMF bases.
         dof (float):
             Degree of freedom parameter in student's-t distribution.
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
             Default: "IP".
@@ -1169,7 +1169,7 @@ class TILRMA(ILRMAbase):
         self,
         n_basis: int,
         dof: float,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -1196,15 +1196,15 @@ class TILRMA(ILRMAbase):
             rng=rng,
         )
 
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
         assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
 
         self.dof = dof
-        self.algorithm_spatial = algorithm_spatial
+        self.spatial_algorithm = spatial_algorithm
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
             self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
@@ -1213,7 +1213,7 @@ class TILRMA(ILRMAbase):
         s = "TILRMA("
         s += "n_basis={n_basis}"
         s += ", dof={dof}"
-        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", spatial_algorithm={spatial_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -1251,7 +1251,7 @@ class TILRMA(ILRMAbase):
         p = self.domain
         nu = self.dof
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -1287,7 +1287,7 @@ class TILRMA(ILRMAbase):
         p = self.domain
         nu = self.dof
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -1337,7 +1337,7 @@ class TILRMA(ILRMAbase):
         p = self.domain
         nu = self.dof
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -1384,21 +1384,21 @@ class TILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
-        if self.algorithm_spatial in ["IP", "IP1"]:
+        if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
-        elif self.algorithm_spatial in ["IP2"]:
+        elif self.spatial_algorithm in ["IP2"]:
             self.update_spatial_model_ip2()
-        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+        elif self.spatial_algorithm in ["ISS", "ISS1"]:
             self.update_spatial_model_iss1()
-        elif self.algorithm_spatial in ["ISS2"]:
+        elif self.spatial_algorithm in ["ISS2"]:
             self.update_spatial_model_iss2()
         else:
-            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
@@ -1731,7 +1731,7 @@ class TILRMA(ILRMAbase):
         nu = self.dof
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
             Y2 = np.abs(Y) ** 2
@@ -1765,7 +1765,7 @@ class TILRMA(ILRMAbase):
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.use_projection_back, "Set self.use_projection_back=True."
@@ -1784,7 +1784,7 @@ class GGDILRMA(ILRMAbase):
             Number of NMF bases.
         beta (float):
             Shape parameter in generalized Gaussian distribution.
-        algorithm_spatial (str):
+        spatial_algorithm (str):
             Algorithm for demixing filter updates.
             Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
             Default: "IP".
@@ -1828,7 +1828,7 @@ class GGDILRMA(ILRMAbase):
         self,
         n_basis: int,
         beta: float,
-        algorithm_spatial: str = "IP",
+        spatial_algorithm: str = "IP",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -1856,15 +1856,15 @@ class GGDILRMA(ILRMAbase):
         )
 
         assert 0 < beta < 2, "Shape parameter {} shoule be chosen from (0, 2).".format(beta)
-        assert algorithm_spatial in algorithms_spatial, "Not support {}.".format(algorithms_spatial)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
         assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
 
         self.beta = beta
-        self.algorithm_spatial = algorithm_spatial
+        self.spatial_algorithm = spatial_algorithm
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and algorithm_spatial in ["IP2", "ISS2"]:
+        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
             self.pair_selector = functools.partial(sequential_pair_selector, sort=True)
         else:
             self.pair_selector = pair_selector
@@ -1873,7 +1873,7 @@ class GGDILRMA(ILRMAbase):
         s = "GGDILRMA("
         s += "n_basis={n_basis}"
         s += ", beta={beta}"
-        s += ", algorithm_spatial={algorithm_spatial}"
+        s += ", spatial_algorithm={spatial_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -1911,7 +1911,7 @@ class GGDILRMA(ILRMAbase):
         p = self.domain
         beta = self.beta
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -1945,7 +1945,7 @@ class GGDILRMA(ILRMAbase):
         p = self.domain
         beta = self.beta
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -1991,7 +1991,7 @@ class GGDILRMA(ILRMAbase):
         p = self.domain
         beta = self.beta
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
         else:
@@ -2034,21 +2034,21 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.algorithm_spatial`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.algorithm_spatial`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.algorithm_spatial`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
-        if self.algorithm_spatial in ["IP", "IP1"]:
+        if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
-        elif self.algorithm_spatial in ["IP2"]:
+        elif self.spatial_algorithm in ["IP2"]:
             self.update_spatial_model_ip2()
-        elif self.algorithm_spatial in ["ISS", "ISS1"]:
+        elif self.spatial_algorithm in ["ISS", "ISS1"]:
             self.update_spatial_model_iss1()
-        elif self.algorithm_spatial in ["ISS2"]:
+        elif self.spatial_algorithm in ["ISS2"]:
             self.update_spatial_model_iss2()
         else:
-            raise NotImplementedError("Not support {}.".format(self.algorithm_spatial))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_ip1(self) -> None:
         p = self.domain
@@ -2351,7 +2351,7 @@ class GGDILRMA(ILRMAbase):
         beta = self.beta
         p = self.domain
 
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
             Yb = np.abs(Y) ** beta
@@ -2385,7 +2385,7 @@ class GGDILRMA(ILRMAbase):
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        if self.algorithm_spatial in ["IP", "IP1", "IP2"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.use_projection_back, "Set self.use_projection_back=True."
