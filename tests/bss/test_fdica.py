@@ -18,7 +18,7 @@ n_iter = 3
 
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_is_holonomic = [True, False]
-parameters_algorithm_spatial = ["IP", "IP1", "IP2"]
+parameters_spatial_algorithm = ["IP", "IP1", "IP2"]
 parameters_grad_fdica = [
     (2, {}),
     (3, {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},),
@@ -134,11 +134,11 @@ def test_natural_grad_fdica(
 
 
 @pytest.mark.parametrize("n_sources, reset_kwargs", parameters_aux_fdica)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_fdica(
     n_sources: int,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     callbacks: Optional[Union[Callable[[AuxFDICA], None], List[Callable[[AuxFDICA], None]]]],
     reset_kwargs: Dict[Any, Any],
 ):
@@ -165,7 +165,7 @@ def test_aux_fdica(
         return 2 * np.ones_like(y)
 
     fdica = AuxFDICA(
-        algorithm_spatial=algorithm_spatial,
+        spatial_algorithm=spatial_algorithm,
         contrast_fn=contrast_fn,
         d_contrast_fn=d_contrast_fn,
         callbacks=callbacks,
@@ -251,11 +251,11 @@ def test_natural_grad_laplace_fdica(
 
 
 @pytest.mark.parametrize("n_sources, reset_kwargs", parameters_aux_fdica)
-@pytest.mark.parametrize("algorithm_spatial", parameters_algorithm_spatial)
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 def test_aux_laplace_fdica(
     n_sources: int,
-    algorithm_spatial: str,
+    spatial_algorithm: str,
     callbacks: Optional[
         Union[Callable[[AuxLaplaceFDICA], None], List[Callable[[AuxLaplaceFDICA], None]]]
     ],
@@ -277,7 +277,7 @@ def test_aux_laplace_fdica(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    fdica = AuxLaplaceFDICA(algorithm_spatial=algorithm_spatial, callbacks=callbacks)
+    fdica = AuxLaplaceFDICA(spatial_algorithm=spatial_algorithm, callbacks=callbacks)
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
