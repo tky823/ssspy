@@ -27,7 +27,7 @@ sphinx:
 python:
    install:
    - method: pip
-      path: .
-      extra_requirements:
-        - dev
-        - docs
+     path: .
+     extra_requirements:
+     - dev
+     - docs
