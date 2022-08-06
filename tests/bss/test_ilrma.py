@@ -21,6 +21,7 @@ parameters_dof = [1, 100]
 parameters_beta = [0.5, 1.5]
 parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_scale_restoration = [True, False, "projection_back"]
 parameters_ilrma_base = [4, 3]
 parameters_ilrma_latent = [
     (
@@ -55,12 +56,18 @@ parameters_normalization_wo_latent = [True, False, "power", "projection_back"]
     "n_basis", parameters_ilrma_base,
 )
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_ilrma_base(
     n_basis: int,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
+    scale_restoration: Union[str, bool],
 ):
     ilrma = ILRMAbase(
-        n_basis, partitioning=True, callbacks=callbacks, rng=np.random.default_rng(42),
+        n_basis,
+        partitioning=True,
+        callbacks=callbacks,
+        scale_restoration=scale_restoration,
+        rng=np.random.default_rng(42),
     )
 
     print(ilrma)
@@ -72,6 +79,7 @@ def test_ilrma_base(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_gauss_ilrma_latent(
     n_sources: int,
     n_basis: int,
@@ -79,6 +87,7 @@ def test_gauss_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -109,6 +118,7 @@ def test_gauss_ilrma_latent(
         partitioning=True,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -124,6 +134,7 @@ def test_gauss_ilrma_latent(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_gauss_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
@@ -131,6 +142,7 @@ def test_gauss_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -161,6 +173,7 @@ def test_gauss_ilrma_wo_latent(
         partitioning=False,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -177,6 +190,7 @@ def test_gauss_ilrma_wo_latent(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_t_ilrma_latent(
     n_sources: int,
     n_basis: int,
@@ -185,6 +199,7 @@ def test_t_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -216,6 +231,7 @@ def test_t_ilrma_latent(
         partitioning=True,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -232,6 +248,7 @@ def test_t_ilrma_latent(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_t_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
@@ -240,6 +257,7 @@ def test_t_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -271,6 +289,7 @@ def test_t_ilrma_wo_latent(
         partitioning=False,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -287,6 +306,7 @@ def test_t_ilrma_wo_latent(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_ggd_ilrma_latent(
     n_sources: int,
     n_basis: int,
@@ -295,6 +315,7 @@ def test_ggd_ilrma_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -326,6 +347,7 @@ def test_ggd_ilrma_latent(
         partitioning=True,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -342,6 +364,7 @@ def test_ggd_ilrma_latent(
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_ggd_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
@@ -350,6 +373,7 @@ def test_ggd_ilrma_wo_latent(
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
+    scale_restoration: Union[str, bool],
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -381,6 +405,7 @@ def test_ggd_ilrma_wo_latent(
         partitioning=False,
         callbacks=callbacks,
         normalization=normalization,
+        scale_restoration=scale_restoration,
         rng=np.random.default_rng(42),
     )
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
