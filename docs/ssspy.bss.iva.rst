@@ -74,13 +74,19 @@ Algorithms
    :undoc-members:
    :inherited-members:
 
-.. autoclass:: ssspy.bss.iva.AuxIVA
+.. autoclass:: ssspy.bss.iva.FastIVA
    :special-members: __call__
    :members:
    :undoc-members:
    :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.FasterIVA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+.. autoclass:: ssspy.bss.iva.AuxIVA
    :special-members: __call__
    :members:
    :undoc-members:
@@ -99,6 +105,12 @@ Algorithms
    :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.AuxLaplaceIVA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+   :inherited-members:
+
+.. autoclass:: ssspy.bss.iva.AuxGaussIVA
    :special-members: __call__
    :members:
    :undoc-members:
