@@ -34,17 +34,17 @@ EPS = 1e-10
 
 
 class IVAbase:
-    r"""Base class of independent vector analysis (IVA) [#kim2006independent]_.
+    r"""Base class of independent vector analysis (IVA).
 
     Args:
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -53,16 +53,11 @@ class IVAbase:
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
-
-    .. [#kim2006independent]
-        T. Kim, H. T. Attias, S.-Y. Lee, and T.-W. Lee,
-        "Blind source separation exploiting higher-order frequency dependencies,"
-        in *IEEE Trans. ASLP*, vol. 15, no. 1, pp. 70-79, 2007.
     """
 
     def __init__(
@@ -109,15 +104,15 @@ class IVAbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                Mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
-                Default: 100.
+                Number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -180,10 +175,10 @@ class IVAbase:
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``.
+                The demixing filters to separate ``input``. \
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
@@ -244,7 +239,7 @@ class IVAbase:
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
-        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        If ``self.scale_restoration="projection_back"``, we use projection back technique.
         """
         scale_restoration = self.scale_restoration
 
@@ -277,24 +272,24 @@ class GradIVAbase(IVAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -303,10 +298,10 @@ class GradIVAbase(IVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
     """
 
@@ -352,15 +347,15 @@ class GradIVAbase(IVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -413,17 +408,17 @@ class FastIVAbase(IVAbase):
 
     Args:
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
     """
 
@@ -554,20 +549,20 @@ class AuxIVAbase(IVAbase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function.
-            This function is expected to receive (n_channels, n_frames)
+            A derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_frames) \
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -576,10 +571,10 @@ class AuxIVAbase(IVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
     """
 
@@ -612,11 +607,11 @@ class AuxIVAbase(IVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
+                The mixture signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames). \
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
@@ -639,30 +634,30 @@ class AuxIVAbase(IVAbase):
 
 
 class GradIVA(GradIVAbase):
-    r"""Independent vector analysis (IVA) using gradient descent.
+    r"""Independent vector analysis (IVA) [#kim2006independent]_ using gradient descent.
 
     Args:
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -671,10 +666,10 @@ class GradIVA(GradIVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -695,6 +690,11 @@ class GradIVA(GradIVAbase):
             spectrogram_est = iva(spectrogram_mix, n_iter=5000)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#kim2006independent]
+        T. Kim, H. T. Attias, S.-Y. Lee, and T.-W. Lee,
+        "Blind source separation exploiting higher-order frequency dependencies,"
+        in *IEEE Trans. ASLP*, vol. 15, no. 1, pp. 70-79, 2007.
     """
 
     def __init__(
@@ -789,24 +789,24 @@ class NaturalGradIVA(GradIVAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -815,10 +815,10 @@ class NaturalGradIVA(GradIVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -997,9 +997,8 @@ class FastIVA(FastIVAbase):
 
     .. [#lee2007fast] I. Lee et al.,
         "Fast fixed-point independent vector analysis algorithms \
-        for convolutive blind source separation," **Signal Processing**,
+        for convolutive blind source separation," *Signal Processing*,
         vol. 87, no. 8, pp. 1859-1871, 2007.
-
     """
 
     def __init__(
@@ -1045,15 +1044,15 @@ class FastIVA(FastIVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
+                The number of iterations of demixing filter updates. \
                 Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -1134,21 +1133,21 @@ class FasterIVA(FastIVAbase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function.
-            This function is expected to receive (n_channels, n_frames)
+            A derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_frames) \
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1157,10 +1156,10 @@ class FasterIVA(FastIVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     .. [#brendel2021fasteriva] A. Brendel and W. Kellermann,
@@ -1205,15 +1204,15 @@ class FasterIVA(FastIVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -1283,32 +1282,32 @@ class FasterIVA(FastIVAbase):
 
 
 class AuxIVA(AuxIVAbase):
-    r"""Auxiliary-function-based independent vector analysis (IVA).
+    r"""Auxiliary-function-based independent vector analysis (IVA) [#ono2011stable]_.
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
             Default: "IP".
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function.
-            This function is expected to receive (n_channels, n_frames)
+            A derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_frames) \
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1317,10 +1316,10 @@ class AuxIVA(AuxIVAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -1340,6 +1339,12 @@ class AuxIVA(AuxIVAbase):
             spectrogram_est = iva(spectrogram_mix, n_iter=100)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#ono2011stable]
+        N. Ono,
+        "Stable and fast update rules for independent vector analysis based on \
+        auxiliary function technique,"
+        in *Proc. WASPAA*, 2011, p.189-192.
     """
 
     def __init__(
@@ -1382,15 +1387,15 @@ class AuxIVA(AuxIVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -1452,8 +1457,10 @@ class AuxIVA(AuxIVAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called. \
+        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called. \
+        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called. \
+        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
@@ -1532,7 +1539,7 @@ class AuxIVA(AuxIVAbase):
             \right).
 
         Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
 
         .. math::
             \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
@@ -1546,7 +1553,7 @@ class AuxIVA(AuxIVAbase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
         and :math:`\boldsymbol{h}_{in}`.
 
         .. math::
@@ -1559,7 +1566,7 @@ class AuxIVA(AuxIVAbase):
             {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
             \boldsymbol{h}_{in}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
         simultaneously.
 
         .. math::
@@ -1602,6 +1609,36 @@ class AuxIVA(AuxIVAbase):
         self.demix_filter = W
 
     def update_once_iss1(self) -> None:
+        r"""Update estimated spectrograms once using \
+        iterative source steering [#scheibler2020fast]_.
+
+        First, update auxiliary variables
+
+        .. math::
+            \bar{r}_{jn}
+            \leftarrow\|\vec{\boldsymbol{y}}_{jn}\|_{2}.
+
+        Then, update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn}
+            v_{inn'}
+            &= \begin{cases}
+                \dfrac{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}{2\bar{r}_{jn'}}
+                y_{ijn'}y_{ijn}^{*}}{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}
+                {2\bar{r}_{jn'}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\dfrac{1}{J}\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}
+                {2\bar{r}_{jn'}}
+                |y_{ijn}|^{2}}} & (n'=n)
+            \end{cases}.
+
+        .. [#scheibler2020fast]
+            R. Scheibler and N. Ono, \
+            "Fast and stable blind source separation with rank-1 updates," \
+            in *Proc. ICASSP*, 2020, pp. 236-240.
+        """
         Y = self.output
         r = np.linalg.norm(Y, axis=1)
         denom = self.flooring_fn(2 * r)
@@ -1610,7 +1647,8 @@ class AuxIVA(AuxIVAbase):
         self.output = update_by_iss1(Y, varphi[:, np.newaxis, :], flooring_fn=self.flooring_fn)
 
     def update_once_iss2(self) -> None:
-        r"""Update estimated spectrograms once using pairwise iterative source steering.
+        r"""Update estimated spectrograms once using \
+        pairwise iterative source steering [#ikeshita2022iss2]_.
 
         First, we compute auxiliary variables:
 
@@ -1672,6 +1710,11 @@ class AuxIVA(AuxIVAbase):
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
             \end{cases}.
 
+        .. [#ikeshita2022iss2]
+            R. Ikeshita and T. Nakatani,
+            "ISS2: An extension of iterative source steering algorithm for \
+            majorization-minimization-based independent vector analysis,"
+            *arXiv:2202.00875*, 2022.
         """
         Y = self.output
 
@@ -1727,16 +1770,16 @@ class GradLaplaceIVA(GradIVA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1748,7 +1791,7 @@ class GradLaplaceIVA(GradIVA):
             if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -1891,7 +1934,7 @@ class GradGaussIVA(GradIVA):
 
             Returns:
                 numpy.ndarray:
-                    Computed contrast function.
+                    Computed contrast function. \
                     The shape is (n_sources, n_frames).
             """
             n_bins = self.n_bins
@@ -1904,12 +1947,12 @@ class GradGaussIVA(GradIVA):
             r"""
             Args:
                 y (numpy.ndarray):
-                    Norm of separated signal.
+                    Norm of separated signal. \
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
                 numpy.ndarray:
-                    Computed contrast function.
+                    Computed contrast function. \
                     The shape is (n_sources, n_frames).
             """
             alpha = self.variance
@@ -1971,16 +2014,16 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1989,10 +2032,10 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -2141,7 +2184,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
 
             Returns:
                 numpy.ndarray:
-                    Computed contrast function.
+                    Computed contrast function. \
                     The shape is (n_sources, n_frames).
             """
             n_bins = self.n_bins
@@ -2154,12 +2197,12 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             r"""
             Args:
                 y (numpy.ndarray):
-                    Norm of separated signal.
+                    Norm of separated signal. \
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
                 numpy.ndarray:
-                    Computed contrast function.
+                    Computed contrast function. \
                     The shape is (n_sources, n_frames).
             """
             alpha = self.variance
@@ -2219,19 +2262,20 @@ class AuxLaplaceIVA(AuxIVA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: "IP".
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -2240,10 +2284,10 @@ class AuxLaplaceIVA(AuxIVA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -2294,7 +2338,7 @@ class AuxLaplaceIVA(AuxIVA):
 
 class AuxGaussIVA(AuxIVA):
     r"""Auxiliary-function-based independent vector analysis (IVA) \
-    on a time-varying Gaussian distribution.
+    on a time-varying Gaussian distribution [#ono2012auxiliary]_.
 
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
 
@@ -2303,19 +2347,20 @@ class AuxGaussIVA(AuxIVA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: "IP".
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -2324,10 +2369,10 @@ class AuxGaussIVA(AuxIVA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     Examples:
@@ -2341,6 +2386,12 @@ class AuxGaussIVA(AuxIVA):
             spectrogram_est = iva(spectrogram_mix, n_iter=100)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#ono2012auxiliary]
+        N. Ono,
+        "Auxiliary-function-based independent vector analysis with power of \
+        vector-norm type weighting functions,"
+        in *Proc. APSIPA ASC*, 2012, pp. 1-4.
     """
 
     def __init__(
@@ -2455,7 +2506,7 @@ class AuxGaussIVA(AuxIVA):
             \right).
 
         Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
 
         .. math::
             \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
@@ -2469,7 +2520,7 @@ class AuxGaussIVA(AuxIVA):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
         and :math:`\boldsymbol{h}_{in}`.
 
         .. math::
@@ -2482,7 +2533,7 @@ class AuxGaussIVA(AuxIVA):
             {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
             \boldsymbol{h}_{in}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
         simultaneously.
 
         .. math::
@@ -2500,7 +2551,7 @@ class AuxGaussIVA(AuxIVA):
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
+        At each iteration, we update for all pairs of :math:`m` \
         and :math:`n` (:math:`m<n`).
         """
         n_sources = self.n_sources
