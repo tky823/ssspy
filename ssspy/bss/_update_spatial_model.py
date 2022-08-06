@@ -5,7 +5,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ..linalg import eigh
+from ..linalg import eigh2
 
 EPS = 1e-10
 
@@ -138,7 +138,7 @@ def update_by_ip2(
         V_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
 
         V_m, V_n = V_mn
-        _, H_mn = eigh(V_m, V_n)  # (n_bins, 2, 2)
+        _, H_mn = eigh2(V_m, V_n)  # (n_bins, 2, 2)
         h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
         hVh_mn = h_mn[:, :, np.newaxis, :].conj() @ V_mn @ h_mn[:, :, :, np.newaxis]
         hVh_mn = np.squeeze(hVh_mn, axis=-1)  # (2, n_bins, 1)
@@ -286,7 +286,7 @@ def update_by_iss2(
             varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :], axis=-1,
         )
         G_m, G_n = G_main
-        _, H_mn = eigh(G_m, G_n)
+        _, H_mn = eigh2(G_m, G_n)
         h_mn = H_mn.transpose(2, 0, 1)
         hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_main @ h_mn[:, :, :, np.newaxis]
         hGh_mn = np.squeeze(hGh_mn, axis=-1)
@@ -353,7 +353,7 @@ def update_by_ip2_one_pair(
     V = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
 
     V_m, V_n = V
-    _, H = eigh(V_m, V_n)  # (n_bins, 2, 2)
+    _, H = eigh2(V_m, V_n)  # (n_bins, 2, 2)
     h = H.transpose(2, 0, 1)  # (2, n_bins, 2)
     hVh = h[:, :, np.newaxis, :].conj() @ V @ h[:, :, :, np.newaxis]
     hVh = np.squeeze(hVh, axis=-1)  # (2, n_bins, 1)
