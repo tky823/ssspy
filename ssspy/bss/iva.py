@@ -20,6 +20,7 @@ from ._update_spatial_model import (
     update_by_iss2,
 )
 from .base import IterativeMethodBase
+from .pdsbss import PDSBSS
 
 __all__ = [
     "GradIVA",
@@ -27,6 +28,7 @@ __all__ = [
     "FastIVA",
     "FasterIVA",
     "AuxIVA",
+    "PDSIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
@@ -1946,6 +1948,57 @@ class AuxIVA(AuxIVAbase):
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+
+
+class PDSIVA(PDSBSS):
+    def __init__(
+        self,
+        mu1: float = 1,
+        mu2: float = 1,
+        alpha: float = 1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
+        callbacks: Optional[
+            Union[Callable[["PDSIVA"], None], List[Callable[["PDSIVA"], None]]]
+        ] = None,
+        should_apply_projection_back: bool = True,
+        should_record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        super().__init__(
+            mu1=mu1,
+            mu2=mu2,
+            alpha=alpha,
+            prox_penalty=prox_penalty,
+            callbacks=callbacks,
+            should_apply_projection_back=should_apply_projection_back,
+            should_record_loss=should_record_loss,
+            reference_id=reference_id,
+        )
+
+        self.contrast_fn = contrast_fn
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is given as follows:
+
+        .. math::
+            \mathcal{L} \
+            = \frac{2}{J}\sum_{j,n}\|\vec{\boldsymbol{y}}_{jn}\|_{2} \
+            - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|.
+
+        Returns:
+            float:
+                Computed loss.
+        """
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
+        logdet = self.compute_logdet(W)  # (n_bins,)
+        G = self.contrast_fn(Y)  # (n_sources, n_frames)
+        loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
+
+        return loss
 
 
 class GradLaplaceIVA(GradIVA):
