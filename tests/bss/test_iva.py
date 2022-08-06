@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import scipy.signal as ss
 
+from ssspy.bss.iva import IVAbase
 from ssspy.bss.iva import FastIVAbase, FastIVA, FasterIVA
 from ssspy.bss.iva import GradIVAbase, GradIVA, GradLaplaceIVA, GradGaussIVA
 from ssspy.bss.iva import NaturalGradIVA, NaturalGradLaplaceIVA, NaturalGradGaussIVA
@@ -54,6 +55,15 @@ parameters_aux_iva = [
     ),
     (4, "dev1_female4", {"demix_filter": None}),
 ]
+
+
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+def test_iva_base(
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
+):
+    iva = IVAbase(callbacks=callbacks)
+
+    print(iva)
 
 
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
