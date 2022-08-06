@@ -46,9 +46,11 @@ class IVAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -71,7 +73,7 @@ class IVAbase:
         callbacks: Optional[
             Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -239,6 +241,23 @@ class IVAbase:
 
         return logdet
 
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
@@ -277,9 +296,11 @@ class GradIVAbase(IVAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -301,7 +322,7 @@ class GradIVAbase(IVAbase):
             Union[Callable[["GradIVAbase"], None], List[Callable[["GradIVAbase"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -366,7 +387,7 @@ class GradIVAbase(IVAbase):
                     callback(self)
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -414,7 +435,7 @@ class FastIVAbase(IVAbase):
         callbacks: Optional[
             Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -548,9 +569,11 @@ class AuxIVAbase(IVAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -570,7 +593,7 @@ class AuxIVAbase(IVAbase):
         callbacks: Optional[
             Union[Callable[["AuxIVAbase"], None], List[Callable[["AuxIVAbase"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -641,9 +664,11 @@ class GradIVA(GradIVAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -684,7 +709,7 @@ class GradIVA(GradIVAbase):
             Union[Callable[["GradIVA"], None], List[Callable[["GradIVA"], None]]]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -783,9 +808,11 @@ class NaturalGradIVA(GradIVAbase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -826,7 +853,7 @@ class NaturalGradIVA(GradIVAbase):
             Union[Callable[["NaturalGradIVA"], None], List[Callable[["NaturalGradIVA"], None]]]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -922,9 +949,11 @@ class FastIVA(FastIVAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``. \
@@ -984,7 +1013,7 @@ class FastIVA(FastIVAbase):
         callbacks: Optional[
             Union[Callable[["FastIVA"], None], List[Callable[["FastIVA"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1051,7 +1080,7 @@ class FastIVA(FastIVAbase):
                     callback(self)
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         self.output = self.separate(
             self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
@@ -1121,9 +1150,11 @@ class FasterIVA(FastIVAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1148,7 +1179,7 @@ class FasterIVA(FastIVAbase):
         callbacks: Optional[
             Union[Callable[["FasterIVA"], None], List[Callable[["FasterIVA"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1209,7 +1240,7 @@ class FasterIVA(FastIVAbase):
                     callback(self)
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         self.output = self.separate(
             self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
@@ -1279,9 +1310,11 @@ class AuxIVA(AuxIVAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1321,7 +1354,7 @@ class AuxIVA(AuxIVAbase):
         callbacks: Optional[
             Union[Callable[["AuxIVA"], None], List[Callable[["AuxIVA"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ):
@@ -1384,7 +1417,7 @@ class AuxIVA(AuxIVAbase):
                     callback(self)
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
@@ -1705,9 +1738,11 @@ class GradLaplaceIVA(GradIVA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1739,7 +1774,7 @@ class GradLaplaceIVA(GradIVA):
             Union[Callable[["GradLaplaceIVA"], None], List[Callable[["GradLaplaceIVA"], None]]]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1844,7 +1879,7 @@ class GradGaussIVA(GradIVA):
             Union[Callable[["GradGaussIVA"], None], List[Callable[["GradGaussIVA"], None]]]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1947,9 +1982,11 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1984,7 +2021,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             ]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -2092,7 +2129,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             ]
         ] = None,
         is_holonomic: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -2196,9 +2233,11 @@ class AuxLaplaceIVA(AuxIVA):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -2230,7 +2269,7 @@ class AuxLaplaceIVA(AuxIVA):
         callbacks: Optional[
             Union[Callable[["AuxLaplaceIVA"], None], List[Callable[["AuxLaplaceIVA"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ):
@@ -2278,9 +2317,11 @@ class AuxGaussIVA(AuxIVA):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -2312,7 +2353,7 @@ class AuxGaussIVA(AuxIVA):
         callbacks: Optional[
             Union[Callable[["AuxGaussIVA"], None], List[Callable[["AuxGaussIVA"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ):

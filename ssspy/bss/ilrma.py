@@ -32,9 +32,11 @@ class ILRMAbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -63,7 +65,7 @@ class ILRMAbase:
         callbacks: Optional[
             Union[Callable[["ILRMAbase"], None], List[Callable[["ILRMAbase"], None]]]
         ] = None,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -141,7 +143,7 @@ class ILRMAbase:
                     callback(self)
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
@@ -493,6 +495,23 @@ class ILRMAbase:
 
         return logdet
 
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
@@ -536,9 +555,11 @@ class GaussILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -565,7 +586,7 @@ class GaussILRMA(ILRMAbase):
             Union[Callable[["GaussILRMA"], None], List[Callable[["GaussILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -1150,9 +1171,11 @@ class TILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1180,7 +1203,7 @@ class TILRMA(ILRMAbase):
             Union[Callable[["TILRMA"], None], List[Callable[["TILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
@@ -1809,9 +1832,11 @@ class GGDILRMA(ILRMAbase):
             Normalization of demixing filters and NMF parameters.
             Choose "power" or "projection_back".
             Default: ``"power"``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -1839,7 +1864,7 @@ class GGDILRMA(ILRMAbase):
             Union[Callable[["GGDILRMA"], None], List[Callable[["GGDILRMA"], None]]]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),

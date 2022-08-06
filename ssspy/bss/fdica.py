@@ -43,9 +43,11 @@ class FDICAbase:
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
             if ``record_loss=True``.
@@ -65,7 +67,7 @@ class FDICAbase:
             Union[Callable[["FDICAbase"], None], List[Callable[["FDICAbase"], None]]]
         ] = None,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -238,6 +240,23 @@ class FDICAbase:
 
         return logdet
 
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
@@ -278,9 +297,11 @@ class GradFDICAbase(FDICAbase):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -302,7 +323,7 @@ class GradFDICAbase(FDICAbase):
             Union[Callable[["GradFDICAbase"], None], List[Callable[["GradFDICAbase"], None]]]
         ] = None,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -370,7 +391,7 @@ class GradFDICAbase(FDICAbase):
             )
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -427,9 +448,11 @@ class GradFDICA(GradFDICAbase):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -472,7 +495,7 @@ class GradFDICA(GradFDICAbase):
         ] = None,
         is_holonomic: bool = False,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -591,9 +614,11 @@ class NaturalGradFDICA(GradFDICAbase):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -636,7 +661,7 @@ class NaturalGradFDICA(GradFDICAbase):
         ] = None,
         is_holonomic: bool = False,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -756,9 +781,11 @@ class AuxFDICA(FDICAbase):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -804,7 +831,7 @@ class AuxFDICA(FDICAbase):
             Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
         ] = None,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -874,7 +901,7 @@ class AuxFDICA(FDICAbase):
             )
 
         if self.scale_restoration:
-            self.apply_projection_back()
+            self.restore_scale()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -1065,9 +1092,11 @@ class GradLaplaceFDICA(GradFDICA):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -1101,7 +1130,7 @@ class GradLaplaceFDICA(GradFDICA):
         ] = None,
         is_holonomic: bool = False,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1189,9 +1218,11 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -1228,7 +1259,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         ] = None,
         is_holonomic: bool = False,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1319,9 +1350,11 @@ class AuxLaplaceFDICA(AuxFDICA):
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
             estimated spectrograms. Default: ``True``.
-        scale_restoration (bool):
-            If ``scale_restoration=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
             if ``record_loss=True``.
@@ -1342,7 +1375,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
         ] = None,
         solve_permutation: bool = True,
-        scale_restoration: bool = True,
+        scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
