@@ -34,7 +34,7 @@ EPS = 1e-10
 
 
 class IVAbase:
-    r"""Base class of independent vector analysis (IVA) [#kim2006independent]_.
+    r"""Base class of independent vector analysis (IVA).
 
     Args:
         flooring_fn (callable, optional):
@@ -58,11 +58,6 @@ class IVAbase:
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
-
-    .. [#kim2006independent]
-        T. Kim, H. T. Attias, S.-Y. Lee, and T.-W. Lee,
-        "Blind source separation exploiting higher-order frequency dependencies,"
-        in *IEEE Trans. ASLP*, vol. 15, no. 1, pp. 70-79, 2007.
     """
 
     def __init__(
@@ -639,7 +634,7 @@ class AuxIVAbase(IVAbase):
 
 
 class GradIVA(GradIVAbase):
-    r"""Independent vector analysis (IVA) using gradient descent.
+    r"""Independent vector analysis (IVA) [#kim2006independent]_ using gradient descent.
 
     Args:
         step_size (float):
@@ -695,6 +690,11 @@ class GradIVA(GradIVAbase):
             spectrogram_est = iva(spectrogram_mix, n_iter=5000)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#kim2006independent]
+        T. Kim, H. T. Attias, S.-Y. Lee, and T.-W. Lee,
+        "Blind source separation exploiting higher-order frequency dependencies,"
+        in *IEEE Trans. ASLP*, vol. 15, no. 1, pp. 70-79, 2007.
     """
 
     def __init__(
@@ -1283,12 +1283,12 @@ class FasterIVA(FastIVAbase):
 
 
 class AuxIVA(AuxIVAbase):
-    r"""Auxiliary-function-based independent vector analysis (IVA).
+    r"""Auxiliary-function-based independent vector analysis (IVA) [#ono2011stable]_.
 
     Args:
         spatial_algorithm (str):
             Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
+            Choose from ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``.
             Default: "IP".
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
@@ -1304,7 +1304,7 @@ class AuxIVA(AuxIVAbase):
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``.
             If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
@@ -1340,6 +1340,12 @@ class AuxIVA(AuxIVAbase):
             spectrogram_est = iva(spectrogram_mix, n_iter=100)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#ono2011stable]
+        N. Ono,
+        "Stable and fast update rules for independent vector analysis based on \
+        auxiliary function technique,"
+        in *Proc. WASPAA*, 2011, p.189-192.
     """
 
     def __init__(
@@ -1532,7 +1538,7 @@ class AuxIVA(AuxIVAbase):
             \right).
 
         Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
 
         .. math::
             \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
@@ -2220,14 +2226,14 @@ class AuxLaplaceIVA(AuxIVA):
     Args:
         spatial_algorithm (str):
             Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
+            Choose from ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``.
             If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
@@ -2294,7 +2300,7 @@ class AuxLaplaceIVA(AuxIVA):
 
 class AuxGaussIVA(AuxIVA):
     r"""Auxiliary-function-based independent vector analysis (IVA) \
-    on a time-varying Gaussian distribution.
+    on a time-varying Gaussian distribution [#ono2012auxiliary]_.
 
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
 
@@ -2303,15 +2309,16 @@ class AuxGaussIVA(AuxIVA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose from "IP", "IP1", or "IP2". Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose from ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: "IP".
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``.
             If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
@@ -2341,6 +2348,12 @@ class AuxGaussIVA(AuxIVA):
             spectrogram_est = iva(spectrogram_mix, n_iter=100)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
+
+    .. [#ono2012auxiliary]
+        N. Ono,
+        "Auxiliary-function-based independent vector analysis with power of \
+        vector-norm type weighting functions,"
+        in *Proc. APSIPA ASC*, 2012, pp. 1-4.
     """
 
     def __init__(
@@ -2455,7 +2468,7 @@ class AuxGaussIVA(AuxIVA):
             \right).
 
         Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
 
         .. math::
             \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
