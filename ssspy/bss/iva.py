@@ -1710,7 +1710,7 @@ class AuxIVA(AuxIVAbase):
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
             \end{cases}.
 
-        .. [#ikeshita2022iss2]_
+        .. [#ikeshita2022iss2]
             R. Ikeshita and T. Nakatani,
             "ISS2: An extension of iterative source steering algorithm for \
             majorization-minimization-based independent vector analysis,"
