@@ -1609,6 +1609,36 @@ class AuxIVA(AuxIVAbase):
         self.demix_filter = W
 
     def update_once_iss1(self) -> None:
+        r"""Update estimated spectrograms once using \
+        iterative source steering [#scheibler2020fast]_.
+
+        First, update auxiliary variables
+
+        .. math::
+            \bar{r}_{jn}
+            \leftarrow\|\vec{\boldsymbol{y}}_{jn}\|_{2}.
+
+        Then, update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn}
+            v_{inn'}
+            &= \begin{cases}
+                \dfrac{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}{2\bar{r}_{jn'}}
+                y_{ijn'}y_{ijn}^{*}}{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}
+                {2\bar{r}_{jn'}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\dfrac{1}{J}\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}
+                {2\bar{r}_{jn'}}
+                |y_{ijn}|^{2}}} & (n'=n)
+            \end{cases}.
+
+        .. [#scheibler2020fast]
+            R. Scheibler and N. Ono, \
+            "Fast and stable blind source separation with rank-1 updates," \
+            in *Proc. ICASSP*, 2020, pp. 236-240.
+        """
         Y = self.output
         r = np.linalg.norm(Y, axis=1)
         denom = self.flooring_fn(2 * r)

@@ -66,52 +66,43 @@ Algorithms
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.NaturalGradIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.FastIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.FasterIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.AuxIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.GradLaplaceIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.NaturalGradLaplaceIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.AuxLaplaceIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.iva.AuxGaussIVA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
