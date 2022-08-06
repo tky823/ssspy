@@ -1647,7 +1647,8 @@ class AuxIVA(AuxIVAbase):
         self.output = update_by_iss1(Y, varphi[:, np.newaxis, :], flooring_fn=self.flooring_fn)
 
     def update_once_iss2(self) -> None:
-        r"""Update estimated spectrograms once using pairwise iterative source steering.
+        r"""Update estimated spectrograms once using \
+        pairwise iterative source steering [#ikeshita2022iss2]_.
 
         First, we compute auxiliary variables:
 
@@ -1708,6 +1709,12 @@ class AuxIVA(AuxIVAbase):
             &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
             \end{cases}.
+
+        .. [#ikeshita2022iss2]_
+            R. Ikeshita and T. Nakatani,
+            "ISS2: An extension of iterative source steering algorithm for \
+            majorization-minimization-based independent vector analysis,"
+            *arXiv:2202.00875*, 2022.
         """
         Y = self.output
 
