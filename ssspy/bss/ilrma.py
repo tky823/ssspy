@@ -991,12 +991,12 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{r_{ijn}}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{r_{ijn}}
                 \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
                 \boldsymbol{f}_{in}^{(m,m')}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
+                \dfrac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
                 &(n\neq m,m'),
             \end{array}
 
@@ -1704,12 +1704,12 @@ class TILRMA(ILRMAbase):
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{\tilde{r}_{ijn}}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
                 \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
                 \boldsymbol{f}_{in}^{(m,m')}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
                 &(n\neq m,m'),
             \end{array}
 
@@ -2355,12 +2355,12 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{\tilde{r}_{ijn}}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
                 \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
                 \boldsymbol{f}_{in}^{(m,m')}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
                 &(n\neq m,m'),
             \end{array}
 
