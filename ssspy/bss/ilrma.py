@@ -16,7 +16,7 @@ EPS = 1e-10
 
 
 class ILRMAbase:
-    r"""Base class of independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_.
+    r"""Base class of independent low-rank matrix analysis (ILRMA).
 
     Args:
         n_basis (int):
@@ -47,11 +47,6 @@ class ILRMAbase:
         rng (numpy.random.Generator):
             Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
-
-    .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
-        "Determined blind source separation unifying independent vector analysis and \
-        nonnegative matrix factorization," \
-        *IEEE/ACM Trans. ASLP*, vol. 24, no. 9, pp. 1626-1641, 2016.
     """
 
     def __init__(
@@ -524,7 +519,8 @@ class ILRMAbase:
 
 
 class GaussILRMA(ILRMAbase):
-    r"""Independent low-rank matrix analysis (ILRMA) on Gaussian distribution.
+    r"""Independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_ \
+    on Gaussian distribution.
 
     Args:
         n_basis (int):
@@ -569,6 +565,11 @@ class GaussILRMA(ILRMAbase):
         rng (numpy.random.Generator):
             Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
+
+    .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
+        "Determined blind source separation unifying independent vector analysis and \
+        nonnegative matrix factorization," \
+        *IEEE/ACM Trans. ASLP*, vol. 24, no. 9, pp. 1626-1641, 2016.
     """
 
     def __init__(
@@ -865,10 +866,10 @@ class GaussILRMA(ILRMAbase):
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{G}_{im}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijm}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{G}_{in}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
 
@@ -884,24 +885,24 @@ class GaussILRMA(ILRMAbase):
             \right).
 
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{G}_{im}^{(m,n)}` and :math:`\boldsymbol{G}_{in}^{(m,n)}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
 
         where
 
         .. math::
             r_{ijn}
-            = \sum_{k}z_{nk}t_{ik}v_{kj}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
 
         if ``partitioning=True``.
         Otherwise,
 
         .. math::
             r_{ijn}
-            = \sum_{k}t_{ikn}v_{kjn}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
         We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
         and :math:`\boldsymbol{h}_{in}`.
@@ -909,11 +910,11 @@ class GaussILRMA(ILRMAbase):
         .. math::
             \boldsymbol{h}_{im}
             &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
             \boldsymbol{h}_{im}}}, \\
             \boldsymbol{h}_{in}
             &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
             \boldsymbol{h}_{in}}}.
 
         Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
@@ -965,6 +966,36 @@ class GaussILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
+            v_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{r_{ijn}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {r_{ijn}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {r_{ijn}}
+                |y_{ijn}|^{2}}} & (n'=n)
+            \end{cases},
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+        """
         p = self.domain
         Y = self.output
 
@@ -1004,14 +1035,14 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             r_{ijn}
-            = \sum_{k}z_{nk}t_{ik}v_{kj}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
 
         if ``partitioning=True``. \
         Otherwise,
 
         .. math::
             r_{ijn}
-            = \sum_{k}t_{ikn}v_{kjn}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
         Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
         we compute
@@ -1080,7 +1111,7 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}
@@ -1561,10 +1592,10 @@ class TILRMA(ILRMAbase):
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{G}_{im}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{G}_{in}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
 
@@ -1580,24 +1611,26 @@ class TILRMA(ILRMAbase):
             \right).
 
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{G}_{im}^{(m,n)}` and :math:`\boldsymbol{G}_{in}^{(m,n)}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
 
         where
 
         .. math::
             \tilde{r}_{ijn}
-            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}} + |y_{ijn}|^{2},
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
 
         if ``partitioning=True``. \
         Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
-            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}} + |y_{ijn}|^{2}.
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
         We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
         and :math:`\boldsymbol{h}_{in}`.
@@ -1605,11 +1638,11 @@ class TILRMA(ILRMAbase):
         .. math::
             \boldsymbol{h}_{im}
             &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
             \boldsymbol{h}_{im}}}, \\
             \boldsymbol{h}_{in}
             &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
             \boldsymbol{h}_{in}}}.
 
         Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
@@ -1670,6 +1703,38 @@ class TILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
+            v_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}}
+                & (n'=n)
+            \end{cases}.
+
+        :math:`\tilde{r}_{ijn}` is defined as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
         p = self.domain
         nu = self.dof
 
@@ -1804,7 +1869,7 @@ class TILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}
@@ -2320,6 +2385,24 @@ class GGDILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
+            v_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}
+                |y_{ijn}|^{2}}} & (n'=n)
+            \end{cases}.
+        """
         p = self.domain
         beta = self.beta
 
@@ -2455,7 +2538,7 @@ class GGDILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}

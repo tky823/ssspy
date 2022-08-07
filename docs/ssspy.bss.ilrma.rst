@@ -10,16 +10,13 @@ Algorithms
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.ilrma.TILRMA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
 
 .. autoclass:: ssspy.bss.ilrma.GGDILRMA
    :special-members: __call__
    :members:
    :undoc-members:
-   :inherited-members:
