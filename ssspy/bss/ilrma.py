@@ -531,8 +531,8 @@ class GaussILRMA(ILRMAbase):
             Number of NMF bases.
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2". \
-            Default: "IP".
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -1147,8 +1147,8 @@ class TILRMA(ILRMAbase):
             Degree of freedom parameter in student's-t distribution.
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2". \
-            Default: "IP".
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -1872,8 +1872,8 @@ class GGDILRMA(ILRMAbase):
             Shape parameter in generalized Gaussian distribution.
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2". \
-            Default: "IP".
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
