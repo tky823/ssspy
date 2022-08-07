@@ -1269,6 +1269,20 @@ class TILRMA(ILRMAbase):
 
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -1305,6 +1319,32 @@ class TILRMA(ILRMAbase):
 
     def update_basis(self) -> None:
         r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            &\leftarrow\left[
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}t_{ik}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
+            ^{\frac{p}{p+2}}t_{ikn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -1355,6 +1395,30 @@ class TILRMA(ILRMAbase):
 
     def update_activation(self) -> None:
         r"""Update NMF activations.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            v_{kj}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}v_{kj}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{p+2}}v_{kjn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -2096,7 +2160,7 @@ class GGDILRMA(ILRMAbase):
             \tilde{r}_{ijn}
             &= \frac{2|y_{ijn}|^{2-\beta}}{\beta}r_{ijn}^{\frac{\beta}{2}} \\
             r_{ijn}
-            =& \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+            &= \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
 
         if ``partitioning=True``, otherwise
 
