@@ -2075,6 +2075,35 @@ class GGDILRMA(ILRMAbase):
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_ip1(self) -> None:
+        r"""Update demixing filters once using iterative projection.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            &\leftarrow\frac{1}{J}\sum_{i,j,n}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\tilde{r}_{ijn}} \\
+            \tilde{r}_{ijn}
+            &= \frac{2|y_{ijn}|^{2-\beta}}{\beta}r_{ijn}^{\frac{\beta}{2}} \\
+            r_{ijn}
+            =& \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+
+        if ``partitioning=True``, otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+        """
         p = self.domain
         beta = self.beta
 
