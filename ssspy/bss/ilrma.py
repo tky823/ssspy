@@ -340,7 +340,7 @@ class ILRMAbase:
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            \leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
 
         where
 
@@ -407,7 +407,7 @@ class ILRMAbase:
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            \leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
 
         where
 
