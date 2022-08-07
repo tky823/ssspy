@@ -2220,18 +2220,22 @@ class GGDILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{U}_{in}
-            &\leftarrow\frac{1}{J}\sum_{i,j,n}
-            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\tilde{r}_{ijn}} \\
-            \tilde{r}_{ijn}
-            &= \frac{2|y_{ijn}|^{2-\beta}}{\beta}r_{ijn}^{\frac{\beta}{2}} \\
-            r_{ijn}
-            &= \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+            \leftarrow\frac{1}{J}\sum_{i,j,n}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\tilde{r}_{ijn}}.
 
-        if ``partitioning=True``, otherwise
+        :math:`\tilde{r}_{ijn}` is computed as
 
         .. math::
-            r_{ijn}
-            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta
@@ -2274,10 +2278,10 @@ class GGDILRMA(ILRMAbase):
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
+            \boldsymbol{G}_{im}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
+            \boldsymbol{G}_{in}^{(m,n)}
             &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
             \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
 
@@ -2292,27 +2296,26 @@ class GGDILRMA(ILRMAbase):
             \end{array}
             \right).
 
+        :math:`\tilde{r}_{ijn}` is computed as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        :math:`\boldsymbol{G}_{im}^{m,n}` and :math:`\boldsymbol{G}_{in}^{m,n}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
-
-        where
-
-        .. math::
-            \tilde{r}_{ijn}
-            = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
-
-        if ``partitioning=True``. \
-        Otherwise,
-
-        .. math::
-            \tilde{r}_{ijn}
-            = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
+            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
 
         We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
         and :math:`\boldsymbol{h}_{in}`.
@@ -2320,11 +2323,11 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \boldsymbol{h}_{im}
             &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
             \boldsymbol{h}_{im}}}, \\
             \boldsymbol{h}_{in}
             &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
+            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
             \boldsymbol{h}_{in}}}.
 
         Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
@@ -2394,14 +2397,27 @@ class GGDILRMA(ILRMAbase):
             & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
             v_{inn'}
             &= \begin{cases}
-                \dfrac{\displaystyle\sum_{j}\dfrac{1}{(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
                 y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
-                {(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}|y_{ijn}|^{2}}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}
                 & (n'\neq n) \\
                 1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
-                {(\sum_{k}t_{ikn}v_{kjn})^{\frac{2}{p}}}
-                |y_{ijn}|^{2}}} & (n'=n)
-            \end{cases}.
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}} & (n'=n)
+            \end{cases},
+
+        where :math:`\tilde{r}_{ijn}` is computed as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta
