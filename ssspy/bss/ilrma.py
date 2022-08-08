@@ -909,7 +909,8 @@ class GaussILRMA(ILRMAbase):
         self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_ip2(self) -> None:
-        r"""Update demixing filters once using pairwise iterative projection.
+        r"""Update demixing filters once using pairwise iterative projection \
+        following [#nakashima2021faster]_.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
@@ -987,6 +988,10 @@ class GaussILRMA(ILRMAbase):
 
         At each iteration, we update for all pairs of :math:`n_{1}` \
         and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
+
+        .. [#nakashima2021faster] T. Nakashima, R. Scheibler, Y. Wakabayashi, and N. Ono, \
+            "Faster independent low-rank matrix analysis with pairwise updates of demixing vectors,"
+            in *Proc. EUSIPCO*, 2021, pp. 301-305.
         """
         p = self.domain
 
