@@ -837,10 +837,10 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called. \
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -1550,10 +1550,10 @@ class TILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called. \
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -2236,10 +2236,10 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called. \
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
