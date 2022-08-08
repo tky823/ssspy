@@ -20,6 +20,10 @@ def projection_back(
         reference_id (int, optional):
             Reference microphone index. Default: ``0``.
 
+    Returns:
+        numpy.ndarray:
+            Rescaled estimated spectrograms or demixing filters.
+
     Examples:
         When you give estimated spectrograms,
 
