@@ -911,34 +911,35 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{G}_{im}^{(m,n)}` and :math:`\boldsymbol{G}_{in}^{(m,n)}`.
+        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
@@ -953,39 +954,39 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m` \
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         p = self.domain
 
@@ -1065,19 +1066,19 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{r_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \dfrac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
@@ -1093,34 +1094,36 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and :math:`\boldsymbol{f}_{in}`, \
         we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
 
         """
@@ -1637,34 +1640,35 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{G}_{im}^{(m,n)}` and :math:`\boldsymbol{G}_{in}^{(m,n)}`.
+        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
@@ -1681,39 +1685,39 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m` \
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         nu = self.dof
         p = self.domain
@@ -1812,19 +1816,19 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
@@ -1842,34 +1846,36 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and :math:`\boldsymbol{f}_{in}`, \
         we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
         """
         p = self.domain
@@ -2327,21 +2333,21 @@ class GGDILRMA(ILRMAbase):
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
@@ -2360,45 +2366,45 @@ class GGDILRMA(ILRMAbase):
             \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
 
         Compute generalized eigenvectors of \
-        :math:`\boldsymbol{G}_{im}^{m,n}` and :math:`\boldsymbol{G}_{in}^{m,n}`.
+        :math:`\boldsymbol{G}_{in_{1}}^{n_{1},n_{2}}` and :math:`\boldsymbol{G}_{in}^{n_{1},n_{2}}`.
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{G}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m` \
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         p = self.domain
         beta = self.beta
@@ -2497,19 +2503,19 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
@@ -2527,34 +2533,36 @@ class GGDILRMA(ILRMAbase):
             = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
             \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
         """
         p = self.domain
