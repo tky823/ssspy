@@ -548,7 +548,7 @@ class GaussILRMA(ILRMAbase):
             Default: ``None``.
         normalization (bool or str, optional):
             Normalization of demixing filters and NMF parameters. \
-            Choose "power" or "projection_back". \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1248,7 +1248,7 @@ class TILRMA(ILRMAbase):
             Default: ``None``.
         normalization (bool or str, optional):
             Normalization of demixing filters and NMF parameters. \
-            Choose "power" or "projection_back". \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -2007,7 +2007,7 @@ class GGDILRMA(ILRMAbase):
             Default: ``None``.
         normalization (bool or str, optional):
             Normalization of demixing filters and NMF parameters. \
-            Choose "power" or "projection_back". \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
