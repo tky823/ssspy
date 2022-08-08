@@ -1099,8 +1099,8 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
@@ -1851,8 +1851,8 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
