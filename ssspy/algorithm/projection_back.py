@@ -13,9 +13,9 @@ def projection_back(
     The implementation is based on [#murata2001approach]_.
 
     Args:
-        data_or_filter (np.ndarray):
+        data_or_filter (numpy.ndarray):
             Estimated spectrograms or demixing filters.
-        reference (np.ndarray, optional):
+        reference (numpy.ndarray, optional):
             Reference spectrogram.
         reference_id (int, optional):
             Reference microphone index. Default: ``0``.
