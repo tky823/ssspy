@@ -18,12 +18,53 @@ def projection_back(
         reference (np.ndarray, optional):
             Reference spectrogram.
         reference_id (int, optional):
-            Reference microphone index. Default: 0.
+            Reference microphone index. Default: ``0``.
+
+    Examples:
+        When you give estimated spectrograms,
+
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            n_sources = n_channels
+            spectrogram_mix = \
+                np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            demix_filter = \
+                np.random.randn(n_sources, n_channels) \
+                + 1j * np.random.randn(n_sources, n_channels)
+
+            spectrogram_est = demix_filter @ spectrogram_mix.transpose(1, 0, 2)
+
+            # (n_bins, n_sources, n_frames) -> (n_sources, n_bins, n_frames)
+            spectrogram_est = spectrogram_est.transpose(1, 0, 2)
+
+            spectrogram_est = \
+                projection_back(spectrogram_est, reference=spectrogram_mix, reference_id=0)
+
+        When you give demixing filters,
+
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            n_sources = n_channels
+            spectrogram_mix = \
+                np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            demix_filter = \
+                np.random.randn(n_sources, n_channels) \
+                + 1j * np.random.randn(n_sources, n_channels)
+
+            demix_filter = projection_back(demix_filter, reference_id=0)
+
+            spectrogram_est = demix_filter @ spectrogram_mix.transpose(1, 0, 2)
+
+            # (n_bins, n_sources, n_frames) -> (n_sources, n_bins, n_frames)
+            spectrogram_est = spectrogram_est.transpose(1, 0, 2)
 
     .. [#murata2001approach]
         N. Murata, S. Ikeda, and A. Ziehe,
-        "An approach to blind source separation based on \
-        temporal structure of speech signals,"
+        "An approach to blind source separation based on temporal structure of speech signals,"
         *Neurocomputing*, vol. 41, no. 1-4, pp. 1-24, 2001.
     """
     if reference is None:
