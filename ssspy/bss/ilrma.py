@@ -1022,8 +1022,8 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{y}_{ij}
-            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
-            v_{inn'}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
             &= \begin{cases}
                 \dfrac{\displaystyle\sum_{j}\dfrac{1}{r_{ijn}}
                 y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
@@ -1762,8 +1762,8 @@ class TILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{y}_{ij}
-            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
-            v_{inn'}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
             &= \begin{cases}
                 \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
                 y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
@@ -2449,8 +2449,8 @@ class GGDILRMA(ILRMAbase):
 
         .. math::
             \boldsymbol{y}_{ij}
-            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn} \\
-            v_{inn'}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
             &= \begin{cases}
                 \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
                 y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
