@@ -8,7 +8,7 @@ def projection_back(
     reference: Optional[np.ndarray] = None,
     reference_id: Optional[int] = 0,
 ):
-    r"""Projection back technique for scale alignment.
+    r"""Projection back technique to restore scale ambiguity.
 
     The implementation is based on [#murata2001approach]_.
 
