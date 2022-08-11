@@ -105,7 +105,7 @@ def update_by_ip2(
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair. \
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            If ``None`` is given, ``sequential_pair_selector`` is used. \
             Default: ``None``.
         overwrite (bool):
             Overwrite ``demix_filter`` if ``overwrite=True``. \
@@ -120,7 +120,7 @@ def update_by_ip2(
         flooring_fn = _identity
 
     if pair_selector is None:
-        pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        pair_selector = sequential_pair_selector
 
     if overwrite:
         W = demix_filter
@@ -232,7 +232,7 @@ def update_by_iss2(
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair. \
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            If ``None`` is given, ``sequential_pair_selector`` is used. \
             Default: ``None``.
 
     Returns:
@@ -244,7 +244,7 @@ def update_by_iss2(
         flooring_fn = _identity
 
     if pair_selector is None:
-        pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        pair_selector = sequential_pair_selector
 
     Y = separated
     varphi = weight
@@ -252,16 +252,31 @@ def update_by_iss2(
     n_sources = Y.shape[0]
 
     for m, n in pair_selector(n_sources):
+        if m < 0:
+            m = n_sources + m
+        if n < 0:
+            n = n_sources + n
+
+        if m > n:
+            ascend = False
+            m, n = n, m
+        else:
+            ascend = True
+
         # Split into main and sub
         Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-        Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
         Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
         varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
             varphi, [m, m + 1, n, n + 1], axis=0
         )
-        varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
         varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
+
+        if ascend:
+            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
+        else:
+            Y_main = np.concatenate([Y_n, Y_m], axis=0)  # (2, n_bins, n_frames)
+            varphi_main = np.concatenate([varphi_n, varphi_m], axis=0)
 
         YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
         YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
@@ -304,7 +319,11 @@ def update_by_iss2(
         # Concat
         Y_m, Y_n = np.split(Y_main, [1], axis=0)
         Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-        Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
+
+        if ascend:
+            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
+        else:
+            Y = np.concatenate([Y1, Y_n, Y2, Y_m, Y3], axis=0)
 
     return Y
 
