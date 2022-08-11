@@ -522,6 +522,24 @@ class GaussILRMA(ILRMAbase):
     r"""Independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_ \
     on Gaussian distribution.
 
+    We assume :math:`y_{ijn}` follows a Gaussian distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{1}{\pi r_{ijn}}\exp\left(-\frac{|y_{ijn}|^{2}}{r_{ijn}}\right),
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
     Args:
         n_basis (int):
             Number of NMF bases.
@@ -1226,7 +1244,28 @@ class GaussILRMA(ILRMAbase):
 
 
 class TILRMA(ILRMAbase):
-    r"""Independent low-rank matrix analysis (ILRMA) on student's-t distribution.
+    r"""Independent low-rank matrix analysis (ILRMA) on Student's *t* distribution.
+
+    We assume :math:`y_{ijn}` follows a Student's *t* distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{1}{\pi r_{ijn}}
+        \left(1+\frac{2}{\nu}\frac{|y_{ijn}|^{2}}{r_{ijn}}\right)^{-\frac{2+\nu}{2}},
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+    :math:`\nu` is a degree of freedom parameter.
 
     Args:
         n_basis (int):
@@ -1989,6 +2028,27 @@ class TILRMA(ILRMAbase):
 
 class GGDILRMA(ILRMAbase):
     r"""Independent low-rank matrix analysis (ILRMA) on generalized Gaussian distribution.
+
+    We assume :math:`y_{ijn}` follows a Student's *t* distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{\beta}{2\pi r_{ijn}\Gamma\left(\frac{2}{\beta}\right)}
+        \exp\left\{-\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}\right)^{\frac{\beta}{2}}\right\},
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+    :math:`\beta` is a shape parameter of a generalized Gaussian distribution.
 
     Args:
         n_basis (int):
