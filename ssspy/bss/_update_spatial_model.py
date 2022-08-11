@@ -129,7 +129,7 @@ def update_by_ip2(
 
     U = weighted_covariance.transpose(1, 0, 2, 3)
 
-    n_bins, n_sources, n_channels = W.shape
+    n_sources = W.shape[1]
 
     for m, n in pair_selector(n_sources):
         W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
