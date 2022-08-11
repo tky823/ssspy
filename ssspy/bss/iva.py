@@ -896,7 +896,7 @@ class NaturalGradIVA(GradIVAbase):
 
 
 class FastIVA(FastIVAbase):
-    r"""Fast independent vector analysis (FasterIVA) [#lee2007fast]_.
+    r"""Fast independent vector analysis (Fast IVA) [#lee2007fast]_.
 
     Args:
         contrast_fn (callable):
@@ -1083,7 +1083,7 @@ class FastIVA(FastIVAbase):
 
 
 class FasterIVA(FastIVAbase):
-    r"""Faster independent vector analysis (FasterIVA) [#brendel2021fasteriva]_.
+    r"""Faster independent vector analysis (Faster IVA) [#brendel2021fasteriva]_.
 
     Args:
         contrast_fn (callable):
@@ -1400,7 +1400,13 @@ class AuxIVA(AuxIVAbase):
     def update_once_ip1(self) -> None:
         r"""Update demixing filters once using iterative projection.
 
-        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+        Compute auxiliary variables:
+
+        .. math::
+            \bar{r}_{jn}
+            \leftarrow\|\vec{\boldsymbol{y}}_{jn}\|_{2}
+
+        Then, demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
         .. math::
             \boldsymbol{w}_{in}
@@ -1415,8 +1421,9 @@ class AuxIVA(AuxIVAbase):
         .. math::
             \boldsymbol{U}_{in}
             &= \frac{1}{J}\sum_{j}
-            \frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}{2\|\vec{\boldsymbol{y}}_{jn}\|_{2}}
-            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}, \\
+            \varphi(\bar{r}_{jn})\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}, \\
+            \varphi(\bar{r}_{jn})
+            &= \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}, \\
             G(\vec{\boldsymbol{y}}_{jn})
             &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
@@ -1438,36 +1445,45 @@ class AuxIVA(AuxIVAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
-        compute weighted covariance matrix as follows:
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        compute auxiliary variables:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \bar{r}_{jn_{1}}
+            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{1}}\|_{2} \\
+            \bar{r}_{jn_{2}}
+            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}
+
+        Then, compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{1}})
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{2}})
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
-            = \left(
+            \varphi(\bar{r}_{jn})
+            &= \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}} \\
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            &= \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
+        Compute generalized eigenvectors of \
+        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
@@ -1477,39 +1493,39 @@ class AuxIVA(AuxIVAbase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}`
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         n_sources = self.n_sources
 
@@ -1546,8 +1562,8 @@ class AuxIVA(AuxIVAbase):
 
         .. math::
             \boldsymbol{y}_{ij}
-            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{v}_{in}y_{ijn}
-            v_{inn'}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn}, \\
+            d_{inn'}
             &= \begin{cases}
                 \dfrac{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}{2\bar{r}_{jn'}}
                 y_{ijn'}y_{ijn}^{*}}{\sum_{j}\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn'})}
@@ -1577,9 +1593,8 @@ class AuxIVA(AuxIVAbase):
         First, we compute auxiliary variables:
 
         .. math::
-            \varphi_{jn}
-            \leftarrow\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}},
+            \bar{r}_{jn}
+            \leftarrow\|\vec{\boldsymbol{y}}_{jn}\|_{2},
 
         where
 
@@ -1589,49 +1604,53 @@ class AuxIVA(AuxIVAbase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\varphi_{jn}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\varphi(\bar{r}_{jn})
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \varphi_{jn}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m').
+                \varphi(\bar{r}_{jn})y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}), \\
+                \varphi(\bar{r}_{jn})
+                &=&\dfrac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}.
             \end{array}
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
 
         .. [#ikeshita2022iss2]
@@ -2400,36 +2419,44 @@ class AuxGaussIVA(AuxIVA):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        Update auxiliary variables:
+
+        .. math::
+            \bar{r}_{jn_{1}}
+            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{1}}\|_{2} \\
+            \bar{r}_{jn_{2}}
+            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}.
+
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jm}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jm}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
-            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{1}})\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            {\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}, \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{2}})\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            {\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}, \\
+            \varphi(\bar{r}_{jn})
+            &= \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
+        Compute generalized eigenvectors of :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
@@ -2439,39 +2466,39 @@ class AuxGaussIVA(AuxIVA):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}` \
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
         and :math:`\boldsymbol{h}_{in}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m` \
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         n_sources = self.n_sources
 
