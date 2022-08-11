@@ -64,64 +64,50 @@ Quick Example of Blind Source Separation
 
 .. code-block:: python
 
-   import os
-   import urllib.request
-   import zipfile
-
    import numpy as np
-   import soundfile as sf
+   import scipy.signal as ss
    import matplotlib.pyplot as plt
 
-   from ssspy.bss.ica import NaturalGradLaplaceICA
+   from ssspy.utils.dataset import download_sample_speech_data
+   from ssspy.bss.iva import AuxLaplaceIVA
 
 
-   def download_sisec2011():
-      filename = "dev1.zip"
-      save_dir = "./data/SiSEC2011"
-      save_path = os.path.join(save_dir, filename)
-      url = "http://www.irisa.fr/metiss/SiSEC10/underdetermined/{}".format(filename)
-      data = urllib.request.urlopen(url).read()
+   n_fft, hop_length = 4096, 2048
+   window = "hann"
 
-      os.makedirs(save_dir, exist_ok=True)
+   waveform_src_img = download_sample_speech_data(n_sources=3)
+   waveform_mix = np.sum(waveform_src_img, axis=1)
+   _, _, spectrogram_mix = ss.stft(
+      waveform_mix,
+      window=window,
+      nperseg=n_fft,
+      noverlap=n_fft-hop_length
+   )
+   _, _, spectrogram_mix = ss.stft(
+      waveform_mix,
+      window=window,
+      nperseg=n_fft,
+      noverlap=n_fft-hop_length
+   )
 
-      if not os.path.exists(save_path):
-         with open(save_path, mode="wb") as f:
-               f.write(data)
+   iva = AuxLaplaceIVA()
+   spectrogram_est = iva(spectrogram_mix)
 
-      with zipfile.ZipFile(save_path) as f:
-         f.extractall(save_dir)
-
-      wav_path = os.path.join(save_dir, "dev1_female3_src_{src_idx}.wav")
-      wav_paths = [wav_path.format(src_idx=src_idx + 1) for src_idx in range(n_sources)]
-
-      return wav_paths
-
-
-   n_channels = n_sources = 2
-   wav_paths = download_sisec2011()
-
-   waveform_src = []
-
-   for wav_path in wav_paths:
-      waveform, _ = sf.read(wav_path)
-      waveform_src.append(waveform)
-
-   waveform_src = np.stack(waveform_src, axis=0)
-   mixing_matrix = np.random.randn(n_channels, n_sources)
-   waveform_mix = mixing_matrix @ waveform_src
-
-   ica = NaturalGradLaplaceICA(is_holonomic=True)
-   waveform_est = ica(waveform_mix, n_iter=100)
+   _, waveform_est = ss.istft(
+      spectrogram_est,
+      window=window,
+      nperseg=n_fft,
+      noverlap=n_fft-hop_length
+   )
 
    plt.figure()
-   plt.plot(ica.loss)
+   plt.plot(iva.loss)
    plt.show()
 
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
-   :hidden:
 
    api
 
