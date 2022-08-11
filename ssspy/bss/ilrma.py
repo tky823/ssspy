@@ -16,7 +16,7 @@ EPS = 1e-10
 
 
 class ILRMAbase:
-    r"""Base class of independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_.
+    r"""Base class of independent low-rank matrix analysis (ILRMA).
 
     Args:
         n_basis (int):
@@ -24,13 +24,13 @@ class ILRMAbase:
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -39,20 +39,14 @@ class ILRMAbase:
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
         rng (numpy.random.Generator):
-            Random number generator. This is mainly used to randomly initialize NMF.
+            Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
-
-    .. [#kitamura2016determined]
-        D. Kitamura et al.,
-        "Determined blind source separation unifying independent vector analysis \
-        and nonnegative matrix factorization,"
-        *IEEE/ACM Trans. ASLP.*, vol. 24, no. 9, pp. 1626-1641, 2016.
     """
 
     def __init__(
@@ -108,15 +102,15 @@ class ILRMAbase:
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -261,15 +255,15 @@ class ILRMAbase:
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``.
+                The demixing filters to separate ``input``. \
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
@@ -285,19 +279,19 @@ class ILRMAbase:
 
         Args:
             basis (numpy.ndarray):
-                Basis matrix.
-                The shape is (n_sources, n_basis, n_frames) if latent is given.
+                Basis matrix. \
+                The shape is (n_sources, n_basis, n_frames) if latent is given. \
                 Otherwise, (n_basis, n_frames).
             activation (numpy.ndarray):
-                Activation matrix.
-                The shape is (n_sources, n_bins, n_basis) if latent is given.
+                Activation matrix. \
+                The shape is (n_sources, n_bins, n_basis) if latent is given. \
                 Otherwise, (n_bins, n_basis).
             latent (numpy.ndarray, optional):
                 Latent variable that determines number of bases per source.
 
         Returns:
             numpy.ndarray:
-                Reconstructed NMF.
+                Reconstructed NMF. \
                 The shape is (n_sources, n_bins, n_frames).
         """
         if latent is None:
@@ -341,7 +335,7 @@ class ILRMAbase:
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            \leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
 
         where
 
@@ -408,7 +402,7 @@ class ILRMAbase:
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
+            \leftarrow\frac{\boldsymbol{w}_{in}}{\psi_{in}},
 
         where
 
@@ -525,35 +519,54 @@ class ILRMAbase:
 
 
 class GaussILRMA(ILRMAbase):
-    r"""Independent low-rank matrix analysis (ILRMA) on Gaussian distribution.
+    r"""Independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_ \
+    on Gaussian distribution.
+
+    We assume :math:`y_{ijn}` follows a Gaussian distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{1}{\pi r_{ijn}}\exp\left(-\frac{|y_{ijn}|^{2}}{r_{ijn}}\right),
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
     Args:
         n_basis (int):
             Number of NMF bases.
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
-            Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         normalization (bool or str, optional):
-            Normalization of demixing filters and NMF parameters.
-            Choose "power" or "projection_back".
+            Normalization of demixing filters and NMF parameters. \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -562,14 +575,19 @@ class GaussILRMA(ILRMAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
         rng (numpy.random.Generator):
-            Random number generator. This is mainly used to randomly initialize NMF.
+            Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
+
+    .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
+        "Determined blind source separation unifying independent vector analysis and \
+        nonnegative matrix factorization," \
+        *IEEE/ACM Trans. ASLP*, vol. 24, no. 9, pp. 1626-1641, 2016.
     """
 
     def __init__(
@@ -636,7 +654,7 @@ class GaussILRMA(ILRMAbase):
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Set arguments as attributes of ILRMA.
         """
         super()._reset(**kwargs)
 
@@ -664,6 +682,17 @@ class GaussILRMA(ILRMAbase):
 
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{p+2}{p}}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}.
         """
         p = self.domain
 
@@ -697,6 +726,26 @@ class GaussILRMA(ILRMAbase):
 
     def update_basis(self) -> None:
         r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{p+2}{p}}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}t_{ik},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{p+2}{p}}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
+            ^{\frac{p}{p+2}}t_{ikn}.
         """
         p = self.domain
 
@@ -742,6 +791,24 @@ class GaussILRMA(ILRMAbase):
 
     def update_activation(self):
         r"""Update NMF activations.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{p+2}{p}}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}v_{kj},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{p+2}{p}}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{p+2}}v_{kjn}.
         """
         p = self.domain
 
@@ -788,10 +855,10 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -860,83 +927,89 @@ class GaussILRMA(ILRMAbase):
         self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
 
     def update_spatial_model_ip2(self) -> None:
-        r"""Update demixing filters once using pairwise iterative projection.
+        r"""Update demixing filters once using pairwise iterative projection \
+        following [#nakashima2021faster]_.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        Compute generalized eigenvectors of \
+        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
         .. math::
             r_{ijn}
-            = \sum_{k}z_{nk}t_{ik}v_{kj}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
 
         if ``partitioning=True``.
         Otherwise,
 
         .. math::
             r_{ijn}
-            = \sum_{k}t_{ikn}v_{kjn}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
+
+        .. [#nakashima2021faster] T. Nakashima, R. Scheibler, Y. Wakabayashi, and N. Ono, \
+            "Faster independent low-rank matrix analysis with pairwise updates of demixing vectors,"
+            in *Proc. EUSIPCO*, 2021, pp. 301-305.
         """
         p = self.domain
 
@@ -966,6 +1039,36 @@ class GaussILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{r_{ijn}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {r_{ijn}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {r_{ijn}}
+                |y_{ijn}|^{2}}} & (n'=n)
+            \end{cases},
+
+        where
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            r_{ijn}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+        """
         p = self.domain
         Y = self.output
 
@@ -986,62 +1089,64 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{r_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{r_{ijn}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{r_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
 
         .. math::
             r_{ijn}
-            = \sum_{k}z_{nk}t_{ik}v_{kj}
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
 
-        if ``partitioning=True``.
+        if ``partitioning=True``. \
         Otherwise,
 
         .. math::
             r_{ijn}
-            = \sum_{k}t_{ikn}v_{kjn}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
 
         """
@@ -1081,7 +1186,7 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}
@@ -1139,7 +1244,28 @@ class GaussILRMA(ILRMAbase):
 
 
 class TILRMA(ILRMAbase):
-    r"""Independent low-rank matrix analysis (ILRMA) on student's-t distribution.
+    r"""Independent low-rank matrix analysis (ILRMA) on Student's *t* distribution.
+
+    We assume :math:`y_{ijn}` follows a Student's *t* distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{1}{\pi r_{ijn}}
+        \left(1+\frac{2}{\nu}\frac{|y_{ijn}|^{2}}{r_{ijn}}\right)^{-\frac{2+\nu}{2}},
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+    :math:`\nu` is a degree of freedom parameter.
 
     Args:
         n_basis (int):
@@ -1147,29 +1273,29 @@ class TILRMA(ILRMAbase):
         dof (float):
             Degree of freedom parameter in student's-t distribution.
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
-            Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         normalization (bool or str, optional):
-            Normalization of demixing filters and NMF parameters.
-            Choose "power" or "projection_back".
+            Normalization of demixing filters and NMF parameters. \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1178,13 +1304,13 @@ class TILRMA(ILRMAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
         rng (numpy.random.Generator):
-            Random number generator. This is mainly used to randomly initialize NMF.
+            Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
     """
 
@@ -1270,6 +1396,20 @@ class TILRMA(ILRMAbase):
 
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -1306,6 +1446,32 @@ class TILRMA(ILRMAbase):
 
     def update_basis(self) -> None:
         r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            &\leftarrow\left[
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}t_{ik}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
+            ^{\frac{p}{p+2}}t_{ikn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -1356,6 +1522,30 @@ class TILRMA(ILRMAbase):
 
     def update_activation(self) -> None:
         r"""Update NMF activations.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            v_{kj}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{p+2}}v_{kj}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{p+2}}v_{kjn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         p = self.domain
         nu = self.dof
@@ -1407,10 +1597,10 @@ class TILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -1494,81 +1684,84 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
+        Compute generalized eigenvectors of \
+        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
         where
 
         .. math::
             \tilde{r}_{ijn}
-            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}} + |y_{ijn}|^{2},
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
 
-        if ``partitioning=True``.
+        if ``partitioning=True``. \
         Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
-            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}} + |y_{ijn}|^{2}.
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         nu = self.dof
         p = self.domain
@@ -1607,6 +1800,38 @@ class TILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}}
+                & (n'=n)
+            \end{cases}.
+
+        :math:`\tilde{r}_{ijn}` is defined as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
+            + \frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
         p = self.domain
         nu = self.dof
 
@@ -1635,19 +1860,19 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{\tilde{r}_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
@@ -1657,7 +1882,7 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}
 
-        if ``partitioning=True``.
+        if ``partitioning=True``. \
         Otherwise,
 
         .. math::
@@ -1665,34 +1890,36 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
         """
         p = self.domain
@@ -1741,7 +1968,7 @@ class TILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}
@@ -1802,35 +2029,56 @@ class TILRMA(ILRMAbase):
 class GGDILRMA(ILRMAbase):
     r"""Independent low-rank matrix analysis (ILRMA) on generalized Gaussian distribution.
 
+    We assume :math:`y_{ijn}` follows a Student's *t* distribution.
+
+    .. math::
+        p(y_{ijn})
+        = \frac{\beta}{2\pi r_{ijn}\Gamma\left(\frac{2}{\beta}\right)}
+        \exp\left\{-\left(\frac{|y_{ijn}|^{2}}{r_{ijn}}\right)^{\frac{\beta}{2}}\right\},
+
+    where
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
+
+    if ``partitioning=True``. Otherwise,
+
+    .. math::
+        r_{ijn}
+        = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
+
+    :math:`\beta` is a shape parameter of a generalized Gaussian distribution.
+
     Args:
         n_basis (int):
             Number of NMF bases.
         beta (float):
             Shape parameter in generalized Gaussian distribution.
         spatial_algorithm (str):
-            Algorithm for demixing filter updates.
-            Choose "IP", "IP1", "IP2", "ISS", "ISS1", or "ISS2".
-            Default: "IP".
+            Algorithm for demixing filter updates. \
+            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
+            Default: ``"IP"``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to return the same shape tensor as the input.
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         normalization (bool or str, optional):
-            Normalization of demixing filters and NMF parameters.
-            Choose "power" or "projection_back".
+            Normalization of demixing filters and NMF parameters. \
+            Choose ``"power"`` or ``"projection_back"``. \
             Default: ``"power"``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -1839,13 +2087,13 @@ class GGDILRMA(ILRMAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
         rng (numpy.random.Generator):
-            Random number generator. This is mainly used to randomly initialize NMF.
+            Random number generator. This is mainly used to randomly initialize NMF. \
             Default: ``numpy.random.default_rng()``.
     """
 
@@ -1932,6 +2180,19 @@ class GGDILRMA(ILRMAbase):
 
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{2}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}z_{nk}, \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\displaystyle\sum_{n'}z_{n'k}}.
         """
         p = self.domain
         beta = self.beta
@@ -1966,6 +2227,28 @@ class GGDILRMA(ILRMAbase):
 
     def update_basis(self) -> None:
         r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}t_{ik},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{j}\frac{v_{kjn}}
+            {(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{\beta+p}}t_{ikn}.
         """
         p = self.domain
         beta = self.beta
@@ -2012,6 +2295,28 @@ class GGDILRMA(ILRMAbase):
 
     def update_activation(self) -> None:
         r"""Update NMF activations.
+
+        Update :math:`v_{kjn}` as follows:
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}v_{kj},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i}\frac{t_{ikn}}
+            {(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i}\frac{t_{ik}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{\beta+p}}v_{kjn}.
         """
         p = self.domain
         beta = self.beta
@@ -2059,10 +2364,10 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -2076,6 +2381,39 @@ class GGDILRMA(ILRMAbase):
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_ip1(self) -> None:
+        r"""Update demixing filters once using iterative projection.
+
+        Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            \boldsymbol{e}_{n}, \\
+            \boldsymbol{w}_{in}
+            &\leftarrow\frac{\boldsymbol{w}_{in}}
+            {\sqrt{\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\boldsymbol{w}_{in}}},
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{in}
+            \leftarrow\frac{1}{J}\sum_{i,j,n}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\tilde{r}_{ijn}}.
+
+        :math:`\tilde{r}_{ijn}` is computed as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+        """
         p = self.domain
         beta = self.beta
 
@@ -2113,83 +2451,82 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijm}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn}} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             = \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}` and :math:`\boldsymbol{V}_{in}`.
-
-        .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i},
-
-        where
+        :math:`\tilde{r}_{ijn}` is computed as
 
         .. math::
             \tilde{r}_{ijn}
-            = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
 
-        if ``partitioning=True``.
-        Otherwise,
+        if ``partitioning=True``. Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
-            = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
+        Compute generalized eigenvectors of \
+        :math:`\boldsymbol{G}_{in_{1}}^{n_{1},n_{2}}` and :math:`\boldsymbol{G}_{in}^{n_{1},n_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
+
+        .. math::
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
+
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
         """
         p = self.domain
         beta = self.beta
@@ -2228,6 +2565,37 @@ class GGDILRMA(ILRMAbase):
         )
 
     def update_spatial_model_iss1(self) -> None:
+        r"""Update estimated spectrograms once using iterative source steering.
+
+        Update :math:`y_{ijn}` as follows:
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            & \leftarrow\boldsymbol{y}_{ij} - \boldsymbol{d}_{in}y_{ijn} \\
+            d_{inn'}
+            &= \begin{cases}
+                \dfrac{\displaystyle\sum_{j}\dfrac{1}{\tilde{r}_{ijn}}
+                y_{ijn'}y_{ijn}^{*}}{\displaystyle\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}
+                & (n'\neq n) \\
+                1 - \dfrac{1}{\sqrt{\displaystyle\dfrac{1}{J}\sum_{j}\dfrac{1}
+                {\tilde{r}_{ijn}}|y_{ijn}|^{2}}} & (n'=n)
+            \end{cases},
+
+        where :math:`\tilde{r}_{ijn}` is computed as
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+        """
         p = self.domain
         beta = self.beta
 
@@ -2257,19 +2625,19 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(m,m')}` \
-        and :math:`\boldsymbol{f}_{in}^{(m,m')}` for :math:`m\neq m'`:
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
             \begin{array}{rclc}
-                \boldsymbol{G}_{in}^{(m,m')}
-                &=& {\displaystyle\frac{1}{J}\sum_{j}}\frac{1}{\tilde{r}_{ijn}}
-                \boldsymbol{y}_{ij}^{(m,m')}{\boldsymbol{y}_{ij}^{(m,m')}}^{\mathsf{H}}
+                \boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                &=& {\displaystyle\frac{1}{J}\sum_{j}}\dfrac{1}{\tilde{r}_{ijn}}
+                \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}
                 &(n=1,\ldots,N), \\
-                \boldsymbol{f}_{in}^{(m,m')}
+                \boldsymbol{f}_{in}^{(n_{1},n_{2})}
                 &=& {\displaystyle\frac{1}{J}\sum_{j}}
-                \frac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(m,m')}
-                &(n\neq m,m'),
+                \dfrac{1}{\tilde{r}_{ijn}}y_{ijn}^{*}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+                &(n\neq n_{1},n_{2}),
             \end{array}
 
         where
@@ -2287,34 +2655,36 @@ class GGDILRMA(ILRMAbase):
             = \frac{2}{\beta}|y_{ijn}|^{2-\beta}
             \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(m,m')}` and :math:`\boldsymbol{f}_{in}`, \
-        we compute
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
             \begin{array}{rclc}
                 \boldsymbol{p}_{in}
                 &=& \dfrac{\boldsymbol{h}_{in}}
-                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(m,m')}
-                \boldsymbol{h}_{in}}} & (n=m,m'), \\
+                {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+                \boldsymbol{h}_{in}}} & (n=n_{1},n_{2}), \\
                 \boldsymbol{q}_{in}
-                &=& -{\boldsymbol{G}_{in}^{(m,m')}}^{-1}\boldsymbol{f}_{in}^{(m,m')}
-                & (n\neq m,m'),
+                &=& -{\boldsymbol{G}_{in}^{(n_{1},n_{2})}}^{-1}\boldsymbol{f}_{in}^{(n_{1},n_{2})}
+                & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=m,m'`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
         a generalized eigenvector obtained from
 
         .. math::
-            \boldsymbol{G}_{im}^{(m,m')}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{im'}^{(m,m')}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
         Separated signal :math:`y_{ijn}` is updated as follows:
 
         .. math::
             y_{ijn}
             &\leftarrow\begin{cases}
-            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} & (n=m,m') \\
-            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(m,m')} + y_{ijn} & (n\neq m,m')
+            &\boldsymbol{p}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
+            & (n=n_{1},n_{2}) \\
+            &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
+            & (n\neq n_{1},n_{2})
             \end{cases}.
         """
         p = self.domain
@@ -2363,7 +2733,7 @@ class GGDILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=False``, otherwise
+        if ``partitioning=True``, otherwise
 
         .. math::
             r_{ijn}
