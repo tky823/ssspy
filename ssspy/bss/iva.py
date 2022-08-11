@@ -1855,6 +1855,53 @@ class GradLaplaceIVA(GradIVA):
 
 
 class GradGaussIVA(GradIVA):
+    r"""Independent vector analysis (IVA) using the gradient descent on a Gaussian distribution.
+
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
+
+    .. math::
+        p(\vec{\boldsymbol{y}}_{jn})
+        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
+
+    Args:
+        step_size (float):
+            A step size of the gradient descent. Default: ``1e-1``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration. \
+            Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used. \
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``record_loss=True``. Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back. Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = GradGaussIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
     def __init__(
         self,
         step_size: float = 1e-1,
@@ -2100,6 +2147,54 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
 
 
 class NaturalGradGaussIVA(NaturalGradIVA):
+    r"""Independent vector analysis (IVA) using the natural gradient descent \
+    on a Gaussian distribution.
+
+    We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
+
+    .. math::
+        p(\vec{\boldsymbol{y}}_{jn})
+        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
+
+    Args:
+        step_size (float):
+            A step size of the gradient descent. Default: ``1e-1``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability. \
+            This function is expected to return the same shape tensor as the input. \
+            If you explicitly set ``flooring_fn=None``, \
+            the identity function (``lambda x: x``) is used. \
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration. \
+            Default: ``None``.
+        is_holonomic (bool):
+            If ``is_holonomic=True``, Holonomic-type update is used. \
+            Otherwise, Nonholonomic-type update is used. Default: ``False``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm \
+            if ``record_loss=True``. Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back. Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = NaturalGradGaussIVA()
+            spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+    """
+
     def __init__(
         self,
         step_size: float = 1e-1,
@@ -2282,7 +2377,8 @@ class AuxGaussIVA(AuxIVA):
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
 
     .. math::
-        p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+        p(\vec{\boldsymbol{y}}_{jn})
+        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
 
     Args:
         spatial_algorithm (str):
