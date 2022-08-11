@@ -636,7 +636,7 @@ class GaussILRMA(ILRMAbase):
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Set arguments as attributes of ILRMA.
         """
         super()._reset(**kwargs)
 
