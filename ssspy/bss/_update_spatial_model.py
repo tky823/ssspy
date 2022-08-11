@@ -5,7 +5,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ..linalg import eigh2
+from ..linalg import inv2, eigh2
 
 EPS = 1e-10
 
@@ -276,7 +276,7 @@ def update_by_iss2(
             axis=-1,
         )
         F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
-        Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
+        Q = -inv2(G_sub) @ F[:, :, :, np.newaxis]
         Q = Q.squeeze(axis=-1)
         Q = Q.transpose(1, 0, 2)
         QY = Q.conj() @ Y_main
