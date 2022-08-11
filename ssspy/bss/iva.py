@@ -1855,13 +1855,15 @@ class GradLaplaceIVA(GradIVA):
 
 
 class GradGaussIVA(GradIVA):
-    r"""Independent vector analysis (IVA) using the gradient descent on a Gaussian distribution.
+    r"""Independent vector analysis (IVA) using the gradient descent on \
+    a time-varying Gaussian distribution.
 
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})
-        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
+        \propto\frac{1}{\alpha_{jn}^{I}}
+        \exp\left(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}^{2}}{\alpha_{jn}}\right).
 
     Args:
         step_size (float):
@@ -1996,7 +1998,9 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a Laplace distribution.
 
     .. math::
-        p(\vec{\boldsymbol{y}}_{jn})\propto\exp(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+        p(\vec{\boldsymbol{y}}_{jn})
+        \propto\frac{1}{\alpha_{jn}^{I}}
+        \exp\left(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}}\right)
 
     Args:
         step_size (float):
@@ -2148,13 +2152,14 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
 
 class NaturalGradGaussIVA(NaturalGradIVA):
     r"""Independent vector analysis (IVA) using the natural gradient descent \
-    on a Gaussian distribution.
+    on a time-varying Gaussian distribution.
 
     We assume :math:`\vec{\boldsymbol{y}}_{jn}` follows a time-varying Gaussian distribution.
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})
-        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
+        \propto\frac{1}{\alpha_{jn}^{I}}
+        \exp\left(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}^{2}}{\alpha_{jn}}\right).
 
     Args:
         step_size (float):
@@ -2378,7 +2383,8 @@ class AuxGaussIVA(AuxIVA):
 
     .. math::
         p(\vec{\boldsymbol{y}}_{jn})
-        \propto\frac{1}{\alpha_{jn}^{I}}\exp(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}}{\alpha_{jn}})
+        \propto\frac{1}{\alpha_{jn}^{I}}
+        \exp\left(\frac{\|\vec{\boldsymbol{y}}_{jn}\|_{2}^{2}}{\alpha_{jn}}\right).
 
     Args:
         spatial_algorithm (str):
