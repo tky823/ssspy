@@ -66,6 +66,7 @@ Quick Example of Blind Source Separation
 
    import numpy as np
    import scipy.signal as ss
+   import IPython.display as ipd
    import matplotlib.pyplot as plt
 
    from ssspy.utils.dataset import download_sample_speech_data
@@ -99,6 +100,11 @@ Quick Example of Blind Source Separation
       nperseg=n_fft,
       noverlap=n_fft-hop_length
    )
+
+   for idx, waveform in enumerate(waveform_est):
+      print("Estimated source: {}".format(idx + 1))
+      ipd.display(ipd.Audio(waveform, rate=16000))
+      print()
 
    plt.figure()
    plt.plot(iva.loss)
