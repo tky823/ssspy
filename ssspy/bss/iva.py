@@ -1225,7 +1225,7 @@ class AuxIVA(AuxIVAbase):
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
             Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: "IP".
+            Default: ``"IP"``.
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
             This function is expected to receive (n_channels, n_bins, n_frames) \
@@ -2203,7 +2203,7 @@ class AuxLaplaceIVA(AuxIVA):
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
             Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: "IP".
+            Default: ``"IP"``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability. \
             This function is expected to return the same shape tensor as the input. \
@@ -2288,7 +2288,7 @@ class AuxGaussIVA(AuxIVA):
         spatial_algorithm (str):
             Algorithm for demixing filter updates. \
             Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: "IP".
+            Default: ``"IP"``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability. \
             This function is expected to return the same shape tensor as the input. \
