@@ -1276,7 +1276,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
 
 class AuxLaplaceFDICA(AuxFDICA):
     r"""Auxiliary-function-based frequency-domain independent component analysis \
-    (AuxFDICA)[#ono2010auxiliary]_ on a Laplace distribution.
+    on a Laplace distribution.
 
     We assume :math:`y_{ijn}` follows a Laplace distribution.
 
