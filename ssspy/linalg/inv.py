@@ -6,11 +6,11 @@ def inv2(X: np.ndarray) -> np.ndarray:
 
     Args:
         X (numpy.ndarray):
-            Complex matrix with shape of (*, 2, 2).
+            Complex matrix with shape of (\*, 2, 2).
 
     Returns:
         numpy.ndarray:
-            Inverse matrix of X whose shape is (*, 2, 2).
+            Inverse matrix of X whose shape is (\*, 2, 2).
     """
     shape = X.shape
 

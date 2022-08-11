@@ -70,5 +70,6 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
-   ssspy.algorithm
    ssspy.bss
+   ssspy.algorithm
+   ssspy.linalg

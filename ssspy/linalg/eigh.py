@@ -10,20 +10,19 @@ def eigh(
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Generalized eigenvalue decomposition.
 
-    Args:
-        A (numpy.ndarray):
-            A complex Hermitian matrix with shape of (*, n_channels, n_channels).
-        B (numpy.ndarray, optional):
-            A complex Hermitian matrix with shape of (*, n_channels, n_channels).
-
-    Returns:
-        numpy.ndarray:
-            Eigenvalues with shape of (*, n_channels).
-        numpy.ndarray:
-            Eigenvectors with shape of (*, n_channels, n_channels).
-
     Solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`, \
     and return :math:`\boldsymbol{z}`.
+
+    Args:
+        A (numpy.ndarray):
+            A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
+        B (numpy.ndarray, optional):
+            A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
+
+    Returns:
+        A tuple of (eigenvalues, eigenvectors)
+            - Eigenvalues have shape of (\*, n_channels).
+            - Eigenvectors have shape of (\*, n_channels, n_channels).
     """
     if B is None:
         return np.linalg.eigh(A)
@@ -48,21 +47,20 @@ def eigh2(
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Generalized eigenvalue decomposition for 2x2 matrix.
 
-    Args:
-        A (numpy.ndarray):
-            A complex Hermitian matrix with shape of (*, 2, 2).
-        B (numpy.ndarray, optional):
-            A complex Hermitian matrix with shape of (*, 2, 2).
-
-    Returns:
-        numpy.ndarray:
-            Eigenvalues with shape of (*, 2).
-        numpy.ndarray:
-            Eigenvectors with shape of (*, 2, 2).
-
     Solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`, \
     and return :math:`\boldsymbol{z}`.
     See also https://github.com/tky823/ssspy/issues/115 for this implementation.
+
+    Args:
+        A (numpy.ndarray):
+            A complex Hermitian matrix with shape of (\*, 2, 2).
+        B (numpy.ndarray, optional):
+            A complex Hermitian matrix with shape of (\*, 2, 2).
+
+    Returns:
+        A tuple of (eigenvalues, eigenvectors)
+            - Eigenvalues have shape of (\*, 2).
+            - Eigenvectors have shape of (\*, 2, 2).
     """
     assert A.shape[-2:] == (2, 2), "2x2 matrix is expected, but given shape of {}.".format(A.shape)
 
