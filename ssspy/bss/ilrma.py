@@ -2391,7 +2391,7 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
         compute weighted covariance matrix as follows:
 
         .. math::
