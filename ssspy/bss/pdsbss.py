@@ -21,12 +21,14 @@ class PDSBSSbase:
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -44,8 +46,8 @@ class PDSBSSbase:
         callbacks: Optional[
             Union[Callable[["PDSBSSbase"], None], List[Callable[["PDSBSSbase"], None]]]
         ] = None,
-        should_apply_projection_back: bool = True,
-        should_record_loss: bool = True,
+        scale_restoration: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         if penalty_fn is None:
@@ -66,16 +68,16 @@ class PDSBSSbase:
             self.callbacks = None
 
         self.input = None
-        self.should_apply_projection_back = should_apply_projection_back
+        self.scale_restoration = scale_restoration
 
-        if reference_id is None and should_apply_projection_back:
-            raise ValueError("Specify 'reference_id' if should_apply_projection_back=True.")
+        if reference_id is None and scale_restoration:
+            raise ValueError("Specify 'reference_id' if scale_restoration=True.")
         else:
             self.reference_id = reference_id
 
-        self.should_record_loss = should_record_loss
+        self.record_loss = record_loss
 
-        if self.should_record_loss:
+        if self.record_loss:
             self.loss = []
         else:
             self.loss = None
@@ -104,10 +106,10 @@ class PDSBSSbase:
 
     def __repr__(self) -> str:
         s = "PDSBSS("
-        s += "should_apply_projection_back={should_apply_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += "scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.scale_restoration:
             s += ", reference_id={reference_id}"
 
         s += ")"
@@ -193,10 +195,27 @@ class PDSBSSbase:
         """
         return np.log(np.abs(np.linalg.det(demix_filter)))  # (n_bins,)
 
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration="projection_back"``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms.
         """
-        assert self.should_apply_projection_back, "Set self.should_apply_projection_back=True."
+        assert self.scale_restoration, "Set self.scale_restoration=True."
 
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
@@ -223,12 +242,14 @@ class PDSBSS(PDSBSSbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        should_apply_projection_back (bool):
-            If ``should_apply_projection_back=True``, the projection back is applied to \
-            estimated spectrograms. Default: ``True``.
-        should_record_loss (bool):
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity. \
+            If ``scale_restoration=True``, the projection back technique is applied to \
+            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Default: ``True``.
+        record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``should_record_loss=True``.
+            if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back.
@@ -245,16 +266,16 @@ class PDSBSS(PDSBSSbase):
         callbacks: Optional[
             Union[Callable[["PDSBSS"], None], List[Callable[["PDSBSS"], None]]]
         ] = None,
-        should_apply_projection_back: bool = True,
-        should_record_loss: bool = True,
+        scale_restoration: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
             penalty_fn=penalty_fn,
             prox_penalty=prox_penalty,
             callbacks=callbacks,
-            should_apply_projection_back=should_apply_projection_back,
-            should_record_loss=should_record_loss,
+            scale_restoration=scale_restoration,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
@@ -281,7 +302,7 @@ class PDSBSS(PDSBSSbase):
 
         self._reset(**kwargs)
 
-        if self.should_record_loss:
+        if self.record_loss:
             loss = self.compute_loss()
             self.loss.append(loss)
 
@@ -292,7 +313,7 @@ class PDSBSS(PDSBSSbase):
         for _ in range(n_iter):
             self.update_once()
 
-            if self.should_record_loss:
+            if self.record_loss:
                 loss = self.compute_loss()
                 self.loss.append(loss)
 
@@ -300,8 +321,8 @@ class PDSBSS(PDSBSSbase):
                 for callback in self.callbacks:
                     callback(self)
 
-        if self.should_apply_projection_back:
-            self.apply_projection_back()
+        if self.scale_restoration:
+            self.restore_scale()
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -311,10 +332,10 @@ class PDSBSS(PDSBSSbase):
         s = "PDSBSS("
         s += "mu1={mu1}, mu2={mu2}"
         s += ", alpha={alpha}"
-        s += ", should_apply_projection_back={should_apply_projection_back}"
-        s += ", should_record_loss={should_record_loss}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
 
-        if self.should_apply_projection_back:
+        if self.scale_restoration:
             s += ", reference_id={reference_id}"
 
         s += ")"

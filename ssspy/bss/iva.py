@@ -1961,7 +1961,7 @@ class PDSIVA(PDSBSS):
         callbacks: Optional[
             Union[Callable[["PDSIVA"], None], List[Callable[["PDSIVA"], None]]]
         ] = None,
-        should_apply_projection_back: bool = True,
+        scale_restoration: bool = True,
         should_record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
@@ -1988,7 +1988,7 @@ class PDSIVA(PDSBSS):
             penalty_fn=penalty_fn,
             prox_penalty=prox_penalty,
             callbacks=callbacks,
-            should_apply_projection_back=should_apply_projection_back,
+            scale_restoration=scale_restoration,
             should_record_loss=should_record_loss,
             reference_id=reference_id,
         )
