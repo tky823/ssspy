@@ -92,7 +92,17 @@ Algorithms
    :members:
    :undoc-members:
 
+.. autoclass:: ssspy.bss.iva.GradGaussIVA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+
 .. autoclass:: ssspy.bss.iva.NaturalGradLaplaceIVA
+   :special-members: __call__
+   :members:
+   :undoc-members:
+
+.. autoclass:: ssspy.bss.iva.NaturalGradGaussIVA
    :special-members: __call__
    :members:
    :undoc-members:
