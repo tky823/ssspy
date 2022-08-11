@@ -9,7 +9,7 @@ def sequential_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tup
         n_sources (int):
             Number of sources.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort = True``. \
+            Sort pair to ensure :math:`m<n` if ``sort=True``. \
             Default: ``False``.
 
     Yields:
@@ -34,7 +34,7 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
         n_sources (int):
             Number of sources.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort = True``. \
+            Sort pair to ensure :math:`m<n` if ``sort=True``. \
             Default: ``False``.
 
     Yields:
