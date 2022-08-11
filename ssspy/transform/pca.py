@@ -2,15 +2,13 @@ import numpy as np
 
 
 def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
-    r"""
+    r"""Apply principal component analysis (PCA).
+
     Args:
         input (numpy.ndarray):
-            If input is 2D real tensor, it is regarded as \
-            (n_channels, n_samples).
-            If input is 3D complex tensor, it is regarded as \
-            (n_channels, n_bins, n_frames).
-            If input is 3D real tensor, it is regarded as \
-            (batch_size, n_channels, n_samples).
+            If input is 2D real tensor, it is regarded as (n_channels, n_samples).
+            If input is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
+            If input is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
             If input is 4D complex tensor, it is regarded as \
             (batch_size, n_channels, n_bins, n_frames).
         ascend (bool):
@@ -18,8 +16,7 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
             Otherwise, last channel corresponds to first principle component.
 
     Returns:
-        numpy.ndarray:
-            Output tensor. The type (real or complex) and shape is same as input.
+        Output tensor. The type (real or complex) and shape is same as input.
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):

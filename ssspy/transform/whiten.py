@@ -2,22 +2,19 @@ import numpy as np
 
 
 def whiten(input: np.ndarray) -> np.ndarray:
-    r"""
+    r"""Apply whitening (a.k.a sphering).
+
     Args:
         input (numpy.ndarray):
-            If input is 2D real tensor, it is regarded as \
-            (n_channels, n_samples).
-            If input is 3D complex tensor, it is regarded as \
-            (n_channels, n_bins, n_frames).
-            If input is 3D real tensor, it is regarded as \
-            (batch_size, n_channels, n_samples).
-            If input is 4D complex tensor, it is regarded as \
-            (batch_size, n_channels, n_bins, n_frames).
+            If input is 2D real tensor, it is regarded as (n_channels, n_samples).
+            If input is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
+            If input is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
+            If input is 4D complex tensor, \
+            it is regarded as (batch_size, n_channels, n_bins, n_frames).
 
     Returns:
-        numpy.ndarray:
-            Whitened tensor.
-            The type (real or complex) and shape is same as input.
+        Whitened tensor.
+        The type (real or complex) and shape is same as input.
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):
