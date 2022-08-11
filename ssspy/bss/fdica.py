@@ -924,18 +924,26 @@ class AuxFDICA(FDICAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`), \
-        compute weighted covariance matrix as follows:
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        compute auxiliary variables:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(|y_{ijm}|)}
-            {2|y_{ijm}|} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(|y_{ijn}|)}
-            {2|y_{ijn}|} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \bar{r}_{ijn_{1}}
+            &\leftarrow|y_{ijn_{1}}| \\
+            \bar{r}_{ijn_{2}}
+            &\leftarrow|y_{ijn_{2}}|
+
+        Then, compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\bar{r}_{ijn_{1}})}
+            {2\bar{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\bar{r}_{ijn_{2}})}
+            {2\bar{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
@@ -944,54 +952,54 @@ class AuxFDICA(FDICAbase):
             &= -\log p(y_{ijn}), \\
             G_{\mathbb{R}}(|y_{ijn}|)
             &= G(y_{ijn}) \\
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             &= \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of \
-        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
+        Compute generalized eigenvectors of :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` \
+        and :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(m,n)}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
+        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update for all pairs of :math:`n_{1}` \
+        and :math:`n_{1}` (:math:`n_{1}<n_{2}`).
         """
         n_sources = self.n_sources
 
