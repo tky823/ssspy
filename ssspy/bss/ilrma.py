@@ -2120,6 +2120,19 @@ class GGDILRMA(ILRMAbase):
 
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{2}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}z_{nk}, \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\displaystyle\sum_{n'}z_{n'k}}.
         """
         p = self.domain
         beta = self.beta
@@ -2154,6 +2167,28 @@ class GGDILRMA(ILRMAbase):
 
     def update_basis(self) -> None:
         r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}t_{ik},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{j}\frac{v_{kjn}}
+            {(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{\beta+p}}t_{ikn}.
         """
         p = self.domain
         beta = self.beta
@@ -2200,6 +2235,28 @@ class GGDILRMA(ILRMAbase):
 
     def update_activation(self) -> None:
         r"""Update NMF activations.
+
+        Update :math:`v_{kjn}` as follows:
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]^{\frac{p}{\beta+p}}v_{kj},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[
+            \frac{\beta}{2}
+            \frac{\displaystyle\sum_{i}\frac{t_{ikn}}
+            {(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{\beta+p}{p}}}|y_{ijn}|^{\beta}}
+            {\displaystyle\sum_{i}\frac{t_{ik}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]^{\frac{p}{\beta+p}}v_{kjn}.
         """
         p = self.domain
         beta = self.beta
