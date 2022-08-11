@@ -27,14 +27,15 @@ def sequential_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tup
         yield m, n
 
 
-def combination_pair_selector(n_sources: int, sort: bool = True) -> Iterable[Tuple[int, int]]:
+def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tuple[int, int]]:
     r"""Select pair in pairwise update.
 
     Args:
         n_sources (int):
             Number of sources.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort = True``.
+            Sort pair to ensure :math:`m<n` if ``sort = True``. \
+            Default: ``False``.
 
     Yields:
         int:
