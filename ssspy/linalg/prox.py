@@ -1,6 +1,24 @@
 import numpy as np
 
-__all__ = ["neg_log", "logdet"]
+__all__ = ["l21", "neg_log", "logdet"]
+
+
+def l21(x: np.ndarray, step_size: float = 1, axis1: int = -2, axis2: int = -1):
+    r"""Proximal operator of L21 norm.
+
+    Args:
+        x (numpy.ndarray):
+            Input tensor.
+        step_size (float):
+            Step size parameter.
+
+    Returns:
+        numpy.ndarray:
+            Output tensor. The shape is same as input.
+    """
+    norm = np.linalg.norm(x, axis=axis2, keepdims=True)
+
+    return np.maximum(1 - step_size / norm, 0) * x
 
 
 def neg_log(x: np.ndarray, step_size: float = 1):

@@ -10,7 +10,7 @@ from ..algorithm import (
     projection_back,
 )
 from ..linalg import eigh
-from ..transform import whiten
+from ..transform import prox, whiten
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import (
@@ -1978,26 +1978,11 @@ class PDSIVA(PDSBSS):
             """
             return np.linalg.norm(y, axis=1)
 
-        def prox_l21(y, step_size: float = 1) -> np.ndarray:
-            r"""Proximal operator of L21 norm.
-
-            Args:
-                y (numpy.ndarray):
-                    The shape is (n_sources, n_bins, n_frames).
-
-            Returns:
-                numpy.ndarray:
-                    (n_sources, n_bins, n_frames).
-            """
-            norm = np.linalg.norm(y, axis=1, keepdims=True)
-
-            return np.maximum(1 - step_size / norm, 0) * y
-
         if contrast_fn is None:
             contrast_fn = l21_fn
 
         if prox_penalty is None:
-            prox_penalty = prox_l21
+            prox_penalty = functools.partial(prox.l21, axis2=1)
 
         def penalty_fn(y: np.ndarray) -> np.ndarray:
             r"""Sum of contrast function.
