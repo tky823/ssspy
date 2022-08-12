@@ -1965,21 +1965,8 @@ class PDSIVA(PDSBSS):
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
-        def l21_fn(y: np.ndarray) -> np.ndarray:
-            r"""L21 norm.
-
-            Args:
-                y (numpy.ndarray):
-                    The shape is (n_sources, n_bins, n_frames).
-
-            Returns:
-                numpy.ndarray:
-                    (n_sources, n_frames).
-            """
-            return np.linalg.norm(y, axis=1)
-
         if contrast_fn is None:
-            contrast_fn = l21_fn
+            contrast_fn = functools.partial(np.linalg.norm, axis=1)
 
         if prox_penalty is None:
             prox_penalty = functools.partial(prox.l21, axis2=1)
