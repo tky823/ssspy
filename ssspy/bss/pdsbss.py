@@ -53,12 +53,22 @@ class PDSBSSbase:
         if penalty_fn is None:
             raise ValueError("Specify penalty function.")
         else:
+            if callable(penalty_fn):
+                penalty_fn = [penalty_fn]
             self.penalty_fn = penalty_fn
 
         if prox_penalty is None:
             raise ValueError("Specify proximal operator of penalty function.")
         else:
+            if callable(prox_penalty):
+                prox_penalty = [prox_penalty]
             self.prox_penalty = prox_penalty
+
+        assert len(self.penalty_fn) == len(
+            self.prox_penalty
+        ), "Length of penalty_fn and prox_penalty are different."
+
+        self.n_penalties = len(self.penalty_fn)
 
         if callbacks is not None:
             if callable(callbacks):
@@ -106,7 +116,8 @@ class PDSBSSbase:
 
     def __repr__(self) -> str:
         s = "PDSBSS("
-        s += "scale_restoration={scale_restoration}"
+        s += "n_penalties={n_penalties}"
+        s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
         if self.scale_restoration:
@@ -185,7 +196,11 @@ class PDSBSSbase:
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
         logdet = self.compute_logdet(W)  # (n_bins,)
-        penalty = self.penalty_fn(Y)
+        penalty = 0
+
+        for penalty_fn in self.penalty_fn:
+            penalty = penalty + penalty_fn(Y)
+
         loss = penalty - 2 * np.sum(logdet, axis=0)
 
         return loss
@@ -332,6 +347,7 @@ class PDSBSS(PDSBSSbase):
         s = "PDSBSS("
         s += "mu1={mu1}, mu2={mu2}"
         s += ", alpha={alpha}"
+        s += ", n_penalties={n_penalties}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -351,11 +367,12 @@ class PDSBSS(PDSBSSbase):
         """
         super()._reset(**kwargs)
 
+        n_penalties = self.n_penalties
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if not hasattr(self, "dual"):
-            dual = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+            dual = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
             if self.dual is None:
                 dual = None
@@ -374,10 +391,18 @@ class PDSBSS(PDSBSSbase):
         Y = self.dual
         X, W = self.input, self.demix_filter
 
-        XY = Y.transpose(1, 0, 2) @ X.transpose(1, 2, 0).conj()
+        Y_sum = Y.sum(axis=0)
+        XY = Y_sum.transpose(1, 0, 2) @ X.transpose(1, 2, 0).conj()
         W_tilde = prox.logdet(W - mu1 * mu2 * XY, step_size=mu1)
-        Z = Y + self.separate(X, demix_filter=2 * W_tilde - W)
-        Y_tilde = Z - self.prox_penalty(Z, step_size=1 / mu2)
+        XW = self.separate(X, demix_filter=2 * W_tilde - W)
+        Y_tilde = []
+
+        for Y_q, prox_penalty in zip(Y, self.prox_penalty):
+            Z_q = Y_q + XW
+            Y_tilde_q = Z_q - prox_penalty(Z_q, step_size=1 / mu2)
+            Y_tilde.append(Y_tilde_q)
+
+        Y_tilde = np.stack(Y_tilde, axis=0)
 
         self.demix_filter = alpha * W_tilde + (1 - alpha) * W
         self.dual = alpha * Y_tilde + (1 - alpha) * Y
