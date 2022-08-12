@@ -3,10 +3,10 @@ import numpy as np
 __all__ = ["l21", "neg_log", "logdet"]
 
 
-def l1(y, step_size: float = 1) -> np.ndarray:
-    norm = np.abs(y)
+def l1(x, step_size: float = 1) -> np.ndarray:
+    norm = np.abs(x)
 
-    return np.maximum(1 - step_size / norm, 0) * y
+    return np.maximum(1 - step_size / norm, 0) * x
 
 
 def l21(x: np.ndarray, step_size: float = 1, axis1: int = -2, axis2: int = -1):
