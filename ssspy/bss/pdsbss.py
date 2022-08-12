@@ -201,7 +201,7 @@ class PDSBSSbase:
         for penalty_fn in self.penalty_fn:
             penalty = penalty + penalty_fn(Y)
 
-        loss = penalty - 2 * np.sum(logdet, axis=0)
+        loss = penalty - np.sum(logdet, axis=0)
 
         return loss
 

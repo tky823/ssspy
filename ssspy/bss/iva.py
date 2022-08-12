@@ -1977,7 +1977,7 @@ class PDSIVA(PDSBSS):
                     Computed loss.
             """
             G = contrast_fn(y)  # (n_sources, n_frames)
-            loss = np.sum(G.mean(axis=-1), axis=0)
+            loss = np.sum(G, axis=(0, 1))
 
             return loss
 
