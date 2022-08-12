@@ -210,6 +210,22 @@ class PDSBSSbase:
         """
         return np.log(np.abs(np.linalg.det(demix_filter)))  # (n_bins,)
 
+    def normalize_by_spectral_norm(self, input: np.ndarray) -> np.ndarray:
+        r"""Spectral normalization.
+
+        Args:
+            input (numpy.ndarray):
+                Input spectrogram with shape of (n_channels, n_bins, n_frames).
+
+        Returns:
+            numpy.ndarray:
+                Normalized spectrogram with shape of (n_channels, n_bins, n_frames).
+        """
+        norm = np.linalg.norm(input.transpose(1, 0, 2), ord=2, axis=(-2, -1))
+        norm = np.max(norm)
+
+        return input / (np.sqrt(self.n_penalties) * norm)
+
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
