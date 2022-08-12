@@ -4,7 +4,7 @@ __all__ = ["neg_log", "logdet"]
 
 
 def neg_log(x: np.ndarray, step_size: float = 1):
-    r"""Proxmal operator of negative logarithm function.
+    r"""Proximal operator of negative logarithm function.
 
     Proximal operator of :math:`-\log(x)` is defined as follows:
 
@@ -30,7 +30,7 @@ def neg_log(x: np.ndarray, step_size: float = 1):
 
 
 def logdet(X: np.ndarray, step_size=1):
-    r"""Proxmal operator of log-determinant.
+    r"""Proximal operator of log-determinant.
 
     :math:`X\in\mathbb{C}^{N\times M}`
 
@@ -49,7 +49,7 @@ def logdet(X: np.ndarray, step_size=1):
 
     Returns:
         np.ndarray:
-            Proxmal operator of log-determinant.
+            Proximal operator of log-determinant.
     """
     n_channels = X.shape[-1]
 
