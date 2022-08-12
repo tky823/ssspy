@@ -1962,7 +1962,7 @@ class PDSIVA(PDSBSS):
             Union[Callable[["PDSIVA"], None], List[Callable[["PDSIVA"], None]]]
         ] = None,
         scale_restoration: bool = True,
-        should_record_loss: bool = True,
+        record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
         def penalty_fn(y: np.ndarray) -> np.ndarray:
@@ -1989,7 +1989,7 @@ class PDSIVA(PDSBSS):
             prox_penalty=prox_penalty,
             callbacks=callbacks,
             scale_restoration=scale_restoration,
-            should_record_loss=should_record_loss,
+            record_loss=record_loss,
             reference_id=reference_id,
         )
 
