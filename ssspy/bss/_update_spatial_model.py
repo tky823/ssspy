@@ -272,7 +272,8 @@ def update_by_iss2(
 
         # Sub
         G_sub = np.mean(
-            varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :], axis=-1,
+            varphi_sub[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
+            axis=-1,
         )
         F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
         Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
@@ -283,7 +284,8 @@ def update_by_iss2(
 
         # Main
         G_main = np.mean(
-            varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :], axis=-1,
+            varphi_main[:, :, np.newaxis, np.newaxis, :] * YY_main[np.newaxis, :, :, :, :],
+            axis=-1,
         )
         G_m, G_n = G_main
         _, H_mn = eigh2(G_m, G_n)

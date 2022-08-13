@@ -21,7 +21,7 @@ from ssspy.utils.dataset import download_sample_speech_data
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ssspy_tests_dir)
 
-from dummy.callback import DummyCallback, dummy_function
+from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
 max_samples = 8000
 n_fft = 512
@@ -35,7 +35,10 @@ parameters_is_holonomic = [True, False]
 parameters_scale_restoration = [True, False, "projection_back"]
 parameters_grad_iva = [
     (2, {}),
-    (3, {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},),
+    (
+        3,
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
 ]
 parameters_fast_iva = [
     (2, "dev1_female3", {}),

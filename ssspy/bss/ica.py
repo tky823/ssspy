@@ -151,8 +151,7 @@ class GradICAbase:
         self.output = self.separate(X, demix_filter=W)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
@@ -372,8 +371,7 @@ class FastICAbase:
         self.output = self.separate(Z, demix_filter=W, use_whitening=False)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(

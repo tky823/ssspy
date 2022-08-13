@@ -42,7 +42,7 @@ def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1
 
         for src_idx, source_path in enumerate(source_paths):
             _, data = wavfile.read(source_path)  # 16 bits
-            dry_sources["src_{}".format(src_idx + 1)] = data / 2 ** 15
+            dry_sources["src_{}".format(src_idx + 1)] = data / 2**15
 
         np.savez(
             npz_path,

@@ -193,8 +193,7 @@ class IVAbase:
         return output
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
     def compute_loss(self) -> float:
@@ -254,8 +253,7 @@ class IVAbase:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         assert self.scale_restoration, "Set self.scale_restoration=True."
 
         X, W = self.input, self.demix_filter
@@ -524,8 +522,7 @@ class FastIVAbase(IVAbase):
         return loss
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         assert self.scale_restoration, "Set self.scale_restoration=True."
 
         reference_id = self.reference_id
@@ -1100,8 +1097,7 @@ class FastIVA(FastIVAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
@@ -1260,8 +1256,7 @@ class FasterIVA(FastIVAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
@@ -1745,8 +1740,7 @@ class AuxIVA(AuxIVAbase):
             return loss
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
@@ -1941,7 +1935,7 @@ class GradGaussIVA(GradIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm**2) / alpha
 
         def score_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -1986,15 +1980,13 @@ class GradGaussIVA(GradIVA):
         self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         self.update_source_model()
 
         super().update_once()
 
     def update_source_model(self) -> None:
-        r"""Update variance of Gaussian distribution.
-        """
+        r"""Update variance of Gaussian distribution."""
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
@@ -2191,7 +2183,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm**2) / alpha
 
         def score_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -2236,15 +2228,13 @@ class NaturalGradGaussIVA(NaturalGradIVA):
         self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         self.update_source_model()
 
         super().update_once()
 
     def update_source_model(self) -> None:
-        r"""Update variance of Gaussian distribution.
-        """
+        r"""Update variance of Gaussian distribution."""
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
@@ -2423,7 +2413,7 @@ class AuxGaussIVA(AuxIVA):
             alpha = self.variance
             norm = np.linalg.norm(y, axis=1)
 
-            return n_bins * np.log(alpha) + (norm ** 2) / alpha
+            return n_bins * np.log(alpha) + (norm**2) / alpha
 
         def d_contrast_fn(y: np.ndarray, variance: np.ndarray = None) -> np.ndarray:
             r"""
@@ -2472,8 +2462,7 @@ class AuxGaussIVA(AuxIVA):
         self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         self.update_source_model()
 
         super().update_once()
@@ -2578,8 +2567,7 @@ class AuxGaussIVA(AuxIVA):
         self.demix_filter = W
 
     def update_source_model(self) -> None:
-        r"""Update variance of Gaussian distribution.
-        """
+        r"""Update variance of Gaussian distribution."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
