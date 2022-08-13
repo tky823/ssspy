@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import Optional, Union, Callable, List, Dict, Any
 
 import pytest
@@ -15,7 +17,11 @@ from ssspy.bss.iva import (
     AuxGaussIVA,
 )
 from ssspy.utils.dataset import download_sample_speech_data
-from tests.dummy.callback import DummyCallback, dummy_function
+
+ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(ssspy_tests_dir)
+
+from dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
 n_fft = 512
