@@ -4,8 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ssspy"
+authors = [
+    "Takuya Hasumi"
+]
 description = "A Python toolkit for sound source separation."
 readme = "README.md"
+license = {text = "MIT License"}
+urls = [
+    "https://github.com/tky823/ssspy"
+]
 requires-python = ">=3.7, <4"
 dependencies = [
     "numpy",
