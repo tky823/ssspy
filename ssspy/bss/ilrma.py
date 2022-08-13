@@ -624,8 +624,11 @@ class GaussILRMA(ILRMAbase):
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
-            self.pair_selector = sequential_pair_selector
+        if pair_selector is None:
+            if spatial_algorithm == "IP2":
+                self.pair_selector = sequential_pair_selector
+            elif spatial_algorithm == "ISS2":
+                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
@@ -1347,8 +1350,11 @@ class TILRMA(ILRMAbase):
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
-            self.pair_selector = sequential_pair_selector
+        if pair_selector is None:
+            if spatial_algorithm == "IP2":
+                self.pair_selector = sequential_pair_selector
+            elif spatial_algorithm == "ISS2":
+                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
@@ -2128,8 +2134,11 @@ class GGDILRMA(ILRMAbase):
         self.domain = domain
         self.normalization = normalization
 
-        if pair_selector is None and spatial_algorithm in ["IP2", "ISS2"]:
-            self.pair_selector = sequential_pair_selector
+        if pair_selector is None:
+            if spatial_algorithm == "IP2":
+                self.pair_selector = sequential_pair_selector
+            elif spatial_algorithm == "ISS2":
+                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
