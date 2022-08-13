@@ -1,9 +1,9 @@
-from typing import Iterable, Tuple
+from typing import Optional, Iterable, Tuple
 import itertools
 
 
 def sequential_pair_selector(
-    n_sources: int, step: int = 1, sort: bool = False
+    n_sources: int, stop: Optional[int] = None, step: int = 1, sort: bool = False
 ) -> Iterable[Tuple[int, int]]:
     r"""Select pair in pairwise update.
 
@@ -25,7 +25,10 @@ def sequential_pair_selector(
         int:
             Second element of updating pair.
     """
-    for m in range(0, step * n_sources, step):
+    if stop is None:
+        stop = n_sources
+
+    for m in range(0, stop, step):
         m, n = m % n_sources, (m + 1) % n_sources
 
         if sort:

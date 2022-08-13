@@ -240,16 +240,16 @@ def update_by_iss2(
             Updated spectrograms. \
             The shape is (n_sources, n_bins, n_frames).
     """
-    if flooring_fn is None:
-        flooring_fn = _identity
-
-    if pair_selector is None:
-        pair_selector = sequential_pair_selector
-
     Y = separated
     varphi = weight
 
     n_sources = Y.shape[0]
+
+    if flooring_fn is None:
+        flooring_fn = _identity
+
+    if pair_selector is None:
+        pair_selector = functools.partial(sequential_pair_selector, stop=n_sources, step=2)
 
     for m, n in pair_selector(n_sources):
         if m < 0:
