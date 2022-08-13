@@ -1,2 +1,51 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ssspy"
+description = "A Python toolkit for sound source separation."
+readme = "README.md"
+requires-python = ">=3.7, <4"
+dependencies = [
+    "numpy",
+]
+dynamic = [
+    "version",
+]
+
+[project.optional-dependencies]
+dev = [
+    "scipy",
+    "soundfile",
+    "flake8",
+    "black",
+]
+docs = [
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "furo",
+]
+tests = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools.dynamic]
+version = {
+    attr = "ssspy.__version__"
+}
+
+[tool.setuptools.packages.find]
+exclude = [
+    ".github",
+    "docs",
+    "notebooks",
+    "tests",
+]
+
 [tool.black]
 line-length = 100
+
+[tools.flake8]
+max-line-length = 100
