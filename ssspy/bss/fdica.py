@@ -258,8 +258,7 @@ class FDICAbase:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         assert self.scale_restoration, "Set self.scale_restoration=True."
 
         X, W = self.input, self.demix_filter
@@ -412,8 +411,7 @@ class GradFDICAbase(FDICAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
 
@@ -1058,7 +1056,10 @@ class AuxFDICA(FDICAbase):
             weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
 
             W[:, (m, n), :] = update_by_ip2_one_pair(
-                Y_mn, demix_filter_pair=W_mn, weight_pair=weight_mn, flooring_fn=self.flooring_fn,
+                Y_mn,
+                demix_filter_pair=W_mn,
+                weight_pair=weight_mn,
+                flooring_fn=self.flooring_fn,
             )
 
         self.demix_filter = W

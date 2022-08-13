@@ -69,7 +69,7 @@ def correlation_based_permutation_solver(
     permutations = list(itertools.permutations(range(n_sources)))
 
     P = np.abs(Y).transpose(1, 0, 2)
-    norm = np.sqrt(np.sum(P ** 2, axis=1, keepdims=True))
+    norm = np.sqrt(np.sum(P**2, axis=1, keepdims=True))
     norm = flooring_fn(norm)
     P = P / norm
     correlation = np.sum(P @ P.transpose(0, 2, 1), axis=(1, 2))

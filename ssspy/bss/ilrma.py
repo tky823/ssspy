@@ -306,13 +306,11 @@ class ILRMAbase:
         return R
 
     def update_once(self) -> None:
-        r"""Update demixing filters once.
-        """
+        r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
     def normalize(self) -> None:
-        r"""Normalize demixing filters and NMF parameters.
-        """
+        r"""Normalize demixing filters and NMF parameters."""
         normalization = self.normalization
 
         assert normalization, "Set normalization."
@@ -507,8 +505,7 @@ class ILRMAbase:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         assert self.scale_restoration, "Set self.scale_restoration=True."
 
         X, W = self.input, self.demix_filter
@@ -662,8 +659,7 @@ class GaussILRMA(ILRMAbase):
             self.demix_filter = None
 
     def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once.
-        """
+        r"""Update NMF parameters and demixing filters once."""
         self.update_source_model()
         self.update_spatial_model()
 
@@ -671,8 +667,7 @@ class GaussILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables.
-        """
+        r"""Update NMF bases, activations, and latent variables."""
 
         if self.partitioning:
             self.update_latent()
@@ -712,7 +707,7 @@ class GaussILRMA(ILRMAbase):
         TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
         ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-        ZTVp2p = ZTV ** p2_p
+        ZTVp2p = ZTV**p2_p
         TV_ZTVp2p = TV[np.newaxis, :, :, :] / ZTVp2p[:, :, np.newaxis, :]
         num = np.sum(TV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(1, 3))
 
@@ -766,7 +761,7 @@ class GaussILRMA(ILRMAbase):
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVp2p = ZTV ** p2_p
+            ZTVp2p = ZTV**p2_p
             ZV_ZTVp2p = ZV[:, np.newaxis, :, :] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZV_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 3))
 
@@ -777,7 +772,7 @@ class GaussILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVp2p = TV ** p2_p
+            TVp2p = TV**p2_p
             V_TVp2p = V[:, np.newaxis, :, :] / TVp2p[:, :, np.newaxis, :]
             num = np.sum(V_TVp2p * Y2[:, :, np.newaxis, :], axis=3)
 
@@ -829,7 +824,7 @@ class GaussILRMA(ILRMAbase):
             ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVp2p = ZTV ** p2_p
+            ZTVp2p = ZTV**p2_p
             ZT_ZTVp2p = ZT[:, :, :, np.newaxis] / ZTVp2p[:, :, np.newaxis, :]
             num = np.sum(ZT_ZTVp2p * Y2[:, :, np.newaxis, :], axis=(0, 1))
 
@@ -840,7 +835,7 @@ class GaussILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVp2p = TV ** p2_p
+            TVp2p = TV**p2_p
             T_TVp2p = T[:, :, :, np.newaxis] / TVp2p[:, :, np.newaxis, :]
             num = np.sum(T_TVp2p * Y2[:, :, np.newaxis, :], axis=1)
 
@@ -1230,8 +1225,7 @@ class GaussILRMA(ILRMAbase):
         return loss
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
@@ -1377,8 +1371,7 @@ class TILRMA(ILRMAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once.
-        """
+        r"""Update NMF parameters and demixing filters once."""
         self.update_source_model()
         self.update_spatial_model()
 
@@ -1386,8 +1379,7 @@ class TILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables.
-        """
+        r"""Update NMF bases, activations, and latent variables."""
         if self.partitioning:
             self.update_latent()
 
@@ -2013,8 +2005,7 @@ class TILRMA(ILRMAbase):
         return loss
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
@@ -2161,8 +2152,7 @@ class GGDILRMA(ILRMAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once.
-        """
+        r"""Update NMF parameters and demixing filters once."""
         self.update_source_model()
         self.update_spatial_model()
 
@@ -2170,8 +2160,7 @@ class GGDILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables.
-        """
+        r"""Update NMF bases, activations, and latent variables."""
         if self.partitioning:
             self.update_latent()
 
@@ -2213,7 +2202,7 @@ class GGDILRMA(ILRMAbase):
         TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
         ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-        ZTVbpp = ZTV ** bp_p
+        ZTVbpp = ZTV**bp_p
         TV_RZTV = TV[np.newaxis, :, :, :] / ZTVbpp[:, :, np.newaxis, :]
         num = (beta / 2) * np.sum(TV_RZTV * Yb[:, :, np.newaxis, :], axis=(1, 3))
 
@@ -2270,7 +2259,7 @@ class GGDILRMA(ILRMAbase):
             ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVbpp = ZTV ** bp_p
+            ZTVbpp = ZTV**bp_p
             ZV_ZTVbpp = ZV[:, np.newaxis, :, :] / ZTVbpp[:, :, np.newaxis, :]
             num = (beta / 2) * np.sum(ZV_ZTVbpp * Yb[:, :, np.newaxis, :], axis=(0, 3))
 
@@ -2281,7 +2270,7 @@ class GGDILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVbpp = TV ** bp_p
+            TVbpp = TV**bp_p
             V_TVbpp = V[:, np.newaxis, :, :] / TVbpp[:, :, np.newaxis, :]
             num = (beta / 2) * np.sum(V_TVbpp * Yb[:, :, np.newaxis, :], axis=3)
 
@@ -2338,7 +2327,7 @@ class GGDILRMA(ILRMAbase):
             ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
             ZTV = self.reconstruct_nmf(T, V, latent=Z)
 
-            ZTVbpp = ZTV ** bp_p
+            ZTVbpp = ZTV**bp_p
             ZT_ZTVbpp = ZT[:, :, :, np.newaxis] / ZTVbpp[:, :, np.newaxis, :]
             num = (beta / 2) * np.sum(ZT_ZTVbpp * Yb[:, :, np.newaxis, :], axis=(0, 1))
 
@@ -2349,7 +2338,7 @@ class GGDILRMA(ILRMAbase):
 
             TV = self.reconstruct_nmf(T, V)
 
-            TVbpp = TV ** bp_p
+            TVbpp = TV**bp_p
             T_TVbpp = T[:, :, :, np.newaxis] / TVbpp[:, :, np.newaxis, :]
             num = (beta / 2) * np.sum(T_TVbpp * Yb[:, :, np.newaxis, :], axis=1)
 
@@ -2778,8 +2767,7 @@ class GGDILRMA(ILRMAbase):
         return loss
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
