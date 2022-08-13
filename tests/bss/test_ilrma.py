@@ -6,7 +6,7 @@ import scipy.signal as ss
 
 from ssspy.bss.ilrma import ILRMAbase, GaussILRMA, TILRMA, GGDILRMA
 from ssspy.utils.dataset import download_sample_speech_data
-from tests.dummy.callback import DummyCallback, dummy_function
+from dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
 n_fft = 512
