@@ -7,7 +7,7 @@ from ssspy.bss.ica import GradICAbase, GradICA, GradLaplaceICA
 from ssspy.bss.ica import NaturalGradICA, NaturalGradLaplaceICA
 from ssspy.bss.ica import FastICA
 from ssspy.utils.dataset import download_sample_speech_data
-from dummy.callback import DummyCallback, dummy_function
+from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
 n_iter = 3

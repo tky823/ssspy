@@ -15,7 +15,7 @@ from ssspy.bss.iva import (
     AuxGaussIVA,
 )
 from ssspy.utils.dataset import download_sample_speech_data
-from dummy.callback import DummyCallback, dummy_function
+from tests.dummy.callback import DummyCallback, dummy_function
 
 max_samples = 8000
 n_fft = 512
