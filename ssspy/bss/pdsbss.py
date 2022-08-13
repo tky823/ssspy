@@ -19,7 +19,7 @@ class PDSBSSbase:
             Proximal operator of penalty function.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -28,10 +28,10 @@ class PDSBSSbase:
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
 
     .. [#yatabe2018determined] K. Yatabe and D. Kitamura,
@@ -97,15 +97,15 @@ class PDSBSSbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                Mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
-                Default: 100.
+                Number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -169,15 +169,15 @@ class PDSBSSbase:
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``.
+                The demixing filters to separate ``input``. \
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
@@ -278,10 +278,10 @@ class PDSBSS(PDSBSSbase):
         penalty_fn (callable):
             Penalty function that determines source model.
         prox_penalty (callable):
-            Proximal operator of penalty function.
+            Proximal operator of penalty function. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity. \
@@ -290,10 +290,10 @@ class PDSBSS(PDSBSSbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
+            Reference channel for projection back. \
             Default: ``0``.
     """
 
@@ -328,15 +328,15 @@ class PDSBSS(PDSBSSbase):
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                Mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
-                Default: 100.
+                Number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
