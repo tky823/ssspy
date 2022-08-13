@@ -32,9 +32,7 @@ tests = [
 ]
 
 [tool.setuptools.dynamic]
-version = {
-    attr = "ssspy.__version__"
-}
+version = {attr = "ssspy.__version__"}
 
 [tool.setuptools.packages.find]
 exclude = [
