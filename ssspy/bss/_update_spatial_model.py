@@ -135,16 +135,16 @@ def update_by_ip2(
         W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
         U_mn = U[(m, n), :, :, :]  # (2, n_bins, n_channels, n_channels)
 
-        V_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
+        G_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
 
-        V_m, V_n = V_mn
-        _, H_mn = eigh2(V_m, V_n)  # (n_bins, 2, 2)
+        G_m, G_n = G_mn
+        _, H_mn = eigh2(G_m, G_n)  # (n_bins, 2, 2)
         h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-        hVh_mn = h_mn[:, :, np.newaxis, :].conj() @ V_mn @ h_mn[:, :, :, np.newaxis]
-        hVh_mn = np.squeeze(hVh_mn, axis=-1)  # (2, n_bins, 1)
-        hVh_mn = np.real(hVh_mn)
-        hVh_mn = np.maximum(hVh_mn, 0)
-        denom_mn = np.sqrt(hVh_mn)
+        hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_mn @ h_mn[:, :, :, np.newaxis]
+        hGh_mn = np.squeeze(hGh_mn, axis=-1)  # (2, n_bins, 1)
+        hGh_mn = np.real(hGh_mn)
+        hGh_mn = np.maximum(hGh_mn, 0)
+        denom_mn = np.sqrt(hGh_mn)
         denom_mn = flooring_fn(denom_mn)
         h_mn = h_mn / denom_mn
         H_mn = h_mn.transpose(1, 2, 0)
@@ -371,16 +371,16 @@ def update_by_ip2_one_pair(
     YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
 
     G_YY = varphi[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-    V = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
+    G = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
 
-    V_m, V_n = V
-    _, H = eigh2(V_m, V_n)  # (n_bins, 2, 2)
+    G_m, G_n = G
+    _, H = eigh2(G_m, G_n)  # (n_bins, 2, 2)
     h = H.transpose(2, 0, 1)  # (2, n_bins, 2)
-    hVh = h[:, :, np.newaxis, :].conj() @ V @ h[:, :, :, np.newaxis]
-    hVh = np.squeeze(hVh, axis=-1)  # (2, n_bins, 1)
-    hVh = np.real(hVh)
-    hVh = np.maximum(hVh, 0)
-    denom = np.sqrt(hVh)
+    hGh = h[:, :, np.newaxis, :].conj() @ G @ h[:, :, :, np.newaxis]
+    hGh = np.squeeze(hGh, axis=-1)  # (2, n_bins, 1)
+    hGh = np.real(hGh)
+    hGh = np.maximum(hGh, 0)
+    denom = np.sqrt(hGh)
     denom = flooring_fn(denom)
     h = h / denom
     H = h.transpose(1, 2, 0)
