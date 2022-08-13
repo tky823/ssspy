@@ -12,7 +12,7 @@ from ssspy.utils.dataset import download_sample_speech_data
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(ssspy_tests_dir)
 
-from dummy.callback import DummyCallback, dummy_function
+from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
 max_samples = 8000
 n_fft = 512
@@ -52,14 +52,20 @@ parameters_ilrma_wo_latent = [
             "basis": rng.random((2, n_bins, 2)),
         },
     ),
-    (3, 1, 1, {},),
+    (
+        3,
+        1,
+        1,
+        {},
+    ),
 ]
 parameters_normalization_latent = [True, False, "power"]
 parameters_normalization_wo_latent = [True, False, "power", "projection_back"]
 
 
 @pytest.mark.parametrize(
-    "n_basis", parameters_ilrma_base,
+    "n_basis",
+    parameters_ilrma_base,
 )
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -80,7 +86,8 @@ def test_ilrma_base(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
@@ -135,7 +142,8 @@ def test_gauss_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
@@ -190,7 +198,8 @@ def test_gauss_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
@@ -248,7 +257,8 @@ def test_t_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
@@ -306,7 +316,8 @@ def test_t_ilrma_wo_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
@@ -364,7 +375,8 @@ def test_ggd_ilrma_latent(
 
 
 @pytest.mark.parametrize(
-    "n_sources, n_basis, domain, reset_kwargs", parameters_ilrma_wo_latent,
+    "n_sources, n_basis, domain, reset_kwargs",
+    parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
