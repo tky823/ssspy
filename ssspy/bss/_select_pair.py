@@ -51,7 +51,6 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
             Second element of updating pair.
     """
     for m, n in itertools.combinations(range(n_sources), 2):
-
         if sort:
             m, n = (n, m) if m > n else (m, n)
 
