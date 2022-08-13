@@ -13,10 +13,24 @@ from ssspy.bss._update_spatial_model import (
     update_by_iss2,
 )
 
+
+def negative_pair_selector(n_sources):
+    for m in range(n_sources):
+        m, n = m % n_sources, (m + 1) % n_sources
+        m, n = m - n_sources, n - n_sources
+
+        yield m, n
+
+
 parameters = [(31, 20)]
 parameters_n_sources = [2, 3]
 parameters_flooring_fn = [max_flooring, add_flooring, None]
-parameters_pair_selector = [sequential_pair_selector, combination_pair_selector, None]
+parameters_pair_selector = [
+    sequential_pair_selector,
+    combination_pair_selector,
+    negative_pair_selector,
+    None,
+]
 
 
 @pytest.mark.parametrize("n_bins, n_frames", parameters)

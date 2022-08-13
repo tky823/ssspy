@@ -5,7 +5,7 @@ import numpy as np
 
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ..linalg import eigh2
+from ..linalg import inv2, eigh2
 
 EPS = 1e-10
 
@@ -105,7 +105,7 @@ def update_by_ip2(
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair. \
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            If ``None`` is given, ``sequential_pair_selector`` is used. \
             Default: ``None``.
         overwrite (bool):
             Overwrite ``demix_filter`` if ``overwrite=True``. \
@@ -120,7 +120,7 @@ def update_by_ip2(
         flooring_fn = _identity
 
     if pair_selector is None:
-        pair_selector = functools.partial(sequential_pair_selector, sort=True)
+        pair_selector = sequential_pair_selector
 
     if overwrite:
         W = demix_filter
@@ -129,22 +129,22 @@ def update_by_ip2(
 
     U = weighted_covariance.transpose(1, 0, 2, 3)
 
-    n_bins, n_sources, n_channels = W.shape
+    n_sources = W.shape[1]
 
     for m, n in pair_selector(n_sources):
         W_mn = W[:, (m, n), :]  # (n_bins, 2, n_channels)
         U_mn = U[(m, n), :, :, :]  # (2, n_bins, n_channels, n_channels)
 
-        V_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
+        G_mn = W_mn @ U_mn @ W_mn.transpose(0, 2, 1).conj()  # (2, n_bins, 2, 2)
 
-        V_m, V_n = V_mn
-        _, H_mn = eigh2(V_m, V_n)  # (n_bins, 2, 2)
+        G_m, G_n = G_mn
+        _, H_mn = eigh2(G_m, G_n)  # (n_bins, 2, 2)
         h_mn = H_mn.transpose(2, 0, 1)  # (2, n_bins, 2)
-        hVh_mn = h_mn[:, :, np.newaxis, :].conj() @ V_mn @ h_mn[:, :, :, np.newaxis]
-        hVh_mn = np.squeeze(hVh_mn, axis=-1)  # (2, n_bins, 1)
-        hVh_mn = np.real(hVh_mn)
-        hVh_mn = np.maximum(hVh_mn, 0)
-        denom_mn = np.sqrt(hVh_mn)
+        hGh_mn = h_mn[:, :, np.newaxis, :].conj() @ G_mn @ h_mn[:, :, :, np.newaxis]
+        hGh_mn = np.squeeze(hGh_mn, axis=-1)  # (2, n_bins, 1)
+        hGh_mn = np.real(hGh_mn)
+        hGh_mn = np.maximum(hGh_mn, 0)
+        denom_mn = np.sqrt(hGh_mn)
         denom_mn = flooring_fn(denom_mn)
         h_mn = h_mn / denom_mn
         H_mn = h_mn.transpose(1, 2, 0)
@@ -232,7 +232,7 @@ def update_by_iss2(
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair. \
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            If ``None`` is given, ``sequential_pair_selector`` is used. \
             Default: ``None``.
 
     Returns:
@@ -240,28 +240,43 @@ def update_by_iss2(
             Updated spectrograms. \
             The shape is (n_sources, n_bins, n_frames).
     """
-    if flooring_fn is None:
-        flooring_fn = _identity
-
-    if pair_selector is None:
-        pair_selector = functools.partial(sequential_pair_selector, sort=True)
-
     Y = separated
     varphi = weight
 
     n_sources = Y.shape[0]
 
+    if flooring_fn is None:
+        flooring_fn = _identity
+
+    if pair_selector is None:
+        pair_selector = functools.partial(sequential_pair_selector, stop=n_sources, step=2)
+
     for m, n in pair_selector(n_sources):
+        if m < 0:
+            m = n_sources + m
+        if n < 0:
+            n = n_sources + n
+
+        if m > n:
+            ascend = False
+            m, n = n, m
+        else:
+            ascend = True
+
         # Split into main and sub
         Y_1, Y_m, Y_2, Y_n, Y_3 = np.split(Y, [m, m + 1, n, n + 1], axis=0)
-        Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
         Y_sub = np.concatenate([Y_1, Y_2, Y_3], axis=0)  # (n_sources - 2, n_bins, n_frames)
-
         varphi_1, varphi_m, varphi_2, varphi_n, varphi_3 = np.split(
             varphi, [m, m + 1, n, n + 1], axis=0
         )
-        varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
         varphi_sub = np.concatenate([varphi_1, varphi_2, varphi_3], axis=0)
+
+        if ascend:
+            Y_main = np.concatenate([Y_m, Y_n], axis=0)  # (2, n_bins, n_frames)
+            varphi_main = np.concatenate([varphi_m, varphi_n], axis=0)
+        else:
+            Y_main = np.concatenate([Y_n, Y_m], axis=0)  # (2, n_bins, n_frames)
+            varphi_main = np.concatenate([varphi_n, varphi_m], axis=0)
 
         YY_main = Y_main[:, np.newaxis, :, :] * Y_main[np.newaxis, :, :, :].conj()
         YY_sub = Y_main[:, np.newaxis, :, :] * Y_sub[np.newaxis, :, :, :].conj()
@@ -276,7 +291,7 @@ def update_by_iss2(
             axis=-1,
         )
         F = np.mean(varphi_sub[:, :, np.newaxis, :] * YY_sub, axis=-1)
-        Q = -np.linalg.inv(G_sub) @ F[:, :, :, np.newaxis]
+        Q = -inv2(G_sub) @ F[:, :, :, np.newaxis]
         Q = Q.squeeze(axis=-1)
         Q = Q.transpose(1, 0, 2)
         QY = Q.conj() @ Y_main
@@ -304,7 +319,11 @@ def update_by_iss2(
         # Concat
         Y_m, Y_n = np.split(Y_main, [1], axis=0)
         Y1, Y2, Y3 = np.split(Y_sub, [m, n - 1], axis=0)
-        Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
+
+        if ascend:
+            Y = np.concatenate([Y1, Y_m, Y2, Y_n, Y3], axis=0)
+        else:
+            Y = np.concatenate([Y1, Y_n, Y2, Y_m, Y3], axis=0)
 
     return Y
 
@@ -352,16 +371,16 @@ def update_by_ip2_one_pair(
     YY_Hermite = YY_Hermite.transpose(2, 0, 1, 3)  # (n_bins, 2, 2, n_frames)
 
     G_YY = varphi[:, :, np.newaxis, np.newaxis, :] * YY_Hermite
-    V = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
+    G = np.mean(G_YY, axis=-1)  # (2, n_bins, 2, 2)
 
-    V_m, V_n = V
-    _, H = eigh2(V_m, V_n)  # (n_bins, 2, 2)
+    G_m, G_n = G
+    _, H = eigh2(G_m, G_n)  # (n_bins, 2, 2)
     h = H.transpose(2, 0, 1)  # (2, n_bins, 2)
-    hVh = h[:, :, np.newaxis, :].conj() @ V @ h[:, :, :, np.newaxis]
-    hVh = np.squeeze(hVh, axis=-1)  # (2, n_bins, 1)
-    hVh = np.real(hVh)
-    hVh = np.maximum(hVh, 0)
-    denom = np.sqrt(hVh)
+    hGh = h[:, :, np.newaxis, :].conj() @ G @ h[:, :, :, np.newaxis]
+    hGh = np.squeeze(hGh, axis=-1)  # (2, n_bins, 1)
+    hGh = np.real(hGh)
+    hGh = np.maximum(hGh, 0)
+    denom = np.sqrt(hGh)
     denom = flooring_fn(denom)
     h = h / denom
     H = h.transpose(1, 2, 0)
