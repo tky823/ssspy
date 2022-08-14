@@ -28,18 +28,18 @@ class FDICAbase(IterativeMethodBase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -51,11 +51,10 @@ class FDICAbase(IterativeMethodBase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            if ``record_loss=True``. \
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
     """
 
     def __init__(
@@ -98,15 +97,15 @@ class FDICAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain.
+                Mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates.
-                Default: 100.
+                Number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -172,15 +171,15 @@ class FDICAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``.
+                The demixing filters to separate ``input``. \
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
@@ -195,10 +194,10 @@ class FDICAbase(IterativeMethodBase):
         :math:`\mathcal{L}` is given as follows:
 
         .. math::
-            \mathcal{L} \
+            \mathcal{L}
             &= \sum_{i}\mathcal{L}^{[i]}, \\
-            \mathcal{L}^{[i]} \
-            &= \frac{1}{J}\sum_{j,n}G(y_{ijn}) \
+            \mathcal{L}^{[i]}
+            &= \frac{1}{J}\sum_{j,n}G(y_{ijn})
             - 2\log|\det\boldsymbol{W}_{i}|, \\
             G(y_{ijn}) \
             &= - \log p(y_{ijn})
@@ -267,22 +266,22 @@ class GradFDICAbase(FDICAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
-            and return (n_channels, n_bins, n_frames).
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
+            and return (n_channels, n_bins, n_frames). \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -294,11 +293,9 @@ class GradFDICAbase(FDICAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
     """
 
     def __init__(
@@ -339,11 +336,11 @@ class GradFDICAbase(FDICAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates.
-                Default: 100.
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
@@ -398,25 +395,25 @@ class GradFDICA(GradFDICAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -428,11 +425,9 @@ class GradFDICA(GradFDICAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -508,15 +503,15 @@ class GradFDICA(GradFDICAbase):
 
         .. math::
             \boldsymbol{W}_{i}
-            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j} \
-            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}} \
+            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j}
+            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}}
             -\boldsymbol{I}\right)\boldsymbol{W}_{i}^{-\mathsf{H}},
 
         where
 
         .. math::
             \boldsymbol{\phi}(\boldsymbol{y}_{ij})
-            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})\
+            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})
             \right)^{\mathsf{T}}\in\mathbb{C}^{N}, \\
             \phi(y_{ijn})
             &= \frac{\partial G(y_{ijn})}{\partial y_{ijn}^{*}}, \\
@@ -564,25 +559,25 @@ class NaturalGradFDICA(GradFDICAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A score function corresponds to the partial derivative of the contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
-            and return (n_channels, n_bins, n_frames).
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
+            and return (n_channels, n_bins, n_frames). \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -594,11 +589,9 @@ class NaturalGradFDICA(GradFDICAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -674,15 +667,15 @@ class NaturalGradFDICA(GradFDICAbase):
 
         .. math::
             \boldsymbol{W}_{i}
-            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j} \
-            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}} \
+            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j}
+            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}}
             -\boldsymbol{I}\right)\boldsymbol{W}_{i},
 
         where
 
         .. math::
             \boldsymbol{\phi}(\boldsymbol{y}_{ij})
-            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})\
+            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})
             \right)^{\mathsf{T}}\in\mathbb{C}^{N}, \\
             \phi(y_{ijn})
             &= \frac{\partial G(y_{ijn})}{\partial y_{ijn}^{*}}, \\
@@ -726,30 +719,29 @@ class AuxFDICA(FDICAbase):
 
     Args:
         spatial_algorithm (str):
-            Algorithm to update demixing filters.
-            Choose from "IP", "IP1", "IP2".
-            Default: "IP".
+            Algorithm to update demixing filters. \
+            Choose ``"IP"``, ``"IP1"``, or ``"IP2"``. Default: ``"IP"``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         d_contrast_fn (callable):
-            A partial derivative of the real contrast function.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A partial derivative of the real contrast function. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
-            and return (n_channels, n_bins, n_frames).
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
+            and return (n_channels, n_bins, n_frames). \
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``sequential_pair_selector`` is used.
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -761,11 +753,9 @@ class AuxFDICA(FDICAbase):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -833,15 +823,15 @@ class AuxFDICA(FDICAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain.
+                The mixture signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 The number of iterations of demixing filter updates.
-                Default: 100.
+                Default: ``100``.
 
         Returns:
             numpy.ndarray:
-                The separated signal in frequency-domain.
+                The separated signal in frequency-domain. \
                 The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
@@ -882,8 +872,8 @@ class AuxFDICA(FDICAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
+        - If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
@@ -899,7 +889,7 @@ class AuxFDICA(FDICAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1}
             \boldsymbol{e}_{n}, \\
             \boldsymbol{w}_{in}
             &\leftarrow\frac{\boldsymbol{w}_{in}}
@@ -934,7 +924,7 @@ class AuxFDICA(FDICAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
+        For :math:`m` and :math:`n` (:math:`m\neq n`), \
         compute weighted covariance matrix as follows:
 
         .. math::
@@ -962,7 +952,7 @@ class AuxFDICA(FDICAbase):
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
+        Compute generalized eigenvectors of \
         :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
 
         .. math::
@@ -1038,17 +1028,17 @@ class GradLaplaceFDICA(GradFDICA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
+            A flooring function for numerical stability. \
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -1060,11 +1050,9 @@ class GradLaplaceFDICA(GradFDICA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -1164,17 +1152,17 @@ class NaturalGradLaplaceFDICA(GradFDICA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
-            and return (n_channels, n_bins, n_frames).
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
+            and return (n_channels, n_bins, n_frames). \
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used.
+            If ``is_holonomic=True``, Holonomic-type update is used. \
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -1186,11 +1174,9 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -1291,22 +1277,21 @@ class AuxLaplaceFDICA(AuxFDICA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm to update demixing filters.
-            Choose from "IP", "IP1", or "IP2".
-            Default: "IP".
+            Algorithm to update demixing filters. \
+            Choose ``"IP"``, ``"IP1"``, or ``"IP2"``. Default: ``"IP"``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability.
-            This function is expected to receive (n_channels, n_bins, n_frames)
+            A flooring function for numerical stability. \
+            This function is expected to receive (n_channels, n_bins, n_frames) \
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used.
+            the identity function (``lambda x: x``) is used. \
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``sequential_pair_selector`` is used.
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration.
+            Callback functions. Each function is called before separation and at each iteration. \
             Default: ``None``.
         solve_permutation (bool):
             If ``solve_permutation=True``, a permutation solver is used to align \
@@ -1318,11 +1303,9 @@ class AuxLaplaceFDICA(AuxFDICA):
             Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
-            Default: ``True``.
+            if ``record_loss=True``. Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
     """
 
     def __init__(
