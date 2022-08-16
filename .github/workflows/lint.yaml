@@ -24,6 +24,7 @@ jobs:
           pip install -e ".[dev]"
       - name: Run linters
         run: |
+          # See pyproject.toml
           flake8 --max-line-length 100 ssspy tests
       - name: Run formatters
         run: |
