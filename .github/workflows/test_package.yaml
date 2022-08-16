@@ -32,9 +32,8 @@ jobs:
           sudo apt-get install libsndfile1
       - name: Pytest
         run: |
-          pytest --cov=./ssspy --cov-report=xml
+          pytest -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Upload coverage to codecov
-        if: matrix.os == 'ubuntu-latest' && ${{ matrix.python-version }} == 3.10
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true
