@@ -18,7 +18,7 @@ from ssspy.bss.iva import (
 )
 from ssspy.utils.dataset import download_sample_speech_data
 
-ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
