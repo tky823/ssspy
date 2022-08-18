@@ -29,14 +29,18 @@ def projection_back(
 
         .. code-block:: python
 
+            import numpy as np
+
             n_channels, n_bins, n_frames = 2, 2049, 128
             n_sources = n_channels
+            rng = np.random.default_rng(42)
+
             spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+                rng.standard_normal((n_channels, n_bins, n_frames)) \
+                + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             demix_filter = \
-                np.random.randn(n_sources, n_channels) \
-                + 1j * np.random.randn(n_sources, n_channels)
+                rng.standard_normal((n_sources, n_channels)) \
+                + 1j * rng.standard_normal((n_sources, n_channels))
 
             spectrogram_est = demix_filter @ spectrogram_mix.transpose(1, 0, 2)
 
@@ -46,18 +50,25 @@ def projection_back(
             spectrogram_est_scaled = \
                 projection_back(spectrogram_est, reference=spectrogram_mix, reference_id=0)
 
+            print(spectrogram_est_scaled.shape)
+            >>> (2, 2049, 128)
+
         When you give demixing filters,
 
         .. code-block:: python
 
+            import numpy as np
+
             n_channels, n_bins, n_frames = 2, 2049, 128
             n_sources = n_channels
+            rng = np.random.default_rng(42)
+
             spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+                rng.standard_normal((n_channels, n_bins, n_frames)) \
+                + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             demix_filter = \
-                np.random.randn(n_sources, n_channels) \
-                + 1j * np.random.randn(n_sources, n_channels)
+                rng.standard_normal((n_sources, n_channels)) \
+                + 1j * rng.standard_normal((n_sources, n_channels))
 
             demix_filter_scaled = projection_back(demix_filter, reference_id=0)
 
@@ -65,6 +76,9 @@ def projection_back(
 
             # (n_bins, n_sources, n_frames) -> (n_sources, n_bins, n_frames)
             spectrogram_est_scaled = spectrogram_est_scaled.transpose(1, 0, 2)
+
+            print(spectrogram_est_scaled.shape)
+            >>> (2, 2049, 128)
 
     .. [#murata2001approach]
         N. Murata, S. Ikeda, and A. Ziehe,
