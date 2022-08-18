@@ -2,6 +2,10 @@ from typing import Optional, Union, List, Callable
 
 import numpy as np
 
+__all__ = [
+    "IterativeMethodBase",
+]
+
 
 class IterativeMethodBase:
     r"""Base class of iterative method.
