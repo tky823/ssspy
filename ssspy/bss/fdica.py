@@ -113,7 +113,9 @@ class FDICAbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__()
+        super().__call__(n_iter=n_iter)
+
+        raise NotImplementedError("Implement '__call__' method.")
 
     def __repr__(self) -> str:
         s = "FDICA("
@@ -348,7 +350,12 @@ class GradFDICAbase(FDICAbase):
                 The separated signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
         """
-        super().__call__(input, n_iter=n_iter, **kwargs)
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
+        super(FDICAbase, self).__call__(n_iter=n_iter)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
@@ -837,7 +844,12 @@ class AuxFDICA(FDICAbase):
                 The separated signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
         """
-        super().__call__(input, n_iter=n_iter, **kwargs)
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
+        super(FDICAbase, self).__call__(n_iter=n_iter)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
