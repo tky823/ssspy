@@ -2,12 +2,13 @@ from typing import Optional, Union, List, Callable
 
 import numpy as np
 
+from .base import IterativeMethodBase
 from ..transform import whiten
 
 __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGradLaplaceICA"]
 
 
-class GradICAbase:
+class GradICAbase(IterativeMethodBase):
     r"""Base class of independent component analysis (ICA) using the gradient descent.
 
     Args:
@@ -40,6 +41,8 @@ class GradICAbase:
         ] = None,
         record_loss: bool = True,
     ) -> None:
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
         self.step_size = step_size
 
         if contrast_fn is None:
@@ -52,20 +55,7 @@ class GradICAbase:
         else:
             self.score_fn = score_fn
 
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
-
         self.input = None
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a time-domain multichannel signal.
@@ -87,24 +77,7 @@ class GradICAbase:
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        super().__call__(n_iter=n_iter)
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -218,7 +191,7 @@ class GradICAbase:
         return logdet
 
 
-class FastICAbase:
+class FastICAbase(IterativeMethodBase):
     r"""Base class of fast independent component analysis (FastICA).
 
     Args:
@@ -252,6 +225,8 @@ class FastICAbase:
         ] = None,
         record_loss: bool = True,
     ) -> None:
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
         if contrast_fn is None:
             raise ValueError("Specify contrast function.")
         else:
@@ -267,20 +242,7 @@ class FastICAbase:
         else:
             self.d_score_fn = d_score_fn
 
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
-
         self.input = None
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a time-domain multichannel signal.
@@ -302,24 +264,7 @@ class FastICAbase:
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        super().__call__(n_iter=n_iter)
 
         self.output = self.separate(
             self.whitened_input, demix_filter=self.demix_filter, use_whitening=False
