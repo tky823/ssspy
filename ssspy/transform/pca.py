@@ -6,6 +6,7 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
 
     Args:
         input (numpy.ndarray):
+            Input tensor to be whitened.
             - If input is 2D real tensor, it is regarded as (n_channels, n_samples).
             - If input is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
             - If input is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
