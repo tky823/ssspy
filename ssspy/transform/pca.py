@@ -18,7 +18,7 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
 
     Returns:
         numpy.ndarray:
-            Output tensor. The type (real or complex) and shape is same as input.
+            Output tensor. The type (real or complex) and shape are same as input.
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):

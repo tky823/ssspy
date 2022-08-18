@@ -16,7 +16,7 @@ def whiten(input: np.ndarray) -> np.ndarray:
     Returns:
         numpy.ndarray:
             Whitened tensor. \
-            The type (real or complex) and shape is same as input.
+            The type (real or complex) and shape are same as input.
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):
