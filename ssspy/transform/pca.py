@@ -6,12 +6,7 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
 
     Args:
         input (numpy.ndarray):
-            Input tensor to be whitened.
-            - If input is 2D real tensor, it is regarded as (n_channels, n_samples).
-            - If input is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
-            - If input is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
-            - If input is 4D complex tensor, it is regarded as \
-            (batch_size, n_channels, n_bins, n_frames).
+            Input tensor.
         ascend (bool):
             If ``ascend=True``, first channel corresponds to first principle component. \
             Otherwise, last channel corresponds to first principle component.
@@ -19,6 +14,13 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
     Returns:
         numpy.ndarray:
             Output tensor. The type (real or complex) and shape are same as input.
+
+    .. note::
+        - If ``input`` is 2D real tensor, it is regarded as (n_channels, n_samples).
+        - If ``input`` is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
+        - If ``input`` is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
+        - If ``input`` is 4D complex tensor, it is regarded as \
+          (batch_size, n_channels, n_bins, n_frames).
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):
