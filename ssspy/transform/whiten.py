@@ -31,10 +31,9 @@ def whiten(input: np.ndarray) -> np.ndarray:
             >>> rng = np.random.default_rng(42)
 
             >>> spectrogram_mix = \
-            >>>     rng.standard_normal((n_channels, n_bins, n_frames)) \
-            >>>     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             >>> spectrogram_mix_whitened = whiten(spectrogram_mix)
-
             >>> spectrogram_mix_whitened.shape
             (2, 2049, 128)
     """

@@ -37,11 +37,11 @@ def projection_back(
             >>> rng = np.random.default_rng(42)
 
             >>> spectrogram_mix = \
-            >>>     rng.standard_normal((n_channels, n_bins, n_frames)) \
-            >>>     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             >>> demix_filter = \
-            >>>     rng.standard_normal((n_sources, n_channels)) \
-            >>>     + 1j * rng.standard_normal((n_sources, n_channels))
+            ...     rng.standard_normal((n_sources, n_channels)) \
+            ...     + 1j * rng.standard_normal((n_sources, n_channels))
 
             >>> spectrogram_est = demix_filter @ spectrogram_mix.transpose(1, 0, 2)
 
@@ -49,7 +49,7 @@ def projection_back(
             >>> spectrogram_est = spectrogram_est.transpose(1, 0, 2)
 
             >>> spectrogram_est_scaled = \
-            >>>     projection_back(spectrogram_est, reference=spectrogram_mix, reference_id=0)
+            ...     projection_back(spectrogram_est, reference=spectrogram_mix, reference_id=0)
             >>> spectrogram_est_scaled.shape
             (2, 2049, 128)
 
@@ -65,11 +65,11 @@ def projection_back(
             >>> rng = np.random.default_rng(42)
 
             >>> spectrogram_mix = \
-            >>>     rng.standard_normal((n_channels, n_bins, n_frames)) \
-            >>>     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             >>> demix_filter = \
             >>>     rng.standard_normal((n_sources, n_channels)) \
-            >>>     + 1j * rng.standard_normal((n_sources, n_channels))
+            ...     + 1j * rng.standard_normal((n_sources, n_channels))
 
             >>> demix_filter_scaled = projection_back(demix_filter, reference_id=0)
 

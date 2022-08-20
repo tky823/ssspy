@@ -33,10 +33,9 @@ def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
             >>> rng = np.random.default_rng(42)
 
             >>> spectrogram_mix = \
-            >>>     rng.standard_normal((n_channels, n_bins, n_frames)) \
-            >>>     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
             >>> spectrogram_mix_ortho = pca(spectrogram_mix)
-
             >>> spectrogram_mix_ortho.shape
             (2, 2049, 128)
     """
