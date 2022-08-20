@@ -7,6 +7,7 @@ import numpy as np
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
+from .base import IterativeMethodBase
 from ..algorithm import projection_back
 
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
@@ -15,7 +16,7 @@ spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
-class ILRMAbase:
+class ILRMAbase(IterativeMethodBase):
     r"""Base class of independent low-rank matrix analysis (ILRMA).
 
     Args:
@@ -64,6 +65,8 @@ class ILRMAbase:
         reference_id: int = 0,
         rng: np.random.Generator = np.random.default_rng(),
     ) -> None:
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
         self.n_basis = n_basis
         self.partitioning = partitioning
 
@@ -71,14 +74,6 @@ class ILRMAbase:
             self.flooring_fn = lambda x: x
         else:
             self.flooring_fn = flooring_fn
-
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
 
         self.input = None
         self.scale_restoration = scale_restoration
@@ -89,13 +84,6 @@ class ILRMAbase:
             self.reference_id = reference_id
 
         self.rng = rng
-
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -117,30 +105,12 @@ class ILRMAbase:
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        super().__call__(n_iter=n_iter)
 
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
 
@@ -631,6 +601,37 @@ class GaussILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
+        super(ILRMAbase, self).__call__(n_iter=n_iter)
+
+        if self.scale_restoration:
+            self.restore_scale()
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
     def __repr__(self) -> str:
         s = "GaussILRMA("
@@ -1357,6 +1358,37 @@ class TILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
+        super(ILRMAbase, self).__call__(n_iter=n_iter)
+
+        if self.scale_restoration:
+            self.restore_scale()
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
     def __repr__(self) -> str:
         s = "TILRMA("
@@ -2141,6 +2173,37 @@ class GGDILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates. \
+                Default: ``100``.
+
+        Returns:
+            numpy.ndarray:
+                The separated signal in frequency-domain. \
+                The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
+        super(ILRMAbase, self).__call__(n_iter=n_iter)
+
+        if self.scale_restoration:
+            self.restore_scale()
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
 
     def __repr__(self) -> str:
         s = "GGDILRMA("

@@ -11,6 +11,7 @@ from ._update_spatial_model import (
     update_by_iss1,
     update_by_iss2,
 )
+from .base import IterativeMethodBase
 from ..linalg import eigh
 from ..algorithm import projection_back
 from ..transform import whiten
@@ -33,7 +34,7 @@ spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
-class IVAbase:
+class IVAbase(IterativeMethodBase):
     r"""Base class of independent vector analysis (IVA).
 
     Args:
@@ -72,17 +73,12 @@ class IVAbase:
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
         if flooring_fn is None:
             self.flooring_fn = lambda x: x
         else:
             self.flooring_fn = flooring_fn
-
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
 
         self.input = None
         self.scale_restoration = scale_restoration
@@ -91,13 +87,6 @@ class IVAbase:
             raise ValueError("Specify 'reference_id' if scale_restoration=True.")
         else:
             self.reference_id = reference_id
-
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -360,24 +349,8 @@ class GradIVAbase(IVAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
+        super(IVAbase, self).__call__(n_iter=n_iter)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1056,24 +1029,8 @@ class FastIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
+        super(IVAbase, self).__call__(n_iter=n_iter)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1215,24 +1172,8 @@ class FasterIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
+        super(IVAbase, self).__call__(n_iter=n_iter)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1400,24 +1341,8 @@ class AuxIVA(AuxIVAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
+        super(IVAbase, self).__call__(n_iter=n_iter)
 
         if self.scale_restoration:
             self.restore_scale()

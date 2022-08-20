@@ -7,6 +7,7 @@ from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from ._solve_permutation import correlation_based_permutation_solver
+from .base import IterativeMethodBase
 from ..algorithm import projection_back
 
 __all__ = [
@@ -22,7 +23,7 @@ spatial_algorithms = ["IP", "IP1", "IP2"]
 EPS = 1e-10
 
 
-class FDICAbase:
+class FDICAbase(IterativeMethodBase):
     r"""Base class of frequency-domain independent component analysis (FDICA).
 
     Args:
@@ -71,6 +72,8 @@ class FDICAbase:
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
         if contrast_fn is None:
             raise ValueError("Specify contrast function.")
         else:
@@ -81,13 +84,6 @@ class FDICAbase:
         else:
             self.flooring_fn = flooring_fn
 
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
-
         self.input = None
         self.solve_permutation = solve_permutation
         self.scale_restoration = scale_restoration
@@ -96,13 +92,6 @@ class FDICAbase:
             raise ValueError("Specify 'reference_id' if scale_restoration=True.")
         else:
             self.reference_id = reference_id
-
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -123,6 +112,8 @@ class FDICAbase:
         self.input = input.copy()
 
         self._reset(**kwargs)
+
+        super().__call__(n_iter=n_iter)
 
         raise NotImplementedError("Implement '__call__' method.")
 
@@ -363,24 +354,8 @@ class GradFDICAbase(FDICAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
+        super(FDICAbase, self).__call__(n_iter=n_iter)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
@@ -873,24 +848,8 @@ class AuxFDICA(FDICAbase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
+        super(FDICAbase, self).__call__(n_iter=n_iter)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
