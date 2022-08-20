@@ -23,19 +23,20 @@ def whiten(input: np.ndarray) -> np.ndarray:
     Examples:
         .. code-block:: python
 
-            import numpy as np
+            >>> import numpy as np
+            >>> from ssspy.transform import whiten
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            n_sources = n_channels
-            rng = np.random.default_rng(42)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> n_sources = n_channels
+            >>> rng = np.random.default_rng(42)
 
-            spectrogram_mix = \
-                rng.standard_normal((n_channels, n_bins, n_frames)) \
-                + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
-            spectrogram_mix_whitened = whiten(spectrogram_mix)
+            >>> spectrogram_mix = \
+            >>>     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            >>>     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            >>> spectrogram_mix_whitened = whiten(spectrogram_mix)
 
-            print(spectrogram_mix_whitened.shape)
-            >>> (2, 2049, 128)
+            >>> spectrogram_mix_whitened.shape
+            (2, 2049, 128)
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):
