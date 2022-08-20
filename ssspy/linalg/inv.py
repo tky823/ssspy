@@ -2,15 +2,39 @@ import numpy as np
 
 
 def inv2(X: np.ndarray) -> np.ndarray:
-    r"""Compute inversion of 2x2 matrix.
+    r"""Compute the (multiplicative) inverse of a 2x2 matrix.
 
     Args:
         X (numpy.ndarray):
-            Complex matrix with shape of (\*, 2, 2).
+            2x2 matrix to be inverted. The shape is (\*, 2, 2).
 
     Returns:
         numpy.ndarray:
-            Inverse matrix of X whose shape is (\*, 2, 2).
+            (Multiplicative) inverse of the matrix X.
+
+    Examples:
+        .. code-block:: python
+
+            >>> import numpy as np
+            >>> from ssspy.linalg import inv2
+            >>> X = np.array([[0, 1], [2, 3]])
+            >>> X_inv = inv2(X)
+            >>> np.allclose(X @ X_inv, np.eye(2))
+            True
+            >>> np.allclose(X_inv @ X, np.eye(2))
+            True
+
+        .. code-block:: python
+
+            >>> import numpy as np
+            >>> from ssspy.linalg import inv2
+            >>> X = np.array([[[0, 1], [2, 3]], [[4, 5], [6, 7]]])
+            >>> inv2(X)
+            array([[[-1.5,  0.5],
+                    [ 1. , -0. ]],
+
+                [[-3.5,  2.5],
+                    [ 3. , -2. ]]])
     """
     shape = X.shape
 
