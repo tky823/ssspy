@@ -37,7 +37,7 @@ def eigh(
         The generalized eigenvalues of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}` \
         are computed by :math:`\boldsymbol{L}^{-\mathsf{H}}\boldsymbol{y}`.
 
-    Examples::
+    Examples:
 
         .. code-block:: python
 
@@ -118,7 +118,7 @@ def eigh2(
 
         See also https://github.com/tky823/ssspy/issues/115 for this implementation.
 
-    Examples::
+    Examples:
 
         .. code-block:: python
 
