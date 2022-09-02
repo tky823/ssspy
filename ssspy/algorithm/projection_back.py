@@ -7,7 +7,7 @@ def projection_back(
     data_or_filter: np.ndarray,
     reference: Optional[np.ndarray] = None,
     reference_id: Optional[int] = 0,
-):
+) -> np.ndarray:
     r"""Projection back technique to restore scale ambiguity.
 
     The implementation is based on [#murata2001approach]_.
