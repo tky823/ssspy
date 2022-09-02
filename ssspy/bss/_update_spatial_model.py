@@ -10,7 +10,7 @@ from ..linalg import inv2, eigh2
 EPS = 1e-10
 
 
-def _identity(x: np.ndarray):
+def _identity(x: np.ndarray) -> np.ndarray:
     return x
 
 
