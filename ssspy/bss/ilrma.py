@@ -244,7 +244,7 @@ class ILRMAbase(IterativeMethodBase):
 
     def reconstruct_nmf(
         self, basis: np.ndarray, activation: np.ndarray, latent: Optional[np.ndarray] = None
-    ):
+    ) -> np.ndarray:
         r"""Reconstruct NMF.
 
         Args:
@@ -296,7 +296,7 @@ class ILRMAbase(IterativeMethodBase):
         else:
             raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
 
-    def normalize_by_power(self):
+    def normalize_by_power(self) -> None:
         r"""Normalize demixing filters and NMF parameters by power.
 
         Demixing filters are normalized by
@@ -363,7 +363,7 @@ class ILRMAbase(IterativeMethodBase):
             Y = Y / psi[:, np.newaxis, np.newaxis]
             self.output = Y
 
-    def normalize_by_projection_back(self):
+    def normalize_by_projection_back(self) -> None:
         r"""Normalize demixing filters and NMF parameters by projection back.
 
         Demixing filters are normalized by
@@ -788,7 +788,7 @@ class GaussILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self):
+    def update_activation(self) -> None:
         r"""Update NMF activations.
 
         Update :math:`t_{ikn}` as follows:
