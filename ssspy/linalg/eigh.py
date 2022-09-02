@@ -1,9 +1,13 @@
+from typing import Optional, Tuple, Union
+
 import numpy as np
 
 from .inv import inv2
 
 
-def eigh(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
+def eigh(
+    A: np.ndarray, B: Optional[np.ndarray] = None
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Generalized eigenvalue decomposition.
 
     Args:
@@ -39,7 +43,9 @@ def eigh(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
     return lamb, z
 
 
-def eigh2(A: np.ndarray, B: np.ndarray = None) -> np.ndarray:
+def eigh2(
+    A: np.ndarray, B: Optional[np.ndarray] = None
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Generalized eigenvalue decomposition for 2x2 matrix.
 
     Args:

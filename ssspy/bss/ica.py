@@ -320,7 +320,7 @@ class FastICAbase(IterativeMethodBase):
         raise NotImplementedError("Implement 'update_once' method.")
 
     def separate(
-        self, input: np.ndarray, demix_filter: np.ndarray, use_whitening=True
+        self, input: np.ndarray, demix_filter: np.ndarray, use_whitening: bool = True
     ) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
