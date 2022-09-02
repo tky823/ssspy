@@ -1298,7 +1298,7 @@ class AuxIVA(AuxIVAbase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-    ):
+    ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
             d_contrast_fn=d_contrast_fn,
@@ -1892,7 +1892,7 @@ class GradGaussIVA(GradIVA):
             reference_id=reference_id,
         )
 
-    def _reset(self, **kwargs):
+    def _reset(self, **kwargs) -> None:
         r"""Reset attributes following on given keyword arguments.
 
         We also set variance of Gaussian distribution.
@@ -2140,7 +2140,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             reference_id=reference_id,
         )
 
-    def _reset(self, **kwargs):
+    def _reset(self, **kwargs) -> None:
         r"""Reset attributes following on given keyword arguments.
 
         We also set variance of Gaussian distribution.
@@ -2234,7 +2234,7 @@ class AuxLaplaceIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-    ):
+    ) -> None:
         def contrast_fn(y):
             return 2 * np.linalg.norm(y, axis=1)
 
@@ -2325,7 +2325,7 @@ class AuxGaussIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-    ):
+    ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
             Args:
@@ -2374,7 +2374,7 @@ class AuxGaussIVA(AuxIVA):
             reference_id=reference_id,
         )
 
-    def _reset(self, **kwargs):
+    def _reset(self, **kwargs) -> None:
         r"""Reset attributes following on given keyword arguments.
 
         We also set variance of Gaussian distribution.
