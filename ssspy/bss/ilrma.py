@@ -45,9 +45,10 @@ class ILRMAbase(IterativeMethodBase):
         reference_id (int):
             Reference channel for projection back. \
             Default: ``0``.
-        rng (numpy.random.Generator):
+        rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF. \
-            Default: ``numpy.random.default_rng()``.
+            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Default: ``None``.
     """
 
     def __init__(
@@ -63,7 +64,7 @@ class ILRMAbase(IterativeMethodBase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-        rng: np.random.Generator = np.random.default_rng(),
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
@@ -82,6 +83,9 @@ class ILRMAbase(IterativeMethodBase):
             raise ValueError("Specify 'reference_id' if scale_restoration=True.")
         else:
             self.reference_id = reference_id
+
+        if rng is None:
+            rng = np.random.default_rng()
 
         self.rng = rng
 
@@ -163,16 +167,21 @@ class ILRMAbase(IterativeMethodBase):
 
         self._init_nmf(rng=self.rng)
 
-    def _init_nmf(self, rng: np.random.Generator = np.random.default_rng()) -> None:
+    def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
         r"""Initialize NMF.
 
         Args:
-            rng (numpy.random.Generator):
-                Random number generator. Default: ``numpy.random.default_rng()``.
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given, \
+                ``np.random.default_rng()`` will be used. \
+                Default: ``None``.
         """
         n_basis = self.n_basis
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
+
+        if rng is None:
+            rng = np.random.default_rng()
 
         if self.partitioning:
             if not hasattr(self, "latent"):
@@ -547,9 +556,10 @@ class GaussILRMA(ILRMAbase):
         reference_id (int):
             Reference channel for projection back. \
             Default: ``0``.
-        rng (numpy.random.Generator):
+        rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF. \
-            Default: ``numpy.random.default_rng()``.
+            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Default: ``None``.
 
     .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
         "Determined blind source separation unifying independent vector analysis and \
@@ -574,7 +584,7 @@ class GaussILRMA(ILRMAbase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-        rng: np.random.Generator = np.random.default_rng(),
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(
             n_basis=n_basis,
@@ -1307,9 +1317,10 @@ class TILRMA(ILRMAbase):
         reference_id (int):
             Reference channel for projection back. \
             Default: ``0``.
-        rng (numpy.random.Generator):
+        rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF. \
-            Default: ``numpy.random.default_rng()``.
+            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Default: ``None``.
     """
 
     def __init__(
@@ -1330,7 +1341,7 @@ class TILRMA(ILRMAbase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-        rng: np.random.Generator = np.random.default_rng(),
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(
             n_basis=n_basis,
@@ -2121,9 +2132,10 @@ class GGDILRMA(ILRMAbase):
         reference_id (int):
             Reference channel for projection back. \
             Default: ``0``.
-        rng (numpy.random.Generator):
+        rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF. \
-            Default: ``numpy.random.default_rng()``.
+            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Default: ``None``.
     """
 
     def __init__(
@@ -2144,7 +2156,7 @@ class GGDILRMA(ILRMAbase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
-        rng: np.random.Generator = np.random.default_rng(),
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(
             n_basis=n_basis,
