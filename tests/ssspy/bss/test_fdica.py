@@ -98,6 +98,7 @@ def test_grad_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
 
@@ -142,6 +143,7 @@ def test_natural_grad_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
 
@@ -189,6 +191,7 @@ def test_aux_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
 
@@ -224,6 +227,7 @@ def test_grad_laplace_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
 
@@ -262,6 +266,7 @@ def test_natural_grad_laplace_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
 
@@ -303,5 +308,6 @@ def test_aux_laplace_fdica(
     spectrogram_est = fdica(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert isinstance(fdica.loss[-1], float)
 
     print(fdica)
