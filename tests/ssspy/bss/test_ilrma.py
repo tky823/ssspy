@@ -137,6 +137,7 @@ def test_gauss_ilrma_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
 
@@ -193,6 +194,7 @@ def test_gauss_ilrma_wo_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
 
@@ -252,6 +254,7 @@ def test_t_ilrma_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
 
@@ -311,6 +314,7 @@ def test_t_ilrma_wo_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
 
@@ -370,6 +374,7 @@ def test_ggd_ilrma_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
 
@@ -429,5 +434,6 @@ def test_ggd_ilrma_wo_latent(
     spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(ilrma.loss[-1]) is float
 
     print(ilrma)
