@@ -1234,7 +1234,7 @@ class GaussILRMA(ILRMAbase):
         logdet = self.compute_logdet(W)  # (n_bins,)
 
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
-        loss = loss.sum(axis=0)
+        loss = loss.sum(axis=0).item()
 
         return loss
 
@@ -2049,7 +2049,7 @@ class TILRMA(ILRMAbase):
         logdet = self.compute_logdet(W)  # (n_bins,)
 
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
-        loss = loss.sum(axis=0)
+        loss = loss.sum(axis=0).item()
 
         return loss
 
@@ -2846,7 +2846,7 @@ class GGDILRMA(ILRMAbase):
         logdet = self.compute_logdet(W)  # (n_bins,)
 
         loss = np.sum(loss.mean(axis=-1), axis=0) - 2 * logdet
-        loss = loss.sum(axis=0)
+        loss = loss.sum(axis=0).item()
 
         return loss
 

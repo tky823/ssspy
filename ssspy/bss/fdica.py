@@ -212,7 +212,7 @@ class FDICAbase(IterativeMethodBase):
         logdet = self.compute_logdet(W)  # (n_bins,)
         G = self.contrast_fn(Y)  # (n_sources, n_bins, n_frames)
         loss = np.sum(np.mean(G, axis=2), axis=0) - 2 * logdet
-        loss = loss.sum(axis=0)
+        loss = loss.sum(axis=0).item()
 
         return loss
 
@@ -771,7 +771,7 @@ class AuxFDICA(FDICAbase):
         .. code-block:: python
 
             def contrast_fn(y):
-                return 2 * y
+                return 2 * np.abs(y)
 
             def d_contrast_fn(y):
                 return 2 * np.ones_like(y)
@@ -1341,7 +1341,7 @@ class AuxLaplaceFDICA(AuxFDICA):
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray):
-            return 2 * y
+            return 2 * np.abs(y)
 
         def d_contrast_fn(y: np.ndarray):
             return 2 * np.ones_like(y)

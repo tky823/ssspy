@@ -188,6 +188,7 @@ def test_grad_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -253,6 +254,7 @@ def test_natural_grad_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -329,6 +331,7 @@ def test_fast_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -387,6 +390,7 @@ def test_faster_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -499,6 +503,7 @@ def test_aux_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -534,6 +539,7 @@ def test_grad_laplace_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -569,6 +575,7 @@ def test_grad_gauss_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -606,6 +613,7 @@ def test_natural_grad_laplace_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -641,6 +649,7 @@ def test_natural_grad_gauss_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -685,6 +694,7 @@ def test_aux_laplace_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)
 
@@ -727,5 +737,6 @@ def test_aux_gauss_iva(
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
 
     print(iva)

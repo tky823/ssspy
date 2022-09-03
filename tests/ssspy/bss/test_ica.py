@@ -81,6 +81,7 @@ def test_grad_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+    assert type(ica.loss[-1]) is float
 
     print(ica)
 
@@ -116,6 +117,7 @@ def test_natural_grad_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+    assert type(ica.loss[-1]) is float
 
     print(ica)
 
@@ -143,6 +145,7 @@ def test_grad_laplace_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+    assert type(ica.loss[-1]) is float
 
     print(ica)
 
@@ -170,6 +173,7 @@ def test_natural_grad_laplace_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+    assert type(ica.loss[-1]) is float
 
     print(ica)
 
@@ -207,5 +211,6 @@ def test_fast_ica(
     waveform_est = ica(waveform_mix, n_iter=n_iter)
 
     assert waveform_mix.shape == waveform_est.shape
+    assert type(ica.loss[-1]) is float
 
     print(ica)

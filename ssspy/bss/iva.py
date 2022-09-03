@@ -206,6 +206,7 @@ class IVAbase(IterativeMethodBase):
         logdet = self.compute_logdet(W)  # (n_bins,)
         G = self.contrast_fn(Y)  # (n_sources, n_frames)
         loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
+        loss = loss.item()
 
         return loss
 
@@ -490,7 +491,7 @@ class FastIVAbase(IVAbase):
         Y = self.separate(Z, demix_filter=W, use_whitening=False)  # (n_sources, n_bins, n_frames)
 
         G = self.contrast_fn(Y)  # (n_sources, n_frames)
-        loss = np.sum(np.mean(G, axis=1), axis=0)
+        loss = np.sum(np.mean(G, axis=1), axis=0).item()
 
         return loss
 
@@ -1664,6 +1665,7 @@ class AuxIVA(AuxIVAbase):
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
             logdet = self.compute_logdet(W)  # (n_bins,)
             loss = np.sum(np.mean(G, axis=1), axis=0) - 2 * np.sum(logdet, axis=0)
+            loss = loss.item()
 
             return loss
 

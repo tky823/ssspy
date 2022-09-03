@@ -172,6 +172,7 @@ class GradICAbase(IterativeMethodBase):
         logdet = self.compute_logdet(W)
         G = self.contrast_fn(Y)
         loss = np.sum(np.mean(G, axis=1)) - logdet
+        loss = loss.item()
 
         return loss
 
@@ -395,7 +396,7 @@ class FastICAbase(IterativeMethodBase):
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         loss = np.mean(self.contrast_fn(Y), axis=-1)
-        loss = loss.sum()
+        loss = loss.sum().item()
 
         return loss
 
