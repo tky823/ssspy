@@ -3,15 +3,11 @@ import functools
 
 import numpy as np
 
-from ._flooring import max_flooring
+from ._flooring import identity, max_flooring
 from ._select_pair import sequential_pair_selector
 from ..linalg import inv2, eigh2
 
 EPS = 1e-10
-
-
-def _identity(x: np.ndarray) -> np.ndarray:
-    return x
 
 
 def update_by_ip1(
@@ -47,7 +43,7 @@ def update_by_ip1(
             The shape is (n_bins, n_sources, n_channels).
     """
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
 
     if overwrite:
         W = demix_filter
@@ -117,7 +113,7 @@ def update_by_ip2(
             The shape is (n_bins, n_sources, n_channels).
     """
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
 
     if pair_selector is None:
         pair_selector = sequential_pair_selector
@@ -184,7 +180,7 @@ def update_by_iss1(
             The shape is (n_sources, n_bins, n_frames).
     """
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
 
     Y = separated
     varphi = weight
@@ -246,7 +242,7 @@ def update_by_iss2(
     n_sources = Y.shape[0]
 
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
 
     if pair_selector is None:
         pair_selector = functools.partial(sequential_pair_selector, stop=n_sources, step=2)
@@ -361,7 +357,7 @@ def update_by_ip2_one_pair(
             The shape is (n_bins, 2, n_channels).
     """
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
 
     W = demix_filter_pair
     Y = separated_pair
