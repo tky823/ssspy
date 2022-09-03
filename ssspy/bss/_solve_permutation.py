@@ -4,13 +4,9 @@ import functools
 
 import numpy as np
 
-from ._flooring import max_flooring
+from ._flooring import identity, max_flooring
 
 EPS = 1e-10
-
-
-def _identity(x: np.ndarray) -> np.ndarray:
-    return x
 
 
 def correlation_based_permutation_solver(
@@ -60,7 +56,7 @@ def correlation_based_permutation_solver(
         W = demix_filter.copy()
 
     if flooring_fn is None:
-        flooring_fn = _identity
+        flooring_fn = identity
     else:
         flooring_fn = flooring_fn
 
