@@ -53,11 +53,6 @@ class IterativeMethodBase:
             n_iter (int):
                 The number of iterations of demixing filter updates. \
                 Default: ``100``.
-
-        Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
         """
         if self.record_loss:
             loss = self.compute_loss()
