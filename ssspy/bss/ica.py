@@ -776,7 +776,7 @@ class FastICA(FastICAbase):
 
 
 class GradLaplaceICA(GradICA):
-    r"""Independent component analysis (ICA) using the gradient descent on a Laplacian distribution.
+    r"""Independent component analysis (ICA) using the gradient descent on a Laplace distribution.
 
     We assume :math:`y_{ijn}` follows a Laplacian distribution.
 
