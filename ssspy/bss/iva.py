@@ -519,32 +519,31 @@ class AuxIVAbase(IVAbase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function. \
-            This function is expected to receive (n_channels, n_frames) \
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
     """
 
@@ -577,16 +576,15 @@ class AuxIVAbase(IVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames). \
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates. \
+                The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         return super().__call__(input, n_iter=n_iter, **kwargs)
 
