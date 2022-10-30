@@ -1126,6 +1126,33 @@ class FasterIVA(FastIVAbase):
             Reference channel for projection back.
             Default: ``0``.
 
+    Examples:
+        .. code-block:: python
+
+            from ssspy.transform import whiten
+            from ssspy.algorithm import projection_back
+
+            def contrast_fn(y):
+                return 2 * np.linalg.norm(y, axis=1)
+
+            def d_contrast_fn(y):
+                return 2 * np.ones_like(y)
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            iva = FasterIVA(
+                    contrast_fn=contrast_fn,
+                    d_contrast_fn=d_contrast_fn,
+                    scale_restoration=False,
+            )
+            spectrogram_mix_whitened = whiten(spectrogram_mix)
+            spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
+            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
+
     .. [#brendel2021fasteriva] A. Brendel and W. Kellermann,
         "Faster IVA: Update rules for independent vector analysis based on negentropy \
         and the majorize-minimize principle,"
