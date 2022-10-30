@@ -382,8 +382,7 @@ class FastICAbase(IterativeMethodBase):
             &= - \log p(y_{tn})
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
