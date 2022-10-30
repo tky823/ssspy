@@ -778,7 +778,7 @@ class FastICA(FastICAbase):
 class GradLaplaceICA(GradICA):
     r"""Independent component analysis (ICA) using the gradient descent on a Laplace distribution.
 
-    We assume :math:`y_{ijn}` follows a Laplacian distribution.
+    We assume :math:`y_{ijn}` follows a Laplace distribution.
 
     .. math::
         p(y_{ijn})\propto\exp(|y_{ijn}|)
@@ -888,9 +888,9 @@ class GradLaplaceICA(GradICA):
 
 class NaturalGradLaplaceICA(NaturalGradICA):
     r"""Independent component analysis (ICA) using the natural gradient descent \
-    on a Laplacian distribution.
+    on a Laplace distribution.
 
-    We assume :math:`y_{ijn}` follows a Laplacian distribution.
+    We assume :math:`y_{ijn}` follows a Laplace distribution.
 
     .. math::
         p(y_{ijn})\propto\exp(|y_{ijn}|)
