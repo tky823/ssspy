@@ -25,29 +25,28 @@ class ILRMAbase(IterativeMethodBase):
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
         rng (numpy.random.Generator, optioinal):
-            Random number generator. This is mainly used to randomly initialize NMF. \
-            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Random number generator. This is mainly used to randomly initialize NMF.
+            If ``None`` is given, ``np.random.default_rng()`` will be used.
             Default: ``None``.
     """
 
@@ -94,16 +93,15 @@ class ILRMAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates. \
+                The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -133,11 +131,13 @@ class ILRMAbase(IterativeMethodBase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
+
+        We also set variance of Gaussian distribution.
 
         Args:
             kwargs:
-                Set arguments as attributes of ILRMA.
+                Keyword arguments to set as attributes of ILRMA.
         """
         assert self.input is not None, "Specify data!"
 
@@ -172,8 +172,8 @@ class ILRMAbase(IterativeMethodBase):
 
         Args:
             rng (numpy.random.Generator, optional):
-                Random number generator. If ``None`` is given, \
-                ``np.random.default_rng()`` will be used. \
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
                 Default: ``None``.
         """
         n_basis = self.n_basis
@@ -234,16 +234,15 @@ class ILRMAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``. \
+                The demixing filters to separate ``input``.
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_sources, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
         Y = W @ X.transpose(1, 0, 2)
@@ -258,20 +257,19 @@ class ILRMAbase(IterativeMethodBase):
 
         Args:
             basis (numpy.ndarray):
-                Basis matrix. \
-                The shape is (n_sources, n_basis, n_frames) if latent is given. \
+                Basis matrix.
+                The shape is (n_sources, n_basis, n_frames) if latent is given.
                 Otherwise, (n_basis, n_frames).
             activation (numpy.ndarray):
-                Activation matrix. \
-                The shape is (n_sources, n_bins, n_basis) if latent is given. \
+                Activation matrix.
+                The shape is (n_sources, n_bins, n_basis) if latent is given.
                 Otherwise, (n_bins, n_basis).
             latent (numpy.ndarray, optional):
                 Latent variable that determines number of bases per source.
 
         Returns:
-            numpy.ndarray:
-                Reconstructed NMF. \
-                The shape is (n_sources, n_bins, n_frames).
+            numpy.ndarray of theconstructed NMF.
+            The shape is (n_sources, n_bins, n_frames).
         """
         if latent is None:
             T, V = basis, activation
@@ -446,8 +444,7 @@ class ILRMAbase(IterativeMethodBase):
         r"""Compute loss :math:`\mathcal{L}`.
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         raise NotImplementedError("Implement 'compute_loss' method.")
 
@@ -459,8 +456,7 @@ class ILRMAbase(IterativeMethodBase):
                 Demixing filters with shape of (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant values.
+            numpy.ndarray of computed log-determinant values.
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
