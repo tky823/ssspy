@@ -193,11 +193,11 @@ class FastICAbase(IterativeMethodBase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{tn})`.
+            A contrast function which corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
+            A score function which corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         d_score_fn (callable):
@@ -207,8 +207,7 @@ class FastICAbase(IterativeMethodBase):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         record_loss (bool):
-            Record the loss at each of the fixed-point iteration \
-            if ``record_loss=True``.
+            Record the loss at each of the fixed-point iteration if ``record_loss=True``.
             Default: ``True``.
     """
 
