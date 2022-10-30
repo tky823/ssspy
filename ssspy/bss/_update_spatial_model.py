@@ -332,25 +332,24 @@ def update_by_ip2_one_pair(
 
     Args:
         separated_pair (numpy.ndarray):
-            Separated spectrograms. \
+            Separated spectrograms.
             The shape is (2, n_bins, n_frames).
         demix_filter_pair (numpy.ndarray):
-            Demixing filters to be updated. \
+            Demixing filters to be updated.
             The shape is (n_bins, 2, n_channels).
         weight_pair (numpy.ndarray):
-            Weights of covariance at each frame. \
+            Weights of covariance at each frame.
             (2, n_bins, n_frames)
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
-        numpy.ndarray:
-            Updated demixing filter pair. \
-            The shape is (n_bins, 2, n_channels).
+        numpy.ndarray of updated demixing filter pair.
+        The shape is (n_bins, 2, n_channels).
     """
     if flooring_fn is None:
         flooring_fn = identity
