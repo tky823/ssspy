@@ -15,7 +15,7 @@ def download_sample_speech_data(
     mird_root: str = ".data/MIRD",
     n_sources: int = 3,
     sisec2010_tag: str = "dev1_female3",
-    max_samples: int = 160000,
+    max_duration: float = 10,
     conv: bool = True,
 ) -> Tuple[np.ndarray, int]:
     r"""Download sample speech data to test sepration methods.
@@ -33,8 +33,8 @@ def download_sample_speech_data(
             Tag of SiSEC 2010 data.
             Choose ""dev1_female3"" or ""dev1_female4"".
             Default:""dev1_female3"".
-        max_samples (int):
-            Maximum time samples. Default: ``160000``.
+        max_duration (float):
+            Maximum duration. Default: ``160000``.
         conv (bool):
             Convolutive mixture or not. Defalt: ``True``.
 
@@ -44,6 +44,7 @@ def download_sample_speech_data(
     """
     assert sisec2010_tag in sisec2010_tags, "Choose sisec2010_tag from {}".format(sisec2010_tags)
     sample_rate = 16000  # Only 16khz is supported.
+    max_samples = int(sample_rate * max_duration)
 
     sisec2010_npz_path = download_sisec2010(
         root=sisec2010_root, n_sources=n_sources, tag=sisec2010_tag
