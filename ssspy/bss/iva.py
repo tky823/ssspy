@@ -946,17 +946,15 @@ class FastIVA(FastIVAbase):
             spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
                 + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            spectrogram_mix_whitened = whiten(spectrogram_mix)
-            spectrogram_est = fast_iva(spectrogram_mix_whitened, n_iter=100)
-            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
-
             iva = FastIVA(
                     contrast_fn=contrast_fn,
                     d_contrast_fn=d_contrast_fn,
                     dd_contrast_fn=dd_contrast_fn,
                     scale_restoration=False,
             )
-            spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            spectrogram_mix_whitened = whiten(spectrogram_mix)
+            spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
+            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
             print(spectrogram_mix.shape, spectrogram_est.shape)
             >>> (2, 2049, 128), (2, 2049, 128)
 
