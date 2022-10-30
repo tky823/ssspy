@@ -128,11 +128,11 @@ class FDICAbase(IterativeMethodBase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of FDICA.
+                Keyword arguments to set as attributes of FDICA.
         """
         assert self.input is not None, "Specify data!"
 
