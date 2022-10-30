@@ -141,9 +141,8 @@ class GradICAbase(IterativeMethodBase):
                 The shape is (n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                The separated signal in time-domain.
-                The shape is (n_sources, n_samples).
+            numpy.ndarray of the separated signal in time-domain.
+            The shape is (n_sources, n_samples).
         """
         output = demix_filter @ input
 
