@@ -2302,32 +2302,31 @@ class AuxLaplaceIVA(AuxIVA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates. \
-            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: ``"IP"``.
+            Algorithm for demixing filter updates.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Default: ``IP``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     Examples:
@@ -2357,10 +2356,28 @@ class AuxLaplaceIVA(AuxIVA):
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
-        def contrast_fn(y):
+        def contrast_fn(y) -> np.ndarray:
+            r"""Contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray of the shape is (n_sources, n_frames).
+            """
             return 2 * np.linalg.norm(y, axis=1)
 
-        def d_contrast_fn(y):
+        def d_contrast_fn(y) -> np.ndarray:
+            r"""Derivative of contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                numpy.ndarray of the shape is (n_sources, n_frames).
+            """
             return 2 * np.ones_like(y)
 
         super().__init__(
