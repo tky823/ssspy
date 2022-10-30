@@ -516,46 +516,57 @@ class GaussILRMA(ILRMAbase):
         n_basis (int):
             Number of NMF bases.
         spatial_algorithm (str):
-            Algorithm for demixing filter updates. \
-            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: ``"IP"``.
+            Algorithm for demixing filter updates.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Default: ``IP``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         normalization (bool or str, optional):
-            Normalization of demixing filters and NMF parameters. \
-            Choose ``"power"`` or ``"projection_back"``. \
-            Default: ``"power"``.
+            Normalization of demixing filters and NMF parameters.
+            Choose ``power`` or ``projection_back``.
+            Default: ``power``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
         rng (numpy.random.Generator, optioinal):
-            Random number generator. This is mainly used to randomly initialize NMF. \
-            If ``None`` is given, ``np.random.default_rng()`` will be used. \
+            Random number generator. This is mainly used to randomly initialize NMF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            ilrma = GaussILRMA(n_basis=2, rng=np.random.default_rng(42))
+            spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
 
     .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
         "Determined blind source separation unifying independent vector analysis and \
@@ -613,16 +624,15 @@ class GaussILRMA(ILRMAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates. \
+                The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -657,11 +667,11 @@ class GaussILRMA(ILRMAbase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of ILRMA.
+                Keyword arguments to set as attributes of ILRMA.
         """
         super()._reset(**kwargs)
 
@@ -860,10 +870,10 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once.
 
-        - If ``spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        - If ``spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called.
-        - If ``spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
-        - If ``spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
+        - If ``spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
+        - If ``spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
+        - If ``spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1()
@@ -935,7 +945,7 @@ class GaussILRMA(ILRMAbase):
         r"""Update demixing filters once using pairwise iterative projection \
         following [#nakashima2021faster]_.
 
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
 
         .. math::
@@ -957,15 +967,7 @@ class GaussILRMA(ILRMAbase):
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of \
-        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
-
-        .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
-
-        where
+        :math:`r_{ijn}` is computed by
 
         .. math::
             r_{ijn}
@@ -978,7 +980,14 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
+
+        .. math::
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
+
+        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
@@ -991,7 +1000,7 @@ class GaussILRMA(ILRMAbase):
             {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
             \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
@@ -1009,8 +1018,8 @@ class GaussILRMA(ILRMAbase):
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`n_{1}` \
-        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
+        At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
+        for :math:`n_{1}\neq n_{2}`.
 
         .. [#nakashima2021faster] T. Nakashima, R. Scheibler, Y. Wakabayashi, and N. Ono, \
             "Faster independent low-rank matrix analysis with pairwise updates of demixing vectors,"
@@ -1094,7 +1103,7 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` \
+        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
@@ -1115,14 +1124,14 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}
 
-        if ``partitioning=True``. \
+        if ``partitioning=True``.
         Otherwise,
 
         .. math::
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and \
+        Using :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}` and
         :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}`, we compute
 
         .. math::
@@ -1136,7 +1145,7 @@ class GaussILRMA(ILRMAbase):
                 & (n\neq n_{1},n_{2}),
             \end{array}
 
-        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is \
+        where :math:`\boldsymbol{h}_{in}` (:math:`n=n_{1},n_{2}`) is
         a generalized eigenvector obtained from
 
         .. math::
@@ -1153,7 +1162,6 @@ class GaussILRMA(ILRMAbase):
             &\boldsymbol{q}_{in}^{\mathsf{H}}\boldsymbol{y}_{ij}^{(n_{1},n_{2})} + y_{ijn}
             & (n\neq n_{1},n_{2})
             \end{cases}.
-
         """
         p = self.domain
         Y = self.output
@@ -1191,15 +1199,14 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
-        if ``partitioning=True``, otherwise
+        if ``partitioning=True``. Otherwise
 
         .. math::
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         p = self.domain
 
