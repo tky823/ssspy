@@ -15,7 +15,7 @@ parameters_conv = [True, False]
 @pytest.mark.parametrize("max_samples", parameters_max_samples)
 @pytest.mark.parametrize("conv", parameters_conv)
 def test_conv_dataset(n_sources: int, sisec2010_tag: str, max_samples: int, conv: bool):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,

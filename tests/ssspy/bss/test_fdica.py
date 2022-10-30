@@ -71,7 +71,7 @@ def test_grad_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -116,7 +116,7 @@ def test_natural_grad_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -161,7 +161,7 @@ def test_aux_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -209,7 +209,7 @@ def test_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -248,7 +248,7 @@ def test_natural_grad_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -286,7 +286,7 @@ def test_aux_laplace_fdica(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,

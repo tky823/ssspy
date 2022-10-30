@@ -59,7 +59,7 @@ def test_grad_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -95,7 +95,7 @@ def test_natural_grad_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -131,7 +131,7 @@ def test_grad_laplace_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -159,7 +159,7 @@ def test_natural_grad_laplace_ica(
     is_holonomic: bool,
     reset_kwargs: Dict[Any, Any],
 ):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -185,7 +185,7 @@ def test_fast_ica(
     callbacks: Optional[Union[Callable[[FastICA], None], List[Callable[[FastICA], None]]]],
     reset_kwargs: Dict[Any, Any],
 ):
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,

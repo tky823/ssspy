@@ -140,7 +140,7 @@ def test_grad_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -206,7 +206,7 @@ def test_natural_grad_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -269,7 +269,7 @@ def test_fast_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -346,7 +346,7 @@ def test_faster_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -453,7 +453,7 @@ def test_aux_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -521,7 +521,7 @@ def test_grad_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -557,7 +557,7 @@ def test_grad_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -595,7 +595,7 @@ def test_natural_grad_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -631,7 +631,7 @@ def test_natural_grad_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -672,7 +672,7 @@ def test_aux_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
@@ -715,7 +715,7 @@ def test_aux_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,

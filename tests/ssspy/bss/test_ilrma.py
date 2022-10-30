@@ -110,7 +110,7 @@ def test_gauss_ilrma_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
@@ -167,7 +167,7 @@ def test_gauss_ilrma_wo_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
@@ -226,7 +226,7 @@ def test_t_ilrma_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
@@ -286,7 +286,7 @@ def test_t_ilrma_wo_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
@@ -346,7 +346,7 @@ def test_ggd_ilrma_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
@@ -406,7 +406,7 @@ def test_ggd_ilrma_wo_latent(
     else:
         raise ValueError("n_sources should be less than 5.")
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root=sisec2010_root,
         mird_root=mird_root,
         n_sources=n_sources,
