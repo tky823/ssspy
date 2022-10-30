@@ -21,7 +21,7 @@ pip install -e .
 ## Build Documentation Locally (optional)
 To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
 ```shell
-   pip install -e ".[docs]"
+pip install -e ".[docs]"
 ```
 
 When you build the documentation, run the following command.
