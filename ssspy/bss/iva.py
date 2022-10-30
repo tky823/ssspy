@@ -39,25 +39,24 @@ class IVAbase(IterativeMethodBase):
 
     Args:
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
     """
 
@@ -93,16 +92,15 @@ class IVAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain. \
+                Mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates. \
+                Number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -123,11 +121,11 @@ class IVAbase(IterativeMethodBase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Keyword arguments to set as attributes of IVA.
         """
         assert self.input is not None, "Specify data!"
 
@@ -164,16 +162,15 @@ class IVAbase(IterativeMethodBase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``. \
+                The demixing filters to separate ``input``.
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_sources, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
         Y = W @ X.transpose(1, 0, 2)
@@ -198,8 +195,7 @@ class IVAbase(IterativeMethodBase):
             &= - \log p(\vec{\boldsymbol{y}}_{jn})
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
@@ -211,15 +207,14 @@ class IVAbase(IterativeMethodBase):
         return loss
 
     def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
-        r"""Compute log-determinant of demixing filter
+        r"""Compute log-determinant of demixing filter.
 
         Args:
             demix_filter (numpy.ndarray):
                 Demixing filters with shape of (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant values.
+            numpy.ndarray of computed log-determinant values.
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
@@ -228,7 +223,7 @@ class IVAbase(IterativeMethodBase):
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
-        If ``self.scale_restoration="projection_back"``, we use projection back technique.
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
         """
         scale_restoration = self.scale_restoration
 
