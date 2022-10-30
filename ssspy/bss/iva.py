@@ -2013,28 +2013,27 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used. \
+            If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     Examples:
@@ -2075,8 +2074,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_frames).
+                numpy.ndarray of the shape is (n_sources, n_frames).
             """
             return 2 * np.linalg.norm(y, axis=1)
 
@@ -2088,8 +2086,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_bins, n_frames).
+                numpy.ndarray of the shape is (n_sources, n_bins, n_frames).
             """
             norm = np.linalg.norm(y, axis=1, keepdims=True)
             norm = self.flooring_fn(norm)
@@ -2151,8 +2148,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             - 2\sum_{i}\log|\det\boldsymbol{W}_{i}|.
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         return super().compute_loss()
 
