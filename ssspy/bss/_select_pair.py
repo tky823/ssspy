@@ -25,12 +25,12 @@ def sequential_pair_selector(
     Examples:
         .. code-block:: python
 
-            for m, n in combination_pair_selector(4):
-                print(m, n)
-            >>> 0 1
-            >>> 1 2
-            >>> 2 3
-            >>> 3 0
+            >>> for m, n in combination_pair_selector(4):
+            ...     print(m, n)
+            0 1
+            1 2
+            2 3
+            3 0
     """
     if stop is None:
         stop = n_sources
@@ -60,14 +60,14 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
     Examples:
         .. code-block:: python
 
-            for m, n in combination_pair_selector(4):
-                print(m, n)
-            >>> 0 1
-            >>> 0 2
-            >>> 0 3
-            >>> 1 2
-            >>> 1 3
-            >>> 2 3
+            >>> for m, n in combination_pair_selector(4):
+            ...     print(m, n)
+            0 1
+            0 2
+            0 3
+            1 2
+            1 3
+            2 3
     """
     for m, n in itertools.combinations(range(n_sources), 2):
         if sort:
