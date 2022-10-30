@@ -400,11 +400,11 @@ class GradICA(GradICAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{tn})`.
+            A contrast function which corresponds to :math:`-\log p(y_{tn})`.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
+            A score function which corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (callable or list[callable], optional):
@@ -414,8 +414,7 @@ class GradICA(GradICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
 
     Examples:
