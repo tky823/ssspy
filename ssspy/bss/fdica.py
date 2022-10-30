@@ -713,41 +713,41 @@ class AuxFDICA(FDICAbase):
 
     Args:
         spatial_algorithm (str):
-            Algorithm to update demixing filters. \
-            Choose ``"IP"``, ``"IP1"``, or ``"IP2"``. Default: ``"IP"``.
+            Algorithm to update demixing filters.
+            Choose ``IP``, ``IP1``, or ``IP2``. Default: ``IP``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         d_contrast_fn (callable):
-            A partial derivative of the real contrast function. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A partial derivative of the real contrast function.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
-            and return (n_channels, n_bins, n_frames). \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``IP2`` and ``ISS2``. \
-            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used. \
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``. Default: ``True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
+            Default: ``True``.
         reference_id (int):
             Reference channel for projection back. Default: ``0``.
 
@@ -770,7 +770,7 @@ class AuxFDICA(FDICAbase):
             >>> (2, 2049, 128), (2, 2049, 128)
 
     .. [#ono2010auxiliary]
-        Ono, Nobutaka and Miyabe, Shigeki,
+        N. Ono and S. Miyabe,
         "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
         in *Proc. LVA/ICA*, 2010, pp.165-172.
     """
@@ -817,16 +817,15 @@ class AuxFDICA(FDICAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -866,8 +865,8 @@ class AuxFDICA(FDICAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        - If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        - If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
+        - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
@@ -918,7 +917,7 @@ class AuxFDICA(FDICAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
 
         .. math::
@@ -954,14 +953,14 @@ class AuxFDICA(FDICAbase):
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` \
-        and :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
+        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
 
         .. math::
             \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
             = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
@@ -992,8 +991,8 @@ class AuxFDICA(FDICAbase):
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`n_{1}` \
-        and :math:`n_{1}` (:math:`n_{1}<n_{2}`).
+        At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
+        for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
 
