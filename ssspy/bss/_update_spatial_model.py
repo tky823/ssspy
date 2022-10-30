@@ -212,26 +212,25 @@ def update_by_iss2(
 
     Args:
         separated (numpy.ndarray):
-            Estimated spectrograms to be updated. \
+            Estimated spectrograms to be updated.
             The shape is (n_sources, n_bins, n_frames).
         weight (numpy.ndarray):
-            Weights for estimated spectrogram. \
+            Weights for estimated spectrogram.
             The shape is (n_sources, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
 
     Returns:
-        numpy.ndarray:
-            Updated spectrograms. \
-            The shape is (n_sources, n_bins, n_frames).
+        numpy.ndarray of updated spectrograms.
+        The shape is (n_sources, n_bins, n_frames).
     """
     Y = separated
     varphi = weight
