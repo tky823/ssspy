@@ -15,7 +15,7 @@ sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
-max_samples = 8000
+max_duration = 0.5
 n_iter = 3
 
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
@@ -64,7 +64,7 @@ def test_grad_ica(
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=False,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -100,7 +100,7 @@ def test_natural_grad_ica(
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=False,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -136,7 +136,7 @@ def test_grad_laplace_ica(
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=False,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -164,7 +164,7 @@ def test_natural_grad_laplace_ica(
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=False,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -190,7 +190,7 @@ def test_fast_ica(
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=False,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)

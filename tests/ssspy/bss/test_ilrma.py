@@ -14,7 +14,7 @@ sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
-max_samples = 8000
+max_duration = 0.5
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
@@ -115,7 +115,7 @@ def test_gauss_ilrma_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -172,7 +172,7 @@ def test_gauss_ilrma_wo_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -231,7 +231,7 @@ def test_t_ilrma_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -291,7 +291,7 @@ def test_t_ilrma_wo_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -351,7 +351,7 @@ def test_ggd_ilrma_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -411,7 +411,7 @@ def test_ggd_ilrma_wo_latent(
         mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
