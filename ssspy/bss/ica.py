@@ -180,8 +180,8 @@ class GradICAbase(IterativeMethodBase):
                 Demixing filter with shape of (n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant value.
+            numpy.ndarray of computed log-determinant value.
+            The shape is (n_bins,).
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
