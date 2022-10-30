@@ -161,8 +161,7 @@ class GradICAbase(IterativeMethodBase):
             &= - \log p(y_{tn})
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_channels, n_samples)
