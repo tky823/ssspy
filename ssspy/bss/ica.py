@@ -249,12 +249,11 @@ class FastICAbase(IterativeMethodBase):
                 The shape is (n_channels, n_samples).
             n_iter (int):
                 Number of iterations of demixing filter updates.
-                Default: 100.
+                Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in time-domain.
-                The shape is (n_sources, n_samples).
+            numpy.ndarray of the separated signal in time-domain.
+            The shape is (n_sources, n_samples).
         """
         self.input = input.copy()
 
