@@ -1541,7 +1541,7 @@ class AuxIVA(AuxIVAbase):
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
