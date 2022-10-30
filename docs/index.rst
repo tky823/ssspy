@@ -37,6 +37,28 @@ or clone the repository.
    cd ssspy
    pip install -e .
 
+Build Documentation Locally (optional)
+--------------------------------------
+To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
+
+.. code-block:: shell
+
+   pip install -e ".[docs]"
+
+When you build the documentation, run the following command.
+
+.. code-block:: shell
+
+   cd docs/
+   make html
+
+Or, you can build the documentation automatically using ``sphinx-autobuild``.
+
+.. code-block:: shell
+
+   # in ssspy/
+   sphinx-autobuild docs docs/_build/html
+
 Quick Example of Blind Source Separation
 ----------------------------------------
 
