@@ -63,9 +63,7 @@ Algorithms
 
 .. autoclass:: ssspy.bss.ica.GradICAbase
    :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: separate, compute_loss, compute_logdet
 
 .. autoclass:: ssspy.bss.ica.GradICA
    :special-members: __call__
