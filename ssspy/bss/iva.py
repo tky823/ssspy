@@ -2406,32 +2406,31 @@ class AuxGaussIVA(AuxIVA):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates. \
-            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: ``"IP"``.
+            Algorithm for demixing filter updates.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Default: ``IP``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     Examples:
@@ -2492,9 +2491,8 @@ class AuxGaussIVA(AuxIVA):
                     The shape is (n_sources, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    Computed contrast function.
-                    The shape is (n_sources, n_frames).
+                numpy.ndarray of computed contrast function.
+                The shape is (n_sources, n_frames).
             """
             if variance is None:
                 alpha = self.variance
@@ -2516,13 +2514,13 @@ class AuxGaussIVA(AuxIVA):
         )
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         We also set variance of Gaussian distribution.
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Keyword arguments to set as attributes of IVA.
         """
         super()._reset(**kwargs)
 
@@ -2531,7 +2529,7 @@ class AuxGaussIVA(AuxIVA):
         self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
-        r"""Update demixing filters once."""
+        r"""Update variance and demixing filters and once."""
         self.update_source_model()
 
         super().update_once()
@@ -2547,7 +2545,7 @@ class AuxGaussIVA(AuxIVA):
             \bar{r}_{jn_{2}}
             &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}.
 
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
 
         .. math::
@@ -2571,23 +2569,15 @@ class AuxGaussIVA(AuxIVA):
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` \
-        and :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
+        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
 
         .. math::
             \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
+            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
-        where
-
-        .. math::
-            G(\vec{\boldsymbol{y}}_{jn})
-            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
-            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
-            &= G(\vec{\boldsymbol{y}}_{jn}).
-
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
-        and :math:`\boldsymbol{h}_{in}`.
+        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
@@ -2599,7 +2589,7 @@ class AuxGaussIVA(AuxIVA):
             {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
             \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
@@ -2617,8 +2607,8 @@ class AuxGaussIVA(AuxIVA):
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`n_{1}` \
-        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
+        At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
+        for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
 
