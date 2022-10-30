@@ -219,8 +219,7 @@ class FDICAbase(IterativeMethodBase):
                 Demixing filters with shape of (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant values.
+            numpy.ndarray of computed log-determinant values.
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
