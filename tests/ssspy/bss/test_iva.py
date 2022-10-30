@@ -23,7 +23,7 @@ sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
-max_samples = 8000
+max_duration = 0.5
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
@@ -140,12 +140,12 @@ def test_grad_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -206,12 +206,12 @@ def test_natural_grad_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -269,12 +269,12 @@ def test_fast_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -346,12 +346,12 @@ def test_faster_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -453,12 +453,12 @@ def test_aux_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -521,12 +521,12 @@ def test_grad_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -557,12 +557,12 @@ def test_grad_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -595,12 +595,12 @@ def test_natural_grad_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -631,12 +631,12 @@ def test_natural_grad_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -672,12 +672,12 @@ def test_aux_laplace_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
@@ -715,12 +715,12 @@ def test_aux_gauss_iva(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
-        max_samples=max_samples,
+        max_duration=max_duration,
         conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
