@@ -1048,7 +1048,25 @@ class FastIVA(FastIVAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once."""
+        r"""Update demixing filters once.
+
+        Demixing filters are updated as follows:
+
+        .. math::
+            \boldsymbol{w}_{in}
+            \leftarrow&\frac{1}{J}\sum_{j}
+            \frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
+            {2\|\vec{\boldsymbol{y}}_{jn}\|_{2}}
+            \left(\boldsymbol{w}_{in}-y_{ijn}^{*}\boldsymbol{x}_{ij}\right) \notag \\
+            &-\frac{1}{J}\sum_{j}\frac{|y_{ijn}|^{2}}{2\|\vec{\boldsymbol{y}}_{jn}\|_{2}}\left(
+            \frac{G'_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})}
+            {\|\vec{\boldsymbol{y}}_{jn}\|_{2}}
+            - G''_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+            \right)\boldsymbol{w}_{in} \\
+            \boldsymbol{W}_{i}
+            \leftarrow&\left(\boldsymbol{W}_{i}\boldsymbol{W}_{i}^{\mathsf{H}}\right)^{-\frac{1}{2}}
+            \boldsymbol{W}_{i}.
+        """
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
