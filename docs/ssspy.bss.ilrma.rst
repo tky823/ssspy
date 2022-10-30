@@ -4,7 +4,7 @@ ssspy.bss.ilrma
 In this module, we separate multichannel signals
 using independent low-rank matrix analysis (ILRMA).
 We denote the number of sources and microphones as :math:`N` and :math:`M`, respectively.
-We also denote source, observed, and separated signals (in time-domain)
+We also denote short-time Fourier transforms of source, observed, and separated signals
 as :math:`\boldsymbol{s}_{ij}`, :math:`\boldsymbol{x}_{ij}`, and :math:`\boldsymbol{y}_{ij}`,
 respectively.
 
@@ -45,17 +45,33 @@ The negative log-likelihood of observed signals (divided by :math:`J`) is comput
 
 Algorithms
 ~~~~~~~~~~
+.. autoclass:: ssspy.bss.ilrma.ILRMAbase
+   :special-members: __call__
+   :members:
+      _init_nmf, separate, reconstruct_nmf, update_once,
+      normalize, normalize_by_power, normalize_by_projection_back,
+      compute_loss, compute_logdet, restore_scale, apply_projection_back
+
 .. autoclass:: ssspy.bss.ilrma.GaussILRMA
    :special-members: __call__
    :members:
-   :undoc-members:
+      update_once,
+      update_source_model, update_latent, update_basis, update_activation,
+      update_spatial_model, update_spatial_model_ip1, update_spatial_model_ip2, update_spatial_model_iss1, update_spatial_model_iss2,
+      compute_loss, apply_projection_back
 
 .. autoclass:: ssspy.bss.ilrma.TILRMA
    :special-members: __call__
    :members:
-   :undoc-members:
+      update_once,
+      update_source_model, update_latent, update_basis, update_activation,
+      update_spatial_model, update_spatial_model_ip1, update_spatial_model_ip2, update_spatial_model_iss1, update_spatial_model_iss2,
+      compute_loss, apply_projection_back
 
 .. autoclass:: ssspy.bss.ilrma.GGDILRMA
    :special-members: __call__
    :members:
-   :undoc-members:
+      update_once,
+      update_source_model, update_latent, update_basis, update_activation,
+      update_spatial_model, update_spatial_model_ip1, update_spatial_model_ip2, update_spatial_model_iss1, update_spatial_model_iss2,
+      compute_loss, apply_projection_back

@@ -2,22 +2,40 @@ import numpy as np
 
 
 def whiten(input: np.ndarray) -> np.ndarray:
-    r"""
+    r"""Apply whitening (a.k.a sphering).
+
     Args:
         input (numpy.ndarray):
-            If input is 2D real tensor, it is regarded as \
-            (n_channels, n_samples).
-            If input is 3D complex tensor, it is regarded as \
-            (n_channels, n_bins, n_frames).
-            If input is 3D real tensor, it is regarded as \
-            (batch_size, n_channels, n_samples).
-            If input is 4D complex tensor, it is regarded as \
-            (batch_size, n_channels, n_bins, n_frames).
+            Input tensor to be whitened.
 
     Returns:
         numpy.ndarray:
-            Whitened tensor.
-            The type (real or complex) and shape is same as input.
+            Whitened tensor. \
+            The type (real or complex) and shape are same as input.
+
+    .. note::
+        - If ``input`` is 2D real tensor, it is regarded as (n_channels, n_samples).
+        - If ``input`` is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
+        - If ``input`` is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
+        - If ``input`` is 4D complex tensor, it is regarded as \
+          (batch_size, n_channels, n_bins, n_frames).
+
+    Examples:
+        .. code-block:: python
+
+            >>> import numpy as np
+            >>> from ssspy.transform import whiten
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> n_sources = n_channels
+            >>> rng = np.random.default_rng(42)
+
+            >>> spectrogram_mix = \
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            >>> spectrogram_mix_whitened = whiten(spectrogram_mix)
+            >>> spectrogram_mix_whitened.shape
+            (2, 2049, 128)
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):

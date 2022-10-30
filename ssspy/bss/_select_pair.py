@@ -11,19 +11,26 @@ def sequential_pair_selector(
         n_sources (int):
             Number of sources.
         step (int):
-            This parameter determines step size. \
-            For instance, if `sequential_pair_selector(n_sources=6, step=2, sort=False)`, \
-            this function yields `0, 1`, `2, 3`, `4, 5`, `0, 1`, `2, 3`, `4, 5`. \
-            Default: `1`.
+            This parameter determines step size.
+            For instance, if ``sequential_pair_selector(n_sources=6, step=2, sort=False)``,
+            this function yields ``0, 1``, ``2, 3``, ``4, 5``, ``0, 1``, ``2, 3``, ``4, 5``.
+            Default: ``1``.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort=True``. \
+            Sort pair to ensure :math:`m<n` if ``sort=True``.
             Default: ``False``.
 
     Yields:
-        int:
-            First element of updating pair.
-        int:
-            Second element of updating pair.
+        Pair (tuple) of indices.
+
+    Examples:
+        .. code-block:: python
+
+            for m, n in combination_pair_selector(4):
+                print(m, n)
+            >>> 0 1
+            >>> 1 2
+            >>> 2 3
+            >>> 3 0
     """
     if stop is None:
         stop = n_sources
@@ -44,14 +51,23 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
         n_sources (int):
             Number of sources.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort=True``. \
+            Sort pair to ensure :math:`m<n` if ``sort=True``.
             Default: ``False``.
 
     Yields:
-        int:
-            First element of updating pair.
-        int:
-            Second element of updating pair.
+        Pair (tuple) of indices.
+
+    Examples:
+        .. code-block:: python
+
+            for m, n in combination_pair_selector(4):
+                print(m, n)
+            >>> 0 1
+            >>> 0 2
+            >>> 0 3
+            >>> 1 2
+            >>> 1 3
+            >>> 2 3
     """
     for m, n in itertools.combinations(range(n_sources), 2):
         if sort:

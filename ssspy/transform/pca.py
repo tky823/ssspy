@@ -2,24 +2,42 @@ import numpy as np
 
 
 def pca(input: np.ndarray, ascend: bool = True) -> np.ndarray:
-    r"""
+    r"""Apply principal component analysis (PCA).
+
     Args:
         input (numpy.ndarray):
-            If input is 2D real tensor, it is regarded as \
-            (n_channels, n_samples).
-            If input is 3D complex tensor, it is regarded as \
-            (n_channels, n_bins, n_frames).
-            If input is 3D real tensor, it is regarded as \
-            (batch_size, n_channels, n_samples).
-            If input is 4D complex tensor, it is regarded as \
-            (batch_size, n_channels, n_bins, n_frames).
+            Input tensor.
         ascend (bool):
-            If ``ascend=True``, first channel corresponds to first principle component.
+            If ``ascend=True``, first channel corresponds to first principle component. \
             Otherwise, last channel corresponds to first principle component.
 
     Returns:
         numpy.ndarray:
-            Output tensor. The type (real or complex) and shape is same as input.
+            Output tensor. The type (real or complex) and shape are same as input.
+
+    .. note::
+        - If ``input`` is 2D real tensor, it is regarded as (n_channels, n_samples).
+        - If ``input`` is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
+        - If ``input`` is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
+        - If ``input`` is 4D complex tensor, it is regarded as \
+          (batch_size, n_channels, n_bins, n_frames).
+
+    Examples:
+        .. code-block:: python
+
+            >>> import numpy as np
+            >>> from ssspy.transform import pca
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> n_sources = n_channels
+            >>> rng = np.random.default_rng(42)
+
+            >>> spectrogram_mix = \
+            ...     rng.standard_normal((n_channels, n_bins, n_frames)) \
+            ...     + 1j * rng.standard_normal((n_channels, n_bins, n_frames))
+            >>> spectrogram_mix_ortho = pca(spectrogram_mix)
+            >>> spectrogram_mix_ortho.shape
+            (2, 2049, 128)
     """
     if input.ndim == 2:
         if np.iscomplexobj(input):

@@ -61,32 +61,25 @@ The derivative of :math:`G(y_{tn})` is called a score function.
 Algorithms
 ~~~~~~~~~~
 
-.. autoclass:: ssspy.bss.ica.GradICA
+.. autoclass:: ssspy.bss.ica.GradICAbase
    :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: separate, compute_loss, compute_logdet
+
+.. autoclass:: ssspy.bss.ica.FastICAbase
+   :special-members: __call__
+   :members: separate, compute_loss
+
+.. autoclass:: ssspy.bss.ica.GradICA
+   :members: update_once
 
 .. autoclass:: ssspy.bss.ica.NaturalGradICA
-   :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: update_once
 
 .. autoclass:: ssspy.bss.ica.FastICA
-   :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: update_once
 
 .. autoclass:: ssspy.bss.ica.GradLaplaceICA
-   :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: update_once, compute_loss
 
 .. autoclass:: ssspy.bss.ica.NaturalGradLaplaceICA
-   :special-members: __call__
-   :members:
-   :undoc-members:
-   :inherited-members:
+   :members: update_once, compute_loss

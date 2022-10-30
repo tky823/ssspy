@@ -28,34 +28,32 @@ class FDICAbase(IterativeMethodBase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
+            A contrast function which corresponds to :math:`-\log p(y_{ijn})`.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
     """
 
     def __init__(
@@ -102,12 +100,11 @@ class FDICAbase(IterativeMethodBase):
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 Number of iterations of demixing filter updates.
-                Default: 100.
+                Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -131,11 +128,11 @@ class FDICAbase(IterativeMethodBase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of FDICA.
+                Keyword arguments to set as attributes of FDICA.
         """
         assert self.input is not None, "Specify data!"
 
@@ -179,9 +176,8 @@ class FDICAbase(IterativeMethodBase):
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_sources, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
         Y = W @ X.transpose(1, 0, 2)
@@ -195,17 +191,16 @@ class FDICAbase(IterativeMethodBase):
         :math:`\mathcal{L}` is given as follows:
 
         .. math::
-            \mathcal{L} \
+            \mathcal{L}
             &= \sum_{i}\mathcal{L}^{[i]}, \\
-            \mathcal{L}^{[i]} \
-            &= \frac{1}{J}\sum_{j,n}G(y_{ijn}) \
+            \mathcal{L}^{[i]}
+            &= \frac{1}{J}\sum_{j,n}G(y_{ijn})
             - 2\log|\det\boldsymbol{W}_{i}|, \\
             G(y_{ijn}) \
             &= - \log p(y_{ijn})
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
@@ -217,15 +212,14 @@ class FDICAbase(IterativeMethodBase):
         return loss
 
     def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
-        r"""Compute log-determinant of demixing filter
+        r"""Compute log-determinant of demixing filter.
 
         Args:
             demix_filter (numpy.ndarray):
                 Demixing filters with shape of (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant values.
+            numpy.ndarray of computed log-determinant values.
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
@@ -234,7 +228,7 @@ class FDICAbase(IterativeMethodBase):
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
-        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
         """
         scale_restoration = self.scale_restoration
 
@@ -267,38 +261,36 @@ class GradFDICAbase(FDICAbase):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`.
+            A contrast function which corresponds to :math:`-\log p(y_{ijn})`.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         score_fn (callable):
-            A score function corresponds to the partial derivative of the contrast function.
+            A score function which corresponds to the partial derivative of the contrast function.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
     """
 
     def __init__(
@@ -343,12 +335,11 @@ class GradFDICAbase(FDICAbase):
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 The number of iterations of demixing filter updates.
-                Default: 100.
+                Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -409,7 +400,7 @@ class GradFDICA(GradFDICAbase):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
@@ -419,20 +410,18 @@ class GradFDICA(GradFDICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -508,15 +497,15 @@ class GradFDICA(GradFDICAbase):
 
         .. math::
             \boldsymbol{W}_{i}
-            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j} \
-            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}} \
+            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j}
+            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}}
             -\boldsymbol{I}\right)\boldsymbol{W}_{i}^{-\mathsf{H}},
 
         where
 
         .. math::
             \boldsymbol{\phi}(\boldsymbol{y}_{ij})
-            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})\
+            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})
             \right)^{\mathsf{T}}\in\mathbb{C}^{N}, \\
             \phi(y_{ijn})
             &= \frac{\partial G(y_{ijn})}{\partial y_{ijn}^{*}}, \\
@@ -575,7 +564,7 @@ class NaturalGradFDICA(GradFDICAbase):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
@@ -585,20 +574,18 @@ class NaturalGradFDICA(GradFDICAbase):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -674,15 +661,15 @@ class NaturalGradFDICA(GradFDICAbase):
 
         .. math::
             \boldsymbol{W}_{i}
-            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j} \
-            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}} \
+            \leftarrow\boldsymbol{W}_{i} - \eta\left(\frac{1}{J}\sum_{j}
+            \boldsymbol{\phi}(\boldsymbol{y}_{ij})\boldsymbol{y}_{ij}^{\mathsf{H}}
             -\boldsymbol{I}\right)\boldsymbol{W}_{i},
 
         where
 
         .. math::
             \boldsymbol{\phi}(\boldsymbol{y}_{ij})
-            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})\
+            &= \left(\phi(y_{ij1}),\ldots,\phi(y_{ijn}),\ldots,\phi(y_{ijN})
             \right)^{\mathsf{T}}\in\mathbb{C}^{N}, \\
             \phi(y_{ijn})
             &= \frac{\partial G(y_{ijn})}{\partial y_{ijn}^{*}}, \\
@@ -727,8 +714,7 @@ class AuxFDICA(FDICAbase):
     Args:
         spatial_algorithm (str):
             Algorithm to update demixing filters.
-            Choose from "IP", "IP1", "IP2".
-            Default: "IP".
+            Choose ``IP``, ``IP1``, or ``IP2``. Default: ``IP``.
         contrast_fn (callable):
             A contrast function corresponds to :math:`-\log p(y_{ijn})`.
             This function is expected to receive (n_channels, n_bins, n_frames)
@@ -741,31 +727,29 @@ class AuxFDICA(FDICAbase):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``sequential_pair_selector`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -786,7 +770,7 @@ class AuxFDICA(FDICAbase):
             >>> (2, 2049, 128), (2, 2049, 128)
 
     .. [#ono2010auxiliary]
-        Ono, Nobutaka and Miyabe, Shigeki,
+        N. Ono and S. Miyabe,
         "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
         in *Proc. LVA/ICA*, 2010, pp.165-172.
     """
@@ -837,12 +821,11 @@ class AuxFDICA(FDICAbase):
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
                 The number of iterations of demixing filter updates.
-                Default: 100.
+                Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -882,8 +865,8 @@ class AuxFDICA(FDICAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called.
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called.
+        - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
+        - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
@@ -899,7 +882,7 @@ class AuxFDICA(FDICAbase):
 
         .. math::
             \boldsymbol{w}_{in}
-            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1} \
+            &\leftarrow\left(\boldsymbol{W}_{in}^{\mathsf{H}}\boldsymbol{U}_{in}\right)^{-1}
             \boldsymbol{e}_{n}, \\
             \boldsymbol{w}_{in}
             &\leftarrow\frac{\boldsymbol{w}_{in}}
@@ -934,18 +917,26 @@ class AuxFDICA(FDICAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`m` and :math:`n` (:math:`m\neq n`),
-        compute weighted covariance matrix as follows:
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
+        compute auxiliary variables:
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(|y_{ijm}|)}
-            {2|y_{ijm}|} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}} \\
-            \boldsymbol{V}_{in}^{(m,n)}
-            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(|y_{ijn}|)}
-            {2|y_{ijn}|} \
-            \boldsymbol{y}_{ij}^{(m,n)}{\boldsymbol{y}_{ij}^{(m,n)}}^{\mathsf{H}},
+            \bar{r}_{ijn_{1}}
+            &\leftarrow|y_{ijn_{1}}| \\
+            \bar{r}_{ijn_{2}}
+            &\leftarrow|y_{ijn_{2}}|
+
+        Then, compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\bar{r}_{ijn_{1}})}
+            {2\bar{r}_{ijn_{1}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
+            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\bar{r}_{ijn_{2}})}
+            {2\bar{r}_{ijn_{2}}} \
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
 
         where
 
@@ -954,54 +945,54 @@ class AuxFDICA(FDICAbase):
             &= -\log p(y_{ijn}), \\
             G_{\mathbb{R}}(|y_{ijn}|)
             &= G(y_{ijn}) \\
-            \boldsymbol{y}_{ij}^{(m,n)}
+            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
             &= \left(
             \begin{array}{c}
-                \boldsymbol{w}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}
+                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
+                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of
-        :math:`\boldsymbol{V}_{im}^{(m,n)}` and :math:`\boldsymbol{V}_{in}^{(m,n)}`.
+        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
 
         .. math::
-            \boldsymbol{V}_{im}^{(m,n)}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(m,n)}\boldsymbol{V}_{in}^{(m,n)}\boldsymbol{h}_{i}.
+            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
+            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{im}`
-        and :math:`\boldsymbol{h}_{in}`.
+        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
-            \boldsymbol{h}_{im}
-            &\leftarrow\frac{\boldsymbol{h}_{im}}
-            {\sqrt{\boldsymbol{h}_{im}^{\mathsf{H}}\boldsymbol{V}_{im}^{(m,n)}
-            \boldsymbol{h}_{im}}}, \\
-            \boldsymbol{h}_{in}
-            &\leftarrow\frac{\boldsymbol{h}_{in}}
-            {\sqrt{\boldsymbol{h}_{in}^{\mathsf{H}}\boldsymbol{V}_{in}^{(m,n)}
-            \boldsymbol{h}_{in}}}.
+            \boldsymbol{h}_{in_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{1}}}}, \\
+            \boldsymbol{h}_{in_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im}` and :math:`\boldsymbol{w}_{in}`
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
             (
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )\leftarrow(
             \begin{array}{cc}
-                \boldsymbol{w}_{im} & \boldsymbol{w}_{in}
+                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
             \end{array}
             )(
             \begin{array}{cc}
-                \boldsymbol{h}_{im} & \boldsymbol{h}_{in}
+                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`m`
-        and :math:`n` (:math:`m<n`).
+        At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
+        for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
 
@@ -1041,7 +1032,7 @@ class GradLaplaceFDICA(GradFDICA):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
@@ -1051,20 +1042,18 @@ class GradLaplaceFDICA(GradFDICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -1103,8 +1092,7 @@ class GradLaplaceFDICA(GradFDICA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_bins, n_frames).
+                The shape is (n_sources, n_bins, n_frames).
             """
             return 2 * np.abs(y)
 
@@ -1116,8 +1104,7 @@ class GradLaplaceFDICA(GradFDICA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_bins, n_frames).
+                The shape is (n_sources, n_bins, n_frames).
             """
             denom = self.flooring_fn(np.abs(y))
             return y / denom
@@ -1167,7 +1154,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
@@ -1177,20 +1164,18 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
 
     Examples:
         .. code-block:: python
@@ -1232,8 +1217,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_bins, n_frames).
+                The shape is (n_sources, n_bins, n_frames).
             """
             return 2 * np.abs(y)
 
@@ -1245,8 +1229,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    The shape is (n_sources, n_bins, n_frames).
+                The shape is (n_sources, n_bins, n_frames).
             """
             denom = self.flooring_fn(np.abs(y))
             return y / denom
@@ -1282,7 +1265,7 @@ class NaturalGradLaplaceFDICA(GradFDICA):
 
 class AuxLaplaceFDICA(AuxFDICA):
     r"""Auxiliary-function-based frequency-domain independent component analysis \
-    (AuxFDICA)[#ono2010auxiliary]_ on a Laplace distribution.
+    on a Laplace distribution.
 
     We assume :math:`y_{ijn}` follows a Laplace distribution.
 
@@ -1292,37 +1275,47 @@ class AuxLaplaceFDICA(AuxFDICA):
     Args:
         spatial_algorithm (str):
             Algorithm to update demixing filters.
-            Choose from "IP", "IP1", or "IP2".
-            Default: "IP".
+            Choose ``IP``, ``IP1``, or ``IP2``. Default: ``IP``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
-            If ``None`` is given, ``sequential_pair_selector`` is used.
+            If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent \
-            if ``record_loss=True``.
+            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back. Default: ``0``.
+
+    Examples:
+        .. code-block:: python
+
+            n_channels, n_bins, n_frames = 2, 2049, 128
+            spectrogram_mix = \
+                np.random.randn(n_channels, n_bins, n_frames) \
+                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            fdica = AuxLaplaceFDICA()
+            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            print(spectrogram_mix.shape, spectrogram_est.shape)
+            >>> (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -1341,9 +1334,27 @@ class AuxLaplaceFDICA(AuxFDICA):
         reference_id: int = 0,
     ) -> None:
         def contrast_fn(y: np.ndarray):
+            r"""Contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                The shape is (n_sources, n_bins, n_frames).
+            """
             return 2 * np.abs(y)
 
         def d_contrast_fn(y: np.ndarray):
+            r"""Partial derivative of score function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                The shape is (n_sources, n_bins, n_frames).
+            """
             return 2 * np.ones_like(y)
 
         super().__init__(

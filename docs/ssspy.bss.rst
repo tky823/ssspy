@@ -9,6 +9,7 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   ssspy.bss.base
    ssspy.bss.ica
    ssspy.bss.fdica
    ssspy.bss.iva

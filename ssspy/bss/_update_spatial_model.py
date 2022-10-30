@@ -22,25 +22,24 @@ def update_by_ip1(
 
     Args:
         demix_filter (numpy.ndarray):
-            Demixing filters to be updated. \
+            Demixing filters to be updated.
             The shape is (n_bins, n_sources, n_channels).
         weighted_covariance (numpy.ndarray):
-            Weighted covariance matrix. \
+            Weighted covariance matrix.
             The shape is (n_bins, n_sources, n_channels, n_channels).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         overwrite (bool):
-            Overwrite ``demix_filter`` if ``overwrite=True``. \
+            Overwrite ``demix_filter`` if ``overwrite=True``.
             Default: ``True``.
 
     Returns:
-        numpy.ndarray:
-            Updated demixing filters. \
-            The shape is (n_bins, n_sources, n_channels).
+        numpy.ndarray of updated demixing filters.
+        The shape is (n_bins, n_sources, n_channels).
     """
     if flooring_fn is None:
         flooring_fn = identity
@@ -88,29 +87,28 @@ def update_by_ip2(
 
     Args:
         demix_filter (numpy.ndarray):
-            Demixing filters to be updated. \
+            Demixing filters to be updated.
             The shape is (n_bins, n_sources, n_channels).
         weighted_covariance (numpy.ndarray):
-            Weighted covariance matrix. \
+            Weighted covariance matrix.
             The shape is (n_bins, n_sources, n_channels, n_channels).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
         overwrite (bool):
-            Overwrite ``demix_filter`` if ``overwrite=True``. \
+            Overwrite ``demix_filter`` if ``overwrite=True``.
             Default: ``True``.
 
     Returns:
-        numpy.ndarray:
-            Updated demixing filters. \
-            The shape is (n_bins, n_sources, n_channels).
+        numpy.ndarray of updated demixing filters.
+        The shape is (n_bins, n_sources, n_channels).
     """
     if flooring_fn is None:
         flooring_fn = identity
@@ -162,22 +160,21 @@ def update_by_iss1(
 
     Args:
         separated (numpy.ndarray):
-            Estimated spectrograms to be updated. \
+            Estimated spectrograms to be updated.
             The shape is (n_sources, n_bins, n_frames).
         weight (numpy.ndarray):
-            Weights for estimated spectrogram. \
+            Weights for estimated spectrogram.
             The shape is (n_sources, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
-        numpy.ndarray:
-            Updated spectrograms. \
-            The shape is (n_sources, n_bins, n_frames).
+        numpy.ndarray of updated spectrograms.
+        The shape is (n_sources, n_bins, n_frames).
     """
     if flooring_fn is None:
         flooring_fn = identity
@@ -215,26 +212,25 @@ def update_by_iss2(
 
     Args:
         separated (numpy.ndarray):
-            Estimated spectrograms to be updated. \
+            Estimated spectrograms to be updated.
             The shape is (n_sources, n_bins, n_frames).
         weight (numpy.ndarray):
-            Weights for estimated spectrogram. \
+            Weights for estimated spectrogram.
             The shape is (n_sources, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
-            Selector to choose updaing pair. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
 
     Returns:
-        numpy.ndarray:
-            Updated spectrograms. \
-            The shape is (n_sources, n_bins, n_frames).
+        numpy.ndarray of updated spectrograms.
+        The shape is (n_sources, n_bins, n_frames).
     """
     Y = separated
     varphi = weight
@@ -336,25 +332,24 @@ def update_by_ip2_one_pair(
 
     Args:
         separated_pair (numpy.ndarray):
-            Separated spectrograms. \
+            Separated spectrograms.
             The shape is (2, n_bins, n_frames).
         demix_filter_pair (numpy.ndarray):
-            Demixing filters to be updated. \
+            Demixing filters to be updated.
             The shape is (n_bins, 2, n_channels).
         weight_pair (numpy.ndarray):
-            Weights of covariance at each frame. \
+            Weights of covariance at each frame.
             (2, n_bins, n_frames)
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
-        numpy.ndarray:
-            Updated demixing filter pair. \
-            The shape is (n_bins, 2, n_channels).
+        numpy.ndarray of updated demixing filter pair.
+        The shape is (n_bins, 2, n_channels).
     """
     if flooring_fn is None:
         flooring_fn = identity
