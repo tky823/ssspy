@@ -881,8 +881,7 @@ class GradLaplaceICA(GradICA):
                 - \log|\det\boldsymbol{W}| \\
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         return super().compute_loss()
 
