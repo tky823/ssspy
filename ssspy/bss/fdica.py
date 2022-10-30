@@ -228,7 +228,7 @@ class FDICAbase(IterativeMethodBase):
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
-        If ``self.scale_restoration="projection_back``, we use projection back technique.
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
         """
         scale_restoration = self.scale_restoration
 
