@@ -28,30 +28,29 @@ class FDICAbase(IterativeMethodBase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(y_{ijn})`. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A contrast function which corresponds to :math:`-\log p(y_{ijn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align \
+            If ``solve_permutation=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back. Default: ``0``.
