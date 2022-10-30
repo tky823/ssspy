@@ -11,19 +11,16 @@ def sequential_pair_selector(
         n_sources (int):
             Number of sources.
         step (int):
-            This parameter determines step size. \
-            For instance, if `sequential_pair_selector(n_sources=6, step=2, sort=False)`, \
-            this function yields `0, 1`, `2, 3`, `4, 5`, `0, 1`, `2, 3`, `4, 5`. \
-            Default: `1`.
+            This parameter determines step size.
+            For instance, if ``sequential_pair_selector(n_sources=6, step=2, sort=False)``,
+            this function yields ``0, 1``, ``2, 3``, ``4, 5``, ``0, 1``, ``2, 3``, ``4, 5``.
+            Default: ``1``.
         sort (bool):
-            Sort pair to ensure :math:`m<n` if ``sort=True``. \
+            Sort pair to ensure :math:`m<n` if ``sort=True``.
             Default: ``False``.
 
     Yields:
-        int:
-            First element of updating pair.
-        int:
-            Second element of updating pair.
+        Pair (tuple) of indices.
     """
     if stop is None:
         stop = n_sources
