@@ -319,7 +319,7 @@ class FastICAbase(IterativeMethodBase):
     ) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
 
-        If ``use_whitening=True``,
+        If ``use_whitening=True``, we apply whitening to input mixture :math:`\boldsymbol{x}_{t}`.
 
         .. math::
             \boldsymbol{y}_{t}
@@ -340,11 +340,11 @@ class FastICAbase(IterativeMethodBase):
         :math:`\sum_{t}\boldsymbol{x}_{t}\boldsymbol{x}_{t}^{\mathsf{T}}`,
         respectively.
 
-        Otherwise (``use_whitening=False``),
+        Otherwise (``use_whitening=False``), we do not apply whitening.
 
         .. math::
             \boldsymbol{y}_{t}
-            = \boldsymbol{W}\boldsymbol{x}_{t}
+            = \boldsymbol{W}\boldsymbol{x}_{t}.
 
         Args:
             input (numpy.ndarray):
@@ -355,12 +355,11 @@ class FastICAbase(IterativeMethodBase):
                 The shape is (n_sources, n_channels).
             use_whitening (bool):
                 If ``use_whitening=True``, use_whitening (sphering) is applied to ``input``.
-                Default: True.
+                Default: ``True``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in time-domain.
-                The shape is (n_sources, n_samples).
+            numpy.ndarray of the separated signal in time-domain.
+            The shape is (n_sources, n_samples).
         """
         if use_whitening:
             whitened_input = whiten(input)
