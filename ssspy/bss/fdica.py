@@ -200,8 +200,7 @@ class FDICAbase(IterativeMethodBase):
             &= - \log p(y_{ijn})
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
