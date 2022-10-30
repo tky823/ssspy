@@ -1103,7 +1103,7 @@ class GaussILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
+        Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
@@ -1901,7 +1901,7 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
+        Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
@@ -2695,7 +2695,7 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_iss2(self) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
-        Then, we compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
+        Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
 
         .. math::
