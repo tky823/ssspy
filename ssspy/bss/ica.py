@@ -710,7 +710,7 @@ class FastICA(FastICAbase):
             >>> (2, 160000), (2, 160000)
 
     .. [#hyvarinen1999fast] A. Hyvärinen,
-        "Fast and Robust Fixed-Point Algorithms for Independent Component Analysis,"
+        "Fast and robust fixed-point algorithms for independent component analysis,"
         *IEEE Trans. on Neural Netw.*, vol. 10, no. 3, pp. 626-634, 1999.
     """
 
