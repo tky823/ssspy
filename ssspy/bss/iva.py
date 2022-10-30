@@ -895,37 +895,36 @@ class FastIVA(FastIVAbase):
 
     Args:
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A contrast function which corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function. \
-            This function is expected to receive (n_channels, n_frames) \
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
             and return (n_channels, n_frames).
         dd_contrast_fn (callable):
-            Second order derivative of the contrast function. \
-            This function is expected to receive (n_channels, n_frames) \
+            Second order derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
-            the identity function (``lambda x: x``) is used. \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     Examples:
@@ -1010,16 +1009,15 @@ class FastIVA(FastIVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates. \
+                The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
