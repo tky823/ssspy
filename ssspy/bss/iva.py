@@ -1207,7 +1207,22 @@ class FasterIVA(FastIVAbase):
         return s.format(**self.__dict__)
 
     def update_once(self) -> None:
-        r"""Update demixing filters once."""
+        r"""Update demixing filters once.
+
+        In FasterIVA, we compute the eigenvector of :math:`\boldsymbol{U}_{in}`
+        which corresponds to the largest eigenvalue by solving
+
+        .. math::
+            \boldsymbol{U}_{in}\boldsymbol{w}_{in}
+            = \lambda_{in}\boldsymbol{w}_{in}.
+
+        Then,
+
+        .. math::
+            \boldsymbol{W}_{i}
+            \leftarrow\left(\boldsymbol{W}_{i}\boldsymbol{W}_{i}^{\mathsf{H}}\right)^{-\frac{1}{2}}
+            \boldsymbol{W}_{i}.
+        """
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
