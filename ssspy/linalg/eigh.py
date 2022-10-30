@@ -13,7 +13,7 @@ def eigh(
 
     If ``B`` is ``None``, solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{z}`.
 
-    If ``B`` is given, \
+    If ``B`` is given,
     solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`.
 
     Args:
@@ -28,13 +28,13 @@ def eigh(
             - Eigenvectors have shape of (\*, n_channels, n_channels).
 
     .. note::
-        If ``B`` is given, we use cholesky decomposition to \
+        If ``B`` is given, we use cholesky decomposition to
         satisfy :math:`\boldsymbol{L}\boldsymbol{L}^{\mathsf{H}}=\boldsymbol{B}`.
 
-        Then, solve :math:`\boldsymbol{C}\boldsymbol{y} = \lambda\boldsymbol{y}`, \
+        Then, solve :math:`\boldsymbol{C}\boldsymbol{y} = \lambda\boldsymbol{y}`,
         where :math:`\boldsymbol{C}=\boldsymbol{L}^{-1}\boldsymbol{A}\boldsymbol{L}^{-\mathsf{H}}`.
 
-        The generalized eigenvalues of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}` \
+        The generalized eigenvalues of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}`
         are computed by :math:`\boldsymbol{L}^{-\mathsf{H}}\boldsymbol{y}`.
 
     Examples:
@@ -92,7 +92,7 @@ def eigh2(
 
     If ``B`` is ``None``, solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{z}`.
 
-    If ``B`` is given, \
+    If ``B`` is given,
     solve :math:`\boldsymbol{A}\boldsymbol{z} = \lambda\boldsymbol{B}\boldsymbol{z}`.
 
     Args:
@@ -107,13 +107,13 @@ def eigh2(
             - Eigenvectors have shape of (\*, 2, 2).
 
     .. note::
-        If ``B`` is given, we use cholesky decomposition to \
+        If ``B`` is given, we use cholesky decomposition to
         satisfy :math:`\boldsymbol{L}\boldsymbol{L}^{\mathsf{H}}=\boldsymbol{B}`.
 
-        Then, solve :math:`\boldsymbol{C}\boldsymbol{y} = \lambda\boldsymbol{y}`, \
+        Then, solve :math:`\boldsymbol{C}\boldsymbol{y} = \lambda\boldsymbol{y}`,
         where :math:`\boldsymbol{C}=\boldsymbol{L}^{-1}\boldsymbol{A}\boldsymbol{L}^{-\mathsf{H}}`.
 
-        The generalized eigenvalues of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}` \
+        The generalized eigenvalues of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}`
         are computed by :math:`\boldsymbol{L}^{-\mathsf{H}}\boldsymbol{y}`.
 
         See also https://github.com/tky823/ssspy/issues/115 for this implementation.
