@@ -212,7 +212,7 @@ class FDICAbase(IterativeMethodBase):
         return loss
 
     def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
-        r"""Compute log-determinant of demixing filter
+        r"""Compute log-determinant of demixing filter.
 
         Args:
             demix_filter (numpy.ndarray):
