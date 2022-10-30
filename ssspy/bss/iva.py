@@ -642,21 +642,21 @@ class GradIVA(GradIVAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.linalg.norm(y, axis=1)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
 
-            def score_fn(y):
-                norm = np.linalg.norm(y, axis=1, keepdims=True)
-                return y / np.maximum(norm, 1e-10)
+            >>> def score_fn(y):
+            ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
+            ...     return y / np.maximum(norm, 1e-10)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = GradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
-            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = GradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#kim2006independent]
         T. Kim, H. T. Attias, S.-Y. Lee, and T.-W. Lee,
@@ -790,21 +790,21 @@ class NaturalGradIVA(GradIVAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.linalg.norm(y, axis=1)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
 
-            def score_fn(y):
-                norm = np.linalg.norm(y, axis=1, keepdims=True)
-                return y / np.maximum(norm, 1e-10)
+            >>> def score_fn(y):
+            ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
+            ...     return y / np.maximum(norm, 1e-10)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = NaturalGradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
-            spectrogram_est = iva(spectrogram_mix, n_iter=500)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = NaturalGradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -930,33 +930,33 @@ class FastIVA(FastIVAbase):
     Examples:
         .. code-block:: python
 
-            from ssspy.transform import whiten
-            from ssspy.algorithm import projection_back
+            >>> from ssspy.transform import whiten
+            >>> from ssspy.algorithm import projection_back
 
-            def contrast_fn(y):
-                return 2 * np.linalg.norm(y, axis=1)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
 
-            def d_contrast_fn(y):
-                return 2 * np.ones_like(y)
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
 
-            def dd_contrast_fn(y):
-                return 2 * np.zeros_like(y)
+            >>> def dd_contrast_fn(y):
+            ...     return 2 * np.zeros_like(y)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = FastIVA(
-                    contrast_fn=contrast_fn,
-                    d_contrast_fn=d_contrast_fn,
-                    dd_contrast_fn=dd_contrast_fn,
-                    scale_restoration=False,
-            )
-            spectrogram_mix_whitened = whiten(spectrogram_mix)
-            spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
-            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = FastIVA(
+            ...         contrast_fn=contrast_fn,
+            ...         d_contrast_fn=d_contrast_fn,
+            ...         dd_contrast_fn=dd_contrast_fn,
+            ...         scale_restoration=False,
+            ... )
+            >>> spectrogram_mix_whitened = whiten(spectrogram_mix)
+            >>> spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
+            >>> spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#lee2007fast] I. Lee et al.,
         "Fast fixed-point independent vector analysis algorithms \
@@ -1127,29 +1127,29 @@ class FasterIVA(FastIVAbase):
     Examples:
         .. code-block:: python
 
-            from ssspy.transform import whiten
-            from ssspy.algorithm import projection_back
+            >>> from ssspy.transform import whiten
+            >>> from ssspy.algorithm import projection_back
 
-            def contrast_fn(y):
-                return 2 * np.linalg.norm(y, axis=1)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
 
-            def d_contrast_fn(y):
-                return 2 * np.ones_like(y)
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = FasterIVA(
-                    contrast_fn=contrast_fn,
-                    d_contrast_fn=d_contrast_fn,
-                    scale_restoration=False,
-            )
-            spectrogram_mix_whitened = whiten(spectrogram_mix)
-            spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
-            spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = FasterIVA(
+            ...         contrast_fn=contrast_fn,
+            ...         d_contrast_fn=d_contrast_fn,
+            ...         scale_restoration=False,
+            ... )
+            >>> spectrogram_mix_whitened = whiten(spectrogram_mix)
+            >>> spectrogram_est = iva(spectrogram_mix_whitened, n_iter=100)
+            >>> spectrogram_est = projection_back(spectrogram_est, reference=spectrogram_mix)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#brendel2021fasteriva] A. Brendel and W. Kellermann,
         "Faster IVA: Update rules for independent vector analysis based on negentropy \
@@ -1310,20 +1310,20 @@ class AuxIVA(AuxIVAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.linalg.norm(y, axis=1)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
 
-            def d_contrast_fn(y):
-                return 2 * np.ones_like(y)
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = AuxIVA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
-            spectrogram_est = iva(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = AuxIVA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#ono2011stable]
         N. Ono,
@@ -1777,14 +1777,14 @@ class GradLaplaceIVA(GradIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = GradLaplaceIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = GradLaplaceIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -1928,14 +1928,14 @@ class GradGaussIVA(GradIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = GradGaussIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=5000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = GradGaussIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -2064,14 +2064,14 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = NaturalGradLaplaceIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=500)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = NaturalGradLaplaceIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -2218,14 +2218,14 @@ class NaturalGradGaussIVA(NaturalGradIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = NaturalGradGaussIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=500)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = NaturalGradGaussIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -2357,14 +2357,14 @@ class AuxLaplaceIVA(AuxIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = AuxLaplaceIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = AuxLaplaceIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -2461,14 +2461,14 @@ class AuxGaussIVA(AuxIVA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            iva = AuxGaussIVA()
-            spectrogram_est = iva(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> iva = AuxGaussIVA()
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#ono2012auxiliary]
         N. Ono,
