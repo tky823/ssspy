@@ -1878,25 +1878,25 @@ class GradGaussIVA(GradIVA):
         step_size (float):
             A step size of the gradient descent. Default: ``1e-1``.
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         is_holonomic (bool):
-            If ``is_holonomic=True``, Holonomic-type update is used. \
+            If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. Default: ``True``.
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
         reference_id (int):
             Reference channel for projection back. Default: ``0``.
 
@@ -1934,9 +1934,8 @@ class GradGaussIVA(GradIVA):
                     Separated signal with shape of (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    Computed contrast function. \
-                    The shape is (n_sources, n_frames).
+                numpy.ndarray of computed contrast function.
+                The shape is (n_sources, n_frames).
             """
             n_bins = self.n_bins
             alpha = self.variance
@@ -1948,13 +1947,12 @@ class GradGaussIVA(GradIVA):
             r"""
             Args:
                 y (numpy.ndarray):
-                    Norm of separated signal. \
+                    Norm of separated signal.
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                numpy.ndarray:
-                    Computed contrast function. \
-                    The shape is (n_sources, n_frames).
+                numpy.ndarray of computed contrast function.
+                The shape is (n_sources, n_frames).
             """
             alpha = self.variance
             return y / alpha[:, np.newaxis, :]
@@ -1972,13 +1970,13 @@ class GradGaussIVA(GradIVA):
         )
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         We also set variance of Gaussian distribution.
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Keyword arguments to set as attributes of IVA.
         """
         super()._reset(**kwargs)
 
@@ -1987,7 +1985,7 @@ class GradGaussIVA(GradIVA):
         self.variance = np.ones((n_sources, n_frames))
 
     def update_once(self) -> None:
-        r"""Update demixing filters once."""
+        r"""Update variance and demixing filters and once."""
         self.update_source_model()
 
         super().update_once()
