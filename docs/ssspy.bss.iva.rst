@@ -62,57 +62,50 @@ The derivative of :math:`G(\vec{\boldsymbol{y}}_{jn})` is called a score functio
 
 Algorithms
 ~~~~~~~~~~
-.. autoclass:: ssspy.bss.iva.GradIVA
+.. autoclass:: ssspy.bss.iva.IVAbase
    :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: separate, update_once, compute_loss, compute_logdet, restore_scale, apply_projection_back
+
+.. autoclass:: ssspy.bss.iva.GradIVAbase
+
+.. autoclass:: ssspy.bss.iva.FastIVAbase
+   :members: separate, compute_loss, apply_projection_back
+
+.. autoclass:: ssspy.bss.iva.AuxIVAbase
+   :special-members: __call__
+   :members: separate, compute_loss, apply_projection_back
+
+.. autoclass:: ssspy.bss.iva.GradIVA
+   :members: update_once
 
 .. autoclass:: ssspy.bss.iva.NaturalGradIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once
 
 .. autoclass:: ssspy.bss.iva.FastIVA
    :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once
 
 .. autoclass:: ssspy.bss.iva.FasterIVA
    :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once
 
 .. autoclass:: ssspy.bss.iva.AuxIVA
    :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, update_once_ip1, update_once_ip2, update_once_iss1, update_once_iss2
 
 .. autoclass:: ssspy.bss.iva.GradLaplaceIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, compute_loss
 
 .. autoclass:: ssspy.bss.iva.GradGaussIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, update_source_model
 
 .. autoclass:: ssspy.bss.iva.NaturalGradLaplaceIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, compute_loss
 
 .. autoclass:: ssspy.bss.iva.NaturalGradGaussIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, compute_loss
 
 .. autoclass:: ssspy.bss.iva.AuxLaplaceIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
 
 .. autoclass:: ssspy.bss.iva.AuxGaussIVA
-   :special-members: __call__
-   :members:
-   :undoc-members:
+   :members: update_once, update_source_model
