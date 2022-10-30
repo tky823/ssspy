@@ -4,7 +4,7 @@ ssspy.bss.ilrma
 In this module, we separate multichannel signals
 using independent low-rank matrix analysis (ILRMA).
 We denote the number of sources and microphones as :math:`N` and :math:`M`, respectively.
-We also denote source, observed, and separated signals (in time-domain)
+We also denote short-time Fourier transforms of source, observed, and separated signals
 as :math:`\boldsymbol{s}_{ij}`, :math:`\boldsymbol{x}_{ij}`, and :math:`\boldsymbol{y}_{ij}`,
 respectively.
 
