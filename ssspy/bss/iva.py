@@ -1247,40 +1247,39 @@ class AuxIVA(AuxIVAbase):
 
     Args:
         spatial_algorithm (str):
-            Algorithm for demixing filter updates. \
-            Choose ``"IP"``, ``"IP1"``, ``"IP2"``, ``"ISS"``, ``"ISS1"``, or ``"ISS2"``. \
-            Default: ``"IP"``.
+            Algorithm for demixing filter updates.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Default: ``IP``.
         contrast_fn (callable):
-            A contrast function corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`. \
-            This function is expected to receive (n_channels, n_bins, n_frames) \
+            A contrast function which corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
+            This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_frames).
         d_contrast_fn (callable):
-            A derivative of the contrast function. \
-            This function is expected to receive (n_channels, n_frames) \
+            A derivative of the contrast function.
+            This function is expected to receive (n_channels, n_frames)
             and return (n_channels, n_frames).
         flooring_fn (callable, optional):
-            A flooring function for numerical stability. \
-            This function is expected to return the same shape tensor as the input. \
-            If you explicitly set ``flooring_fn=None``, \
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
         pair_selector (callable, optional):
-            Selector to choose updaing pair in ``"IP2"`` and ``"ISS2"``. \
-            If ``None`` is given, ``sequential_pair_selector`` is used. \
+            Selector to choose updaing pair in ``IP2`` and ``ISS2``.
+            If ``None`` is given, ``sequential_pair_selector`` is used.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     Examples:
@@ -1351,16 +1350,15 @@ class AuxIVA(AuxIVAbase):
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                The number of iterations of demixing filter updates. \
+                The number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -1391,11 +1389,11 @@ class AuxIVA(AuxIVAbase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of IVA.
+                Keyword arguments to set as attributes of IVA.
         """
         super()._reset(**kwargs)
 
@@ -1405,10 +1403,10 @@ class AuxIVA(AuxIVAbase):
     def update_once(self) -> None:
         r"""Update demixing filters once.
 
-        If ``self.spatial_algorithm`` is ``"IP"`` or ``"IP1"``, ``update_once_ip1`` is called. \
-        If ``self.spatial_algorithm`` is ``"IP2"``, ``update_once_ip2`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS"`` or ``"ISS1"``, ``update_once_iss1`` is called. \
-        If ``self.spatial_algorithm`` is ``"ISS2"``, ``update_once_iss2`` is called.
+        - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
+        - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
+        - If ``self.spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
+        - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_once_ip1()
@@ -1469,7 +1467,7 @@ class AuxIVA(AuxIVAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
 
         .. math::
@@ -1501,23 +1499,14 @@ class AuxIVA(AuxIVAbase):
             \end{array}
             \right).
 
-        Compute generalized eigenvectors of \
-        :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and \
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`.
+        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
+        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
 
         .. math::
             \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i},
+            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
 
-        where
-
-        .. math::
-            G(\vec{\boldsymbol{y}}_{jn})
-            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
-            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
-            &= G(\vec{\boldsymbol{y}}_{jn}).
-
-        We denote two eigenvectors as :math:`\boldsymbol{h}_{in_{1}}` \
+        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
@@ -1530,7 +1519,7 @@ class AuxIVA(AuxIVAbase):
             {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in}^{(n_{1},n_{2})}
             \boldsymbol{h}_{in_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}` \
+        Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
@@ -1548,8 +1537,8 @@ class AuxIVA(AuxIVAbase):
             \end{array}
             )
 
-        At each iteration, we update for all pairs of :math:`n_{1}`
-        and :math:`n_{2}` (:math:`n_{1}<n_{2}`).
+        At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
+        for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
 
@@ -1598,9 +1587,8 @@ class AuxIVA(AuxIVAbase):
                 |y_{ijn}|^{2}}} & (n'=n)
             \end{cases}.
 
-        .. [#scheibler2020fast]
-            R. Scheibler and N. Ono, \
-            "Fast and stable blind source separation with rank-1 updates," \
+        .. [#scheibler2020fast] R. Scheibler and N. Ono,
+            "Fast and stable blind source separation with rank-1 updates,"
             in *Proc. ICASSP*, 2020, pp. 236-240.
         """
         Y = self.output
@@ -1697,6 +1685,7 @@ class AuxIVA(AuxIVAbase):
         )
 
     def compute_loss(self) -> float:
+        r"""Compute loss."""
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             return super().compute_loss()
         else:
