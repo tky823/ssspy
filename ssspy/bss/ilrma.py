@@ -46,7 +46,7 @@ class ILRMAbase(IterativeMethodBase):
             Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF.
-            If ``None`` is given, ``np.random.default_rng()`` will be used.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
     """
 
@@ -2144,7 +2144,7 @@ class GGDILRMA(ILRMAbase):
             Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF.
-            If ``None`` is given, ``np.random.default_rng()`` will be used.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
 
     Examples:
