@@ -426,22 +426,22 @@ class GradFDICA(GradFDICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.abs(y)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
 
-            def score_fn(y):
-                denom = np.maximum(np.abs(y), 1e-10)
-                return y / denom
+            >>> def score_fn(y):
+            ...     denom = np.maximum(np.abs(y), 1e-10)
+            ...     return y / denom
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = GradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
-            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = GradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -590,22 +590,22 @@ class NaturalGradFDICA(GradFDICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.abs(y)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
 
-            def score_fn(y):
-                denom = np.maximum(np.abs(y), 1e-10)
-                return y / denom
+            >>> def score_fn(y):
+            ...     denom = np.maximum(np.abs(y), 1e-10)
+            ...     return y / denom
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = NaturalGradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
-            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = NaturalGradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -754,20 +754,20 @@ class AuxFDICA(FDICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return 2 * np.abs(y)
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
 
-            def d_contrast_fn(y):
-                return 2 * np.ones_like(y)
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = AuxFDICA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
-            spectrogram_est = fdica(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = AuxFDICA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#ono2010auxiliary]
         N. Ono and S. Miyabe,
@@ -1058,15 +1058,15 @@ class GradLaplaceFDICA(GradFDICA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = GradLaplaceFDICA()
-            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = GradLaplaceFDICA()
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -1180,15 +1180,15 @@ class NaturalGradLaplaceFDICA(GradFDICA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = NaturalGradLaplaceFDICA()
-            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = NaturalGradLaplaceFDICA()
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -1307,15 +1307,15 @@ class AuxLaplaceFDICA(AuxFDICA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = \
-                np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            fdica = AuxLaplaceFDICA()
-            spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> fdica = AuxLaplaceFDICA()
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(

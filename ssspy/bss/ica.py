@@ -420,19 +420,19 @@ class GradICA(GradICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return np.abs(y)
+            >>> def contrast_fn(y):
+            ...     return np.abs(y)
 
-            def score_fn(y):
-                return np.sign(y)
+            >>> def score_fn(y):
+            ...     return np.sign(y)
 
-            n_channels, n_samples = 2, 160000
-            waveform_mix = np.random.randn(n_channels, n_samples)
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn)
-            waveform_est = ica(waveform_mix, n_iter=1000)
-            print(waveform_mix.shape, waveform_est.shape)
-            >>> (2, 160000), (2, 160000)
+            >>> ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> waveform_est = ica(waveform_mix, n_iter=1000)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -543,19 +543,19 @@ class NaturalGradICA(GradICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return np.abs(y)
+            >>> def contrast_fn(y):
+            ...     return np.abs(y)
 
-            def score_fn(y):
-                return np.sign(y)
+            >>> def score_fn(y):
+            ...     return np.sign(y)
 
-            n_channels, n_samples = 2, 160000
-            waveform_mix = np.random.randn(n_channels, n_samples)
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn)
-            waveform_est = ica(waveform_mix, n_iter=100)
-            print(waveform_mix.shape, waveform_est.shape)
-            >>> (2, 160000), (2, 160000)
+            >>> ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> waveform_est = ica(waveform_mix, n_iter=100)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
 
     .. [#amari1995new] S. Amari, A. Cichocki, and H. H. Yang,
         "A new learning algorithm for blind signal separation,"
@@ -691,23 +691,23 @@ class FastICA(FastICAbase):
     Examples:
         .. code-block:: python
 
-            def contrast_fn(y):
-                return np.log(1 + np.exp(y))
+            >>> def contrast_fn(y):
+            ...     return np.log(1 + np.exp(y))
 
-            def score_fn(y):
-                return 1 / (1 + np.exp(-y))
+            >>> def score_fn(y):
+            ...     return 1 / (1 + np.exp(-y))
 
-            def d_score_fn(y):
-                sigmoid_y = 1 / (1 + np.exp(-y))
-                return sigmoid_y * (1 - sigmoid_y)
+            >>> def d_score_fn(y):
+            ...     sigmoid_y = 1 / (1 + np.exp(-y))
+            ...     return sigmoid_y * (1 - sigmoid_y)
 
-            n_channels, n_samples = 2, 160000
-            waveform_mix = np.random.randn(n_channels, n_samples)
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            ica = FastICA(contrast_fn=contrast_fn, score_fn=score_fn, d_score_fn=d_score_fn)
-            waveform_est = ica(waveform_mix, n_iter=10)
-            print(waveform_mix.shape, waveform_est.shape)
-            >>> (2, 160000), (2, 160000)
+            >>> ica = FastICA(contrast_fn=contrast_fn, score_fn=score_fn, d_score_fn=d_score_fn)
+            >>> waveform_est = ica(waveform_mix, n_iter=10)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
 
     .. [#hyvarinen1999fast] A. Hyvärinen,
         "Fast and robust fixed-point algorithms for independent component analysis,"
@@ -800,13 +800,13 @@ class GradLaplaceICA(GradICA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_samples = 2, 160000
-            waveform_mix = np.random.randn(n_channels, n_samples)
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            ica = GradLaplaceICA()
-            waveform_est = ica(waveform_mix, n_iter=1000)
-            print(waveform_mix.shape, waveform_est.shape)
-            >>> (2, 160000), (2, 160000)
+            >>> ica = GradLaplaceICA()
+            >>> waveform_est = ica(waveform_mix, n_iter=1000)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
     """
 
     def __init__(
@@ -912,13 +912,13 @@ class NaturalGradLaplaceICA(NaturalGradICA):
     Examples:
         .. code-block:: python
 
-            n_channels, n_samples = 2, 160000
-            waveform_mix = np.random.randn(n_channels, n_samples)
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            ica = NaturalGradLaplaceICA()
-            waveform_est = ica(waveform_mix, n_iter=100)
-            print(waveform_mix.shape, waveform_est.shape)
-            >>> (2, 160000), (2, 160000)
+            >>> ica = NaturalGradLaplaceICA()
+            >>> waveform_est = ica(waveform_mix, n_iter=100)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
     """
 
     def __init__(

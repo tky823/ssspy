@@ -559,14 +559,14 @@ class GaussILRMA(ILRMAbase):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            ilrma = GaussILRMA(n_basis=2, rng=np.random.default_rng(42))
-            spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> ilrma = GaussILRMA(n_basis=2, rng=np.random.default_rng(42))
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
 
     .. [#kitamura2016determined] D. Kitamura, N. Ono, H. Sawada, H. Kameoka, and H. Saruwatari, \
         "Determined blind source separation unifying independent vector analysis and \
@@ -1327,14 +1327,14 @@ class TILRMA(ILRMAbase):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            ilrma = TILRMA(n_basis=2, dof=1000, rng=np.random.default_rng(42))
-            spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> ilrma = TILRMA(n_basis=2, dof=1000, rng=np.random.default_rng(42))
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
@@ -2150,14 +2150,14 @@ class GGDILRMA(ILRMAbase):
     Examples:
         .. code-block:: python
 
-            n_channels, n_bins, n_frames = 2, 2049, 128
-            spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
-                + 1j * np.random.randn(n_channels, n_bins, n_frames)
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            ilrma = GGDILRMA(n_basis=2, beta=1.99, rng=np.random.default_rng(42))
-            spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
-            print(spectrogram_mix.shape, spectrogram_est.shape)
-            >>> (2, 2049, 128), (2, 2049, 128)
+            >>> ilrma = GGDILRMA(n_basis=2, beta=1.99, rng=np.random.default_rng(42))
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
     """
 
     def __init__(
