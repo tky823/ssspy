@@ -1,9 +1,6 @@
 # For local data
 .data/
 
-# For VSCode
-.vscode/
-
 # For Mac
 .DS_Store
 
