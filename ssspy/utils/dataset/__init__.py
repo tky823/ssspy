@@ -51,15 +51,13 @@ def download_sample_speech_data(
     )
     sisec2010_npz = np.load(sisec2010_npz_path)
 
-    if sample_rate != sisec2010_npz["sample_rate"].item():
-        raise ValueError("Invalid sampling rate is detected.")
+    assert sample_rate == sisec2010_npz["sample_rate"].item(), "Invalid sampling rate is detected."
 
     if conv:
         mird_npz_path = download_mird(root=mird_root, n_sources=n_sources)
         mird_npz = np.load(mird_npz_path)
 
-        if sample_rate != mird_npz["sample_rate"].item():
-            raise ValueError("Invalid sampling rate is detected.")
+        assert sample_rate == mird_npz["sample_rate"].item(), "Invalid sampling rate is detected."
 
         waveform_src_img = []
 
