@@ -524,11 +524,11 @@ class NaturalGradICA(GradICAbase):
             A step size of the gradient descent. Default: ``1e-1``.
         contrast_fn (callable):
             A contrast function which corresponds to :math:`-\log p(y_{tn})`.
-            This function is expected to receive (n_channels, n_samples) \
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         score_fn (callable):
             A score function which corresponds to the partial derivative of the contrast function.
-            This function is expected to receive (n_channels, n_samples) \
+            This function is expected to receive (n_channels, n_samples)
             and return (n_channels, n_samples).
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
