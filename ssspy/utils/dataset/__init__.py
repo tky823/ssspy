@@ -31,8 +31,8 @@ def download_sample_speech_data(
             Number of sources included in sample data.
         sisec2010_tag (str):
             Tag of SiSEC 2010 data.
-            Choose ""dev1_female3"" or ""dev1_female4"".
-            Default:""dev1_female3"".
+            Choose "dev1_female3" or "dev1_female4".
+            Default:"dev1_female3".
         max_duration (float):
             Maximum duration. Default: ``160000``.
         conv (bool):
