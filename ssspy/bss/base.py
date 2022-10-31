@@ -73,7 +73,13 @@ class IterativeMethodBase:
                     callback(self)
 
     def update_once(self) -> None:
+        r"""Update parameters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
     def compute_loss(self) -> float:
+        r"""Compute loss.
+
+        Returns:
+            Computed loss. The type is expected ``float``.
+        """
         raise NotImplementedError("Implement 'compute_loss' method.")
