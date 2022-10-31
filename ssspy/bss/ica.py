@@ -418,6 +418,8 @@ class GradICA(GradICAbase):
             Default: ``True``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -429,7 +431,33 @@ class GradICA(GradICAbase):
             >>> n_channels, n_samples = 2, 160000
             >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            >>> ica = GradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> ica = GradICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> waveform_est = ica(waveform_mix, n_iter=1000)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return np.abs(y)
+
+            >>> def score_fn(y):
+            ...     return np.sign(y)
+
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
+
+            >>> ica = GradICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> waveform_est = ica(waveform_mix, n_iter=1000)
             >>> print(waveform_mix.shape, waveform_est.shape)
             (2, 160000), (2, 160000)
@@ -541,6 +569,8 @@ class NaturalGradICA(GradICAbase):
             Default: ``True``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -552,7 +582,33 @@ class NaturalGradICA(GradICAbase):
             >>> n_channels, n_samples = 2, 160000
             >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            >>> ica = NaturalGradICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> ica = NaturalGradICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> waveform_est = ica(waveform_mix, n_iter=100)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return np.abs(y)
+
+            >>> def score_fn(y):
+            ...     return np.sign(y)
+
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
+
+            >>> ica = NaturalGradICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> waveform_est = ica(waveform_mix, n_iter=100)
             >>> print(waveform_mix.shape, waveform_est.shape)
             (2, 160000), (2, 160000)
@@ -798,12 +854,26 @@ class GradLaplaceICA(GradICA):
             Default: ``True``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_samples = 2, 160000
             >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            >>> ica = GradLaplaceICA()
+            >>> ica = GradLaplaceICA(is_holonomic=True)
+            >>> waveform_est = ica(waveform_mix, n_iter=1000)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
+
+            >>> ica = GradLaplaceICA(is_holonomic=False)
             >>> waveform_est = ica(waveform_mix, n_iter=1000)
             >>> print(waveform_mix.shape, waveform_est.shape)
             (2, 160000), (2, 160000)
@@ -910,12 +980,26 @@ class NaturalGradLaplaceICA(NaturalGradICA):
             Default: ``True``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_samples = 2, 160000
             >>> waveform_mix = np.random.randn(n_channels, n_samples)
 
-            >>> ica = NaturalGradLaplaceICA()
+            >>> ica = NaturalGradLaplaceICA(is_holonomic=True)
+            >>> waveform_est = ica(waveform_mix, n_iter=100)
+            >>> print(waveform_mix.shape, waveform_est.shape)
+            (2, 160000), (2, 160000)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_samples = 2, 160000
+            >>> waveform_mix = np.random.randn(n_channels, n_samples)
+
+            >>> ica = NaturalGradLaplaceICA(is_holonomic=False)
             >>> waveform_est = ica(waveform_mix, n_iter=100)
             >>> print(waveform_mix.shape, waveform_est.shape)
             (2, 160000), (2, 160000)
