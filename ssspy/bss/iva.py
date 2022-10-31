@@ -1368,6 +1368,8 @@ class AuxIVA(AuxIVAbase):
             Default: ``0``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -1380,7 +1382,87 @@ class AuxIVA(AuxIVAbase):
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = AuxIVA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="IP",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="IP2",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ...     pair_selector=sequential_pair_selector,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="ISS",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS2:
+
+        .. code-block:: python
+
+            >>> import functools
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="ISS2",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
+            ... )
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -2475,13 +2557,65 @@ class AuxLaplaceIVA(AuxIVA):
             Default: ``0``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = AuxLaplaceIVA()
+            >>> iva = AuxLaplaceIVA(spatial_algorithm="IP")
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxLaplaceIVA(
+            ...     spatial_algorithm="IP2",
+            ...     pair_selector=sequential_pair_selector,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxLaplaceIVA(spatial_algorithm="ISS")
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS2:
+
+        .. code-block:: python
+
+            >>> import functools
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxLaplaceIVA(
+            ...     spatial_algorithm="ISS2",
+            ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
+            ... )
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -2579,13 +2713,65 @@ class AuxGaussIVA(AuxIVA):
             Default: ``0``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = AuxGaussIVA()
+            >>> iva = AuxGaussIVA(spatial_algorithm="IP")
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxGaussIVA(
+            ...     spatial_algorithm="IP2",
+            ...     pair_selector=sequential_pair_selector,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxGaussIVA(spatial_algorithm="ISS")
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS2:
+
+        .. code-block:: python
+
+            >>> import functools
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxGaussIVA(
+            ...     spatial_algorithm="ISS2",
+            ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
+            ... )
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
