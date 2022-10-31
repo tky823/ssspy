@@ -557,13 +557,76 @@ class GaussILRMA(ILRMAbase):
             Default: ``None``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> ilrma = GaussILRMA(n_basis=2, rng=np.random.default_rng(42))
+            >>> ilrma = GaussILRMA(
+            ...     n_basis=2,
+            ...     spatial_algorithm="IP",
+            ...     rng=np.random.default_rng(42)
+            ... )
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> ilrma = GaussILRMA(
+            ...     n_basis=2,
+            ...     spatial_algorithm="IP2",
+            ...     pair_selector=sequential_pair_selector,
+            ...     rng=np.random.default_rng(42)
+            ... )
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> ilrma = GaussILRMA(
+            ...     n_basis=2,
+            ...     spatial_algorithm="ISS",
+            ...     rng=np.random.default_rng(42)
+            ... )
+            >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by ISS2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> ilrma = GaussILRMA(
+            ...     n_basis=2,
+            ...     spatial_algorithm="ISS2",
+            ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
+            ...     rng=np.random.default_rng(42)
+            ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
