@@ -25,6 +25,7 @@ dev = [
     "soundfile",
     "flake8",
     "black",
+    "isort"
 ]
 docs = [
     "sphinx",
