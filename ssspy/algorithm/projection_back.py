@@ -21,8 +21,7 @@ def projection_back(
             Reference microphone index. Default: ``0``.
 
     Returns:
-        numpy.ndarray:
-            Rescaled estimated spectrograms or demixing filters.
+        numpy.ndarray of rescaled estimated spectrograms or demixing filters.
 
     Examples:
         When you give estimated spectrograms,
@@ -113,7 +112,6 @@ def projection_back(
             scale = scale.transpose(1, 0, 2)  # (n_channels, n_bins, n_sources)
             Y_scaled = Y * scale[..., np.newaxis]  # (n_channels, n_bins, n_sources, n_frames)
             output_scaled = Y_scaled.swapaxes(-3, -2)  # (n_channels, n_sources, n_bins, n_frames)
-            output_scaled.swapaxes
         else:
             scale = scale[..., reference_id, :]  # (n_bins, n_sources)
             Y_scaled = Y * scale[..., np.newaxis]  # (n_bins, n_sources, n_frames)
