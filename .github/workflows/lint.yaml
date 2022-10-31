@@ -25,7 +25,7 @@ jobs:
       - name: Run linters
         run: |
           # See pyproject.toml
-          isort --line-length 100
+          isort --line-length 100 ssspy tests
           flake8 --max-line-length 100 ssspy tests
       - name: Run formatters
         run: |
