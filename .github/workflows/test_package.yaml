@@ -19,30 +19,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements/dev.txt
-          pip install -e .
+          pip install -e ".[dev,tests]"
       - name: Install dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install libsndfile1
-      - name: Download dataset (Ubuntu & MacOS)
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
-        run: |
-          . ./tests/scripts/download_sisec2011.sh
-      - name: Download dataset (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          ./tests/scripts/download_sisec2011.bat
       - name: Pytest
         run: |
-          pytest --cov=./ssspy --cov-report=xml
+          pytest -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Upload coverage to codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true

@@ -1,2 +1,60 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ssspy"
+authors = [
+    {name = "Takuya Hasumi"},
+]
+description = "A Python toolkit for sound source separation."
+readme = "README.md"
+license = {text = "MIT License"}
+urls = {url = "https://github.com/tky823/ssspy"}
+requires-python = ">=3.7, <4"
+dependencies = [
+    "numpy",
+]
+dynamic = [
+    "version",
+]
+
+[project.optional-dependencies]
+dev = [
+    "scipy",
+    "soundfile",
+    "flake8",
+    "black",
+    "isort"
+]
+docs = [
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
+    "furo",
+]
+tests = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "ssspy.__version__"}
+
+[tool.setuptools.packages.find]
+exclude = [
+    ".github",
+    "docs",
+    "notebooks",
+    "tests",
+]
+
 [tool.black]
 line-length = 100
+
+[tools.flake8]
+max-line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
