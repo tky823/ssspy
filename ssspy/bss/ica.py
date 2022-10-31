@@ -1,9 +1,9 @@
-from typing import Optional, Union, List, Callable
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from .base import IterativeMethodBase
 from ..transform import whiten
+from .base import IterativeMethodBase
 
 __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGradLaplaceICA"]
 

@@ -2,8 +2,8 @@ from typing import Tuple
 
 import numpy as np
 
-from .sisec2010 import download as download_sisec2010
 from .mird import download as download_mird
+from .sisec2010 import download as download_sisec2010
 
 __all__ = ["download_sample_speech_data"]
 

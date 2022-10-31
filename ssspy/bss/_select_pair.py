@@ -1,5 +1,5 @@
-from typing import Optional, Iterable, Tuple
 import itertools
+from typing import Iterable, Optional, Tuple
 
 
 def sequential_pair_selector(

@@ -1,14 +1,20 @@
 import os
 import sys
-from typing import Optional, Union, Callable, List, Dict, Any
+from typing import Any, Callable, Dict, List, Optional, Union
 
-import pytest
 import numpy as np
+import pytest
 import scipy.signal as ss
 
-from ssspy.bss.fdica import GradFDICAbase, GradFDICA, GradLaplaceFDICA
-from ssspy.bss.fdica import NaturalGradFDICA, NaturalGradLaplaceFDICA
-from ssspy.bss.fdica import AuxFDICA, AuxLaplaceFDICA
+from ssspy.bss.fdica import (
+    AuxFDICA,
+    AuxLaplaceFDICA,
+    GradFDICA,
+    GradFDICAbase,
+    GradLaplaceFDICA,
+    NaturalGradFDICA,
+    NaturalGradLaplaceFDICA,
+)
 from ssspy.utils.dataset import download_sample_speech_data
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))

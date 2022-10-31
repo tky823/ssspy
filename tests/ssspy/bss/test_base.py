@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Union, Callable, List
+from typing import Callable, List, Optional, Union
 
 import pytest
 

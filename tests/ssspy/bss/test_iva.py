@@ -1,20 +1,27 @@
 import os
 import sys
-from typing import Optional, Union, Callable, List, Dict, Any
+from typing import Any, Callable, Dict, List, Optional, Union
 
-import pytest
 import numpy as np
+import pytest
 import scipy.signal as ss
 
-from ssspy.bss.iva import IVAbase
-from ssspy.bss.iva import FastIVAbase, FastIVA, FasterIVA
-from ssspy.bss.iva import GradIVAbase, GradIVA, GradLaplaceIVA, GradGaussIVA
-from ssspy.bss.iva import NaturalGradIVA, NaturalGradLaplaceIVA, NaturalGradGaussIVA
 from ssspy.bss.iva import (
-    AuxIVAbase,
-    AuxIVA,
-    AuxLaplaceIVA,
     AuxGaussIVA,
+    AuxIVA,
+    AuxIVAbase,
+    AuxLaplaceIVA,
+    FasterIVA,
+    FastIVA,
+    FastIVAbase,
+    GradGaussIVA,
+    GradIVA,
+    GradIVAbase,
+    GradLaplaceIVA,
+    IVAbase,
+    NaturalGradGaussIVA,
+    NaturalGradIVA,
+    NaturalGradLaplaceIVA,
 )
 from ssspy.utils.dataset import download_sample_speech_data
 

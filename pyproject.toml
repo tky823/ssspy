@@ -25,6 +25,7 @@ dev = [
     "soundfile",
     "flake8",
     "black",
+    "isort"
 ]
 docs = [
     "sphinx",
@@ -53,3 +54,7 @@ line-length = 100
 
 [tools.flake8]
 max-line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100

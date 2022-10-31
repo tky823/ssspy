@@ -1,14 +1,14 @@
-from typing import Optional, Union, List, Tuple, Callable, Iterable
 import functools
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from ..algorithm import projection_back
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from ._solve_permutation import correlation_based_permutation_solver
+from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
-from ..algorithm import projection_back
 
 __all__ = [
     "GradFDICA",

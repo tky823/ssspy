@@ -1,6 +1,6 @@
-from typing import Optional, Callable
-import itertools
 import functools
+import itertools
+from typing import Callable, Optional
 
 import numpy as np
 
