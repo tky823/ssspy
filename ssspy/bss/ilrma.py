@@ -568,7 +568,7 @@ class GaussILRMA(ILRMAbase):
             >>> ilrma = GaussILRMA(
             ...     n_basis=2,
             ...     spatial_algorithm="IP",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -588,7 +588,7 @@ class GaussILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     spatial_algorithm="IP2",
             ...     pair_selector=sequential_pair_selector,
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -605,7 +605,7 @@ class GaussILRMA(ILRMAbase):
             >>> ilrma = GaussILRMA(
             ...     n_basis=2,
             ...     spatial_algorithm="ISS",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -626,7 +626,7 @@ class GaussILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     spatial_algorithm="ISS2",
             ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -1401,7 +1401,7 @@ class TILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     dof=1000,
             ...     spatial_algorithm="IP",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -1422,7 +1422,7 @@ class TILRMA(ILRMAbase):
             ...     dof=1000,
             ...     spatial_algorithm="IP2",
             ...     pair_selector=sequential_pair_selector,
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -1440,7 +1440,7 @@ class TILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     dof=1000,
             ...     spatial_algorithm="ISS",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -1462,7 +1462,7 @@ class TILRMA(ILRMAbase):
             ...     dof=1000,
             ...     spatial_algorithm="ISS2",
             ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -2292,7 +2292,7 @@ class GGDILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     beta=1.99,
             ...     spatial_algorithm="IP",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -2313,7 +2313,7 @@ class GGDILRMA(ILRMAbase):
             ...     beta=1.99,
             ...     spatial_algorithm="IP2",
             ...     pair_selector=sequential_pair_selector,
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -2331,7 +2331,7 @@ class GGDILRMA(ILRMAbase):
             ...     n_basis=2,
             ...     beta=1.99,
             ...     spatial_algorithm="ISS",
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
@@ -2353,7 +2353,7 @@ class GGDILRMA(ILRMAbase):
             ...     beta=1.99,
             ...     spatial_algorithm="ISS2",
             ...     pair_selector=functools.partial(sequential_pair_selector, step=2),
-            ...     rng=np.random.default_rng(42)
+            ...     rng=np.random.default_rng(42),
             ... )
             >>> spectrogram_est = ilrma(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
