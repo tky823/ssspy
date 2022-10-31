@@ -37,6 +37,14 @@ or clone the repository.
    cd ssspy
    pip install -e .
 
+.. note::
+
+   If you fail to install ``ssspy``, please update ``setuptools`` by
+
+   .. code-block:: shell
+
+      python -m pip install --upgrade setuptools
+   
 Build Documentation Locally (optional)
 --------------------------------------
 To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
