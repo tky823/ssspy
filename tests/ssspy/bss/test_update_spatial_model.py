@@ -1,10 +1,10 @@
-from typing import Optional, Tuple, Callable, Iterable
+from typing import Callable, Iterable, Optional, Tuple
 
 import numpy as np
 import pytest
 
-from ssspy.bss._flooring import max_flooring, add_flooring
-from ssspy.bss._select_pair import sequential_pair_selector, combination_pair_selector
+from ssspy.bss._flooring import add_flooring, max_flooring
+from ssspy.bss._select_pair import combination_pair_selector, sequential_pair_selector
 from ssspy.bss._update_spatial_model import (
     update_by_ip1,
     update_by_ip2,

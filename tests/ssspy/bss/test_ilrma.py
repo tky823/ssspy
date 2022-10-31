@@ -1,12 +1,12 @@
 import os
 import sys
-from typing import Optional, Union, Callable, Any, List, Dict
+from typing import Any, Callable, Dict, List, Optional, Union
 
-import pytest
 import numpy as np
+import pytest
 import scipy.signal as ss
 
-from ssspy.bss.ilrma import ILRMAbase, GaussILRMA, TILRMA, GGDILRMA
+from ssspy.bss.ilrma import GGDILRMA, TILRMA, GaussILRMA, ILRMAbase
 from ssspy.utils.dataset import download_sample_speech_data
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))

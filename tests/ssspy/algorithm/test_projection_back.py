@@ -1,7 +1,7 @@
 from typing import Optional
 
-import pytest
 import numpy as np
+import pytest
 
 from ssspy.algorithm import projection_back
 
