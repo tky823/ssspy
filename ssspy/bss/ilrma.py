@@ -615,6 +615,7 @@ class GaussILRMA(ILRMAbase):
 
         .. code-block:: python
 
+            >>> import functools
             >>> from ssspy.bss._select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
