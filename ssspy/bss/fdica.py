@@ -424,6 +424,8 @@ class GradFDICA(GradFDICAbase):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -438,7 +440,36 @@ class GradFDICA(GradFDICAbase):
             ...     np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = GradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> fdica = GradFDICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
+
+            >>> def score_fn(y):
+            ...     denom = np.maximum(np.abs(y), 1e-10)
+            ...     return y / denom
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = GradFDICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -588,6 +619,8 @@ class NaturalGradFDICA(GradFDICAbase):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -602,7 +635,36 @@ class NaturalGradFDICA(GradFDICAbase):
             ...     np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = NaturalGradFDICA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> fdica = NaturalGradFDICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
+
+            >>> def score_fn(y):
+            ...     denom = np.maximum(np.abs(y), 1e-10)
+            ...     return y / denom
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = NaturalGradFDICA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -1088,6 +1150,8 @@ class GradLaplaceFDICA(GradFDICA):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -1095,7 +1159,21 @@ class GradLaplaceFDICA(GradFDICA):
             ...     np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = GradLaplaceFDICA()
+            >>> fdica = GradLaplaceFDICA(is_holonomic=True)
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = GradLaplaceFDICA(is_holonomic=False)
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -1210,6 +1288,8 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -1217,7 +1297,21 @@ class NaturalGradLaplaceFDICA(GradFDICA):
             ...     np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = NaturalGradLaplaceFDICA()
+            >>> fdica = NaturalGradLaplaceFDICA(is_holonomic=True)
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = NaturalGradLaplaceFDICA(is_holonomic=False)
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
