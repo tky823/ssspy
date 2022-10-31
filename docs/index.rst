@@ -84,12 +84,6 @@ Quick Example of Blind Source Separation
       nperseg=n_fft,
       noverlap=n_fft-hop_length
    )
-   _, _, spectrogram_mix = ss.stft(
-      waveform_mix,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
 
    iva = AuxLaplaceIVA()
    spectrogram_est = iva(spectrogram_mix)
