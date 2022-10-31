@@ -37,6 +37,14 @@ or clone the repository.
    cd ssspy
    pip install -e .
 
+.. note::
+
+   If you fail to install ``ssspy``, please update ``setuptools`` by
+
+   .. code-block:: shell
+
+      python -m pip install --upgrade setuptools
+   
 Build Documentation Locally (optional)
 --------------------------------------
 To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
@@ -76,14 +84,8 @@ Quick Example of Blind Source Separation
    n_fft, hop_length = 4096, 2048
    window = "hann"
 
-   waveform_src_img = download_sample_speech_data(n_sources=3)
+   waveform_src_img, sample_rate = download_sample_speech_data(n_sources=3)
    waveform_mix = np.sum(waveform_src_img, axis=1)
-   _, _, spectrogram_mix = ss.stft(
-      waveform_mix,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
    _, _, spectrogram_mix = ss.stft(
       waveform_mix,
       window=window,
@@ -103,7 +105,7 @@ Quick Example of Blind Source Separation
 
    for idx, waveform in enumerate(waveform_est):
       print("Estimated source: {}".format(idx + 1))
-      ipd.display(ipd.Audio(waveform, rate=16000))
+      ipd.display(ipd.Audio(waveform, rate=sample_rate))
       print()
 
    plt.figure()
