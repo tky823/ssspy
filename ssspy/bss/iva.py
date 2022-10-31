@@ -640,6 +640,8 @@ class GradIVA(GradIVAbase):
             Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -653,7 +655,35 @@ class GradIVA(GradIVAbase):
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = GradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> iva = GradIVA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def score_fn(y):
+            ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
+            ...     return y / np.maximum(norm, 1e-10)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = GradIVA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -788,6 +818,8 @@ class NaturalGradIVA(GradIVAbase):
             Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -801,7 +833,35 @@ class NaturalGradIVA(GradIVAbase):
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = NaturalGradIVA(contrast_fn=contrast_fn, score_fn=score_fn)
+            >>> iva = NaturalGradIVA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=True,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def score_fn(y):
+            ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
+            ...     return y / np.maximum(norm, 1e-10)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = NaturalGradIVA(
+            ...     contrast_fn=contrast_fn,
+            ...     score_fn=score_fn,
+            ...     is_holonomic=False,
+            ... )
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -1775,13 +1835,28 @@ class GradLaplaceIVA(GradIVA):
             Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = GradLaplaceIVA()
+            >>> iva = GradLaplaceIVA(is_holonomic=True)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = GradLaplaceIVA(is_holonomic=False)
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -1926,13 +2001,28 @@ class GradGaussIVA(GradIVA):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = GradGaussIVA()
+            >>> iva = GradGaussIVA(is_holonomic=True)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = GradGaussIVA(is_holonomic=False)
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=5000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -2062,13 +2152,28 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = NaturalGradLaplaceIVA()
+            >>> iva = NaturalGradLaplaceIVA(is_holonomic=True)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = NaturalGradLaplaceIVA(is_holonomic=False)
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -2216,13 +2321,28 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters using Holonomic-type update:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> iva = NaturalGradGaussIVA()
+            >>> iva = NaturalGradGaussIVA(is_holonomic=True)
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters using Nonholonomic-type update:
+
+        .. code-block:: python
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = NaturalGradGaussIVA(is_holonomic=False)
             >>> spectrogram_est = iva(spectrogram_mix, n_iter=500)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
