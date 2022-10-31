@@ -752,6 +752,8 @@ class AuxFDICA(FDICAbase):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> def contrast_fn(y):
@@ -764,7 +766,37 @@ class AuxFDICA(FDICAbase):
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = AuxFDICA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
+            >>> fdica = AuxFDICA(
+            ...     spatial_algorithm="IP",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ... )
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.abs(y)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = AuxFDICA(
+            ...     spatial_algorithm="IP2",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ...     pair_selector=sequential_pair_selector,
+            ... )
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=100)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
@@ -1305,6 +1337,8 @@ class AuxLaplaceFDICA(AuxFDICA):
             Reference channel for projection back. Default: ``0``.
 
     Examples:
+        Update demixing filters by IP:
+
         .. code-block:: python
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -1312,7 +1346,26 @@ class AuxLaplaceFDICA(AuxFDICA):
             ...     np.random.randn(n_channels, n_bins, n_frames) \
             ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
 
-            >>> fdica = AuxLaplaceFDICA()
+            >>> fdica = AuxLaplaceFDICA(spatial_algorithm="IP")
+            >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
+        Update demixing filters by IP2:
+
+        .. code-block:: python
+
+            >>> from ssspy.bss._select_pair import sequential_pair_selector
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = \
+            ...     np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> fdica = AuxLaplaceFDICA(
+            ...     spatial_algorithm="IP2",
+            ...     pair_selector=sequential_pair_selector,
+            ... )
             >>> spectrogram_est = fdica(spectrogram_mix, n_iter=1000)
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
