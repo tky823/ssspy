@@ -9,9 +9,8 @@ def whiten(input: np.ndarray) -> np.ndarray:
             Input tensor to be whitened.
 
     Returns:
-        numpy.ndarray:
-            Whitened tensor. \
-            The type (real or complex) and shape are same as input.
+        numpy.ndarray of Whitened tensor.
+        The type (real or complex) and shape are same as input.
 
     .. note::
         - If ``input`` is 2D real tensor, it is regarded as (n_channels, n_samples).
