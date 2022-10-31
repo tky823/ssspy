@@ -16,7 +16,7 @@ def whiten(input: np.ndarray) -> np.ndarray:
         - If ``input`` is 2D real tensor, it is regarded as (n_channels, n_samples).
         - If ``input`` is 3D complex tensor, it is regarded as (n_channels, n_bins, n_frames).
         - If ``input`` is 3D real tensor, it is regarded as (batch_size, n_channels, n_samples).
-        - If ``input`` is 4D complex tensor, it is regarded as \
+        - If ``input`` is 4D complex tensor, it is regarded as
           (batch_size, n_channels, n_bins, n_frames).
 
     Examples:
