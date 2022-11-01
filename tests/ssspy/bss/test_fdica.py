@@ -15,12 +15,12 @@ from ssspy.bss.fdica import (
     NaturalGradFDICA,
     NaturalGradLaplaceFDICA,
 )
-from ssspy.utils.dataset import download_sample_speech_data
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
+from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 max_duration = 0.5
 n_fft = 512
@@ -78,8 +78,6 @@ def test_grad_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
@@ -123,8 +121,6 @@ def test_natural_grad_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
@@ -168,8 +164,6 @@ def test_aux_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
@@ -216,8 +210,6 @@ def test_grad_laplace_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
@@ -255,8 +247,6 @@ def test_natural_grad_laplace_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
@@ -293,8 +283,6 @@ def test_aux_laplace_fdica(
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
         max_duration=max_duration,
