@@ -1,4 +1,4 @@
-from typing import Optional, Union, List, Callable
+from typing import Callable, List, Optional, Union
 
 import numpy as np
 
@@ -19,19 +19,18 @@ class PDSBSSbase:
             Proximal operator of penalty function.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
 
     .. [#yatabe2018determined] K. Yatabe and D. Kitamura,
@@ -97,16 +96,15 @@ class PDSBSSbase:
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain. \
+                Mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates. \
+                Number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -128,11 +126,11 @@ class PDSBSSbase:
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of PDSBSSbase.
+                Keyword arguments to set as attributes of PDSBSSbase.
         """
         assert self.input is not None, "Specify data!"
 
@@ -169,16 +167,15 @@ class PDSBSSbase:
 
         Args:
             input (numpy.ndarray):
-                The mixture signal in frequency-domain. \
+                The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             demix_filter (numpy.ndarray):
-                The demixing filters to separate ``input``. \
+                The demixing filters to separate ``input``.
                 The shape is (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_sources, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
         """
         X, W = input, demix_filter
         Y = W @ X.transpose(1, 0, 2)
@@ -190,8 +187,7 @@ class PDSBSSbase:
         r"""Compute loss :math:`\mathcal{L}`.
 
         Returns:
-            float:
-                Computed loss.
+            Computed loss.
         """
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)  # (n_sources, n_bins, n_frames)
@@ -202,6 +198,7 @@ class PDSBSSbase:
             penalty = penalty + penalty_fn(Y)
 
         loss = penalty - np.sum(logdet, axis=0)
+        loss = loss.item()
 
         return loss
 
@@ -213,8 +210,7 @@ class PDSBSSbase:
                 Demixing filters with shape of (n_bins, n_sources, n_channels).
 
         Returns:
-            numpy.ndarray:
-                Computed log-determinant values.
+            numpy.ndarray of computed log-determinant values.
         """
         _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
 
@@ -228,8 +224,7 @@ class PDSBSSbase:
                 Input spectrogram with shape of (n_channels, n_bins, n_frames).
 
         Returns:
-            numpy.ndarray:
-                Normalized spectrogram with shape of (n_channels, n_bins, n_frames).
+            numpy.ndarray of normalized spectrogram with shape of (n_channels, n_bins, n_frames).
         """
         norm = np.linalg.norm(input.transpose(1, 0, 2), ord=2, axis=(-2, -1))
         norm = np.max(norm)
@@ -239,7 +234,7 @@ class PDSBSSbase:
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
-        If ``self.scale_restoration="projection_back"``, we use projection back technique.
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
         """
         scale_restoration = self.scale_restoration
 
@@ -254,8 +249,7 @@ class PDSBSSbase:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
     def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms.
-        """
+        r"""Apply projection back technique to estimated spectrograms."""
         assert self.scale_restoration, "Set self.scale_restoration=True."
 
         X, W = self.input, self.demix_filter
@@ -278,22 +272,21 @@ class PDSBSS(PDSBSSbase):
         penalty_fn (callable):
             Penalty function that determines source model.
         prox_penalty (callable):
-            Proximal operator of penalty function. \
+            Proximal operator of penalty function.
             Default: ``None``.
         callbacks (callable or list[callable], optional):
-            Callback functions. Each function is called before separation and at each iteration. \
+            Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
         scale_restoration (bool or str):
-            Technique to restore scale ambiguity. \
-            If ``scale_restoration=True``, the projection back technique is applied to \
-            estimated spectrograms. You can also specify ``"projection_back"`` explicitly. \
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the update algorithm \
-            if ``record_loss=True``. \
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back. \
+            Reference channel for projection back.
             Default: ``0``.
     """
 
@@ -323,21 +316,20 @@ class PDSBSS(PDSBSSbase):
         self.mu1, self.mu2 = mu1, mu2
         self.alpha = alpha
 
-    def __call__(self, input, n_iter=100, **kwargs):
+    def __call__(self, input, n_iter=100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
             input (numpy.ndarray):
-                Mixture signal in frequency-domain. \
+                Mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
             n_iter (int):
-                Number of iterations of demixing filter updates. \
+                Number of iterations of demixing filter updates.
                 Default: ``100``.
 
         Returns:
-            numpy.ndarray:
-                The separated signal in frequency-domain. \
-                The shape is (n_channels, n_bins, n_frames).
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
         """
         self.input = input.copy()
 
@@ -385,11 +377,11 @@ class PDSBSS(PDSBSSbase):
         return s.format(**self.__dict__)
 
     def _reset(self, **kwargs) -> None:
-        r"""Reset attributes following on given keyword arguments.
+        r"""Reset attributes by given keyword arguments.
 
         Args:
             kwargs:
-                Set arguments as attributes of PDSBSS.
+                Keyword arguments to set as attributes of PDSBSS.
         """
         super()._reset(**kwargs)
 
@@ -408,9 +400,8 @@ class PDSBSS(PDSBSSbase):
 
         self.dual = dual
 
-    def update_once(self):
-        r"""Update demixing filters and dual parameters once.
-        """
+    def update_once(self) -> None:
+        r"""Update demixing filters and dual parameters once."""
         mu1, mu2 = self.mu1, self.mu2
         alpha = self.alpha
 
