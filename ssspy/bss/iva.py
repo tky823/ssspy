@@ -1971,7 +1971,7 @@ class PDSIVA(PDSBSS):
         if prox_penalty is None:
             prox_penalty = functools.partial(prox.l21, axis2=1)
 
-        def penalty_fn(y: np.ndarray) -> np.ndarray:
+        def penalty_fn(y: np.ndarray) -> float:
             r"""Sum of contrast function.
 
             Args:
@@ -1979,11 +1979,11 @@ class PDSIVA(PDSBSS):
                     The shape is (n_sources, n_bins, n_frames).
 
             Returns:
-                float:
-                    Computed loss.
+                Computed loss.
             """
             G = contrast_fn(y)  # (n_sources, n_frames)
             loss = np.sum(G, axis=(0, 1))
+            loss = loss.item()
 
             return loss
 
