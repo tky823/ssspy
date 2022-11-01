@@ -16,12 +16,15 @@ def download_sample_speech_data(
     conv: bool = True,
     cache_dir: str = ".tests/.data/.cache",
 ) -> Tuple[np.ndarray, int]:
-    hash = hashlib.sha256(sisec2010_root).hexdigest()
-    hash += hashlib.sha256(mird_root).hexdigest()
-    hash += hashlib.sha256(str(n_sources)).hexdigest()
-    hash += hashlib.sha256(sisec2010_tag).hexdigest()
-    hash += hashlib.sha256(str(max_duration)).hexdigest()
-    hash += hashlib.sha256(str(conv)).hexdigest()
+    hash = hashlib.sha256(sisec2010_root.encode("utf-8")).hexdigest()
+    hash += hashlib.sha256(mird_root.encode("utf-8")).hexdigest()
+    hash += hashlib.sha256(str(n_sources).encode("utf-8")).hexdigest()
+    hash += hashlib.sha256(sisec2010_tag.encode("utf-8")).hexdigest()
+    hash += hashlib.sha256(str(max_duration).encode("utf-8")).hexdigest()
+    hash += hashlib.sha256(str(conv).encode("utf-8")).hexdigest()
+
+    # because concatenated hash is too long
+    hash = hashlib.sha256(hash.encode("utf-8")).hexdigest()
 
     npz_path = os.path.join(cache_dir, "{}.npz".format(hash))
 
