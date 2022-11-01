@@ -41,6 +41,7 @@ def download_sample_speech_data(
             max_duration=max_duration,
             conv=conv,
         )
+        os.makedirs(cache_dir, exist_ok=True)
         np.savez(npz_path, waveform_src_img=waveform_src_img, sample_rate=sample_rate)
 
     return waveform_src_img, sample_rate
