@@ -7,20 +7,18 @@ import pytest
 import scipy.signal as ss
 
 from ssspy.bss.ilrma import GGDILRMA, TILRMA, GaussILRMA, ILRMAbase
-from ssspy.utils.dataset import download_sample_speech_data
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
 
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
+from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 max_duration = 0.5
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
 n_iter = 3
-sisec2010_root = "./tests/.data/SiSEC2010"
-mird_root = "./tests/.data/MIRD"
 rng = np.random.default_rng(42)
 
 parameters_dof = [1, 100]
@@ -111,8 +109,6 @@ def test_gauss_ilrma_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
@@ -168,8 +164,6 @@ def test_gauss_ilrma_wo_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
@@ -227,8 +221,6 @@ def test_t_ilrma_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
@@ -287,8 +279,6 @@ def test_t_ilrma_wo_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
@@ -347,8 +337,6 @@ def test_ggd_ilrma_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
@@ -407,8 +395,6 @@ def test_ggd_ilrma_wo_latent(
         raise ValueError("n_sources should be less than 5.")
 
     waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root=sisec2010_root,
-        mird_root=mird_root,
         n_sources=n_sources,
         sisec2010_tag=sisec2010_tag,
         max_duration=max_duration,
