@@ -2022,14 +2022,29 @@ class TILRMA(ILRMABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        super()._reset(**kwargs)
+        if flooring_fn is None:
+            flooring_fn = identity
+
+        super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
@@ -3284,14 +3299,29 @@ class GGDILRMA(ILRMABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        super()._reset(**kwargs)
+        if flooring_fn is None:
+            flooring_fn = identity
+
+        super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
