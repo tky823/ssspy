@@ -1620,18 +1620,31 @@ class AuxIVA(AuxIVABase):
         - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
         """
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_once_ip1()
+            self.update_once_ip1(flooring_fn=self.flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_once_ip2()
+            self.update_once_ip2(flooring_fn=self.flooring_fn)
         elif self.spatial_algorithm in ["ISS", "ISS1"]:
-            self.update_once_iss1()
+            self.update_once_iss1(flooring_fn=self.flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
-            self.update_once_iss2()
+            self.update_once_iss2(flooring_fn=self.flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_once_ip1(self) -> None:
+    def update_once_ip1(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
         Compute auxiliary variables:
 
@@ -1662,21 +1675,37 @@ class AuxIVA(AuxIVABase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
         """
+        if flooring_fn is None:
+            flooring_fn = identity
+
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         norm = np.linalg.norm(Y, axis=1)
-        denom = self.flooring_fn(2 * norm)
+        denom = flooring_fn(2 * norm)
         weight = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
         GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_once_ip2(self) -> None:
+    def update_once_ip2(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
@@ -1761,10 +1790,12 @@ class AuxIVA(AuxIVABase):
         for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
-
         X, W = self.input, self.demix_filter
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        if flooring_fn is None:
+            flooring_fn = identity
 
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
@@ -1785,9 +1816,22 @@ class AuxIVA(AuxIVABase):
 
         self.demix_filter = W
 
-    def update_once_iss1(self) -> None:
+    def update_once_iss1(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+    ) -> None:
         r"""Update estimated spectrograms once using \
         iterative source steering [#scheibler2020fast]_.
+
+        Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
         First, update auxiliary variables
 
@@ -1815,16 +1859,32 @@ class AuxIVA(AuxIVABase):
             "Fast and stable blind source separation with rank-1 updates,"
             in *Proc. ICASSP*, 2020, pp. 236-240.
         """
+        if flooring_fn is None:
+            flooring_fn = identity
+
         Y = self.output
         r = np.linalg.norm(Y, axis=1)
-        denom = self.flooring_fn(2 * r)
+        denom = flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom  # (n_sources, n_frames)
 
-        self.output = update_by_iss1(Y, varphi[:, np.newaxis, :], flooring_fn=self.flooring_fn)
+        self.output = update_by_iss1(Y, varphi[:, np.newaxis, :], flooring_fn=flooring_fn)
 
-    def update_once_iss2(self) -> None:
+    def update_once_iss2(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+    ) -> None:
         r"""Update estimated spectrograms once using \
         pairwise iterative source steering [#ikeshita2022iss2]_.
+
+        Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
         First, we compute auxiliary variables:
 
@@ -1895,16 +1955,19 @@ class AuxIVA(AuxIVABase):
             majorization-minimization-based independent vector analysis,"
             *arXiv:2202.00875*, 2022.
         """
+        if flooring_fn is None:
+            flooring_fn = identity
+
         Y = self.output
 
         # Auxiliary variables
         r = np.linalg.norm(Y, axis=1)
-        varphi = self.d_contrast_fn(r) / self.flooring_fn(2 * r)
+        varphi = self.d_contrast_fn(r) / flooring_fn(2 * r)
 
         self.output = update_by_iss2(
             Y,
             varphi[:, np.newaxis, :],
-            flooring_fn=self.flooring_fn,
+            flooring_fn=flooring_fn,
             pair_selector=self.pair_selector,
         )
 
@@ -2989,7 +3052,12 @@ class AuxGaussIVA(AuxIVA):
 
         super().update_once()
 
-    def update_once_ip2(self) -> None:
+    def update_once_ip2(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
@@ -3075,6 +3143,9 @@ class AuxGaussIVA(AuxIVA):
         for :math:`n_{1}\neq n_{2}`.
         """
         n_sources = self.n_sources
+
+        if flooring_fn is None:
+            flooring_fn = identity
 
         X, W = self.input, self.demix_filter
         R = self.variance
