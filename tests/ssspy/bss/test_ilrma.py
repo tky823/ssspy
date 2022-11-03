@@ -135,6 +135,9 @@ def test_gauss_ilrma_latent(
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
 
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
+
     print(ilrma)
 
 
@@ -189,6 +192,9 @@ def test_gauss_ilrma_wo_latent(
 
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
+
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
 
     print(ilrma)
 
@@ -248,6 +254,9 @@ def test_t_ilrma_latent(
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
 
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
+
     print(ilrma)
 
 
@@ -305,6 +314,9 @@ def test_t_ilrma_wo_latent(
 
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
+
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
 
     print(ilrma)
 
@@ -364,6 +376,9 @@ def test_ggd_ilrma_latent(
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
 
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
+
     print(ilrma)
 
 
@@ -421,5 +436,8 @@ def test_ggd_ilrma_wo_latent(
 
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(ilrma.loss[-1]) is float
+
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert ilrma.demix_filter is None
 
     print(ilrma)

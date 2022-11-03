@@ -502,6 +502,9 @@ def test_aux_iva(
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(iva.loss[-1]) is float
 
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert iva.demix_filter is None
+
     print(iva)
 
 
@@ -683,6 +686,9 @@ def test_aux_laplace_iva(
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(iva.loss[-1]) is float
 
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert iva.demix_filter is None
+
     print(iva)
 
 
@@ -723,5 +729,8 @@ def test_aux_gauss_iva(
 
     assert spectrogram_mix.shape == spectrogram_est.shape
     assert type(iva.loss[-1]) is float
+
+    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        assert iva.demix_filter is None
 
     print(iva)
