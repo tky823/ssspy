@@ -83,7 +83,7 @@ class FDICABase(IterativeMethodBase):
             self.contrast_fn = contrast_fn
 
         if flooring_fn is None:
-            self.flooring_fn = lambda x: x
+            self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
 

@@ -10,7 +10,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase
@@ -77,7 +77,7 @@ class ILRMABase(IterativeMethodBase):
         self.partitioning = partitioning
 
         if flooring_fn is None:
-            self.flooring_fn = lambda x: x
+            self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
 
@@ -783,7 +783,7 @@ class GaussILRMA(ILRMABase):
 
     def update_once(self) -> None:
         r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model()
+        self.update_source_model(flooring_fn=self.flooring_fn)
         self.update_spatial_model()
 
         if self.normalization:
@@ -806,14 +806,16 @@ class GaussILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
+    def update_source_model_mm(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables by MM algorithm."""
 
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
     def update_source_model_me(self) -> None:
         r"""Update NMF bases, activations, and latent variables by ME algorithm."""
@@ -871,8 +873,10 @@ class GaussILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_mm(self) -> None:
-        r"""Update NMF bases by MM algorithm.
+    def update_basis_mm(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
+        r"""Update NMF bases.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -895,6 +899,9 @@ class GaussILRMA(ILRMABase):
             ^{\frac{p}{p+2}}t_{ikn}.
         """
         p = self.domain
+
+        if flooring_fn is None:
+            flooring_fn = identity
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -932,11 +939,13 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = ((num / denom) ** p_p2) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_mm(self) -> None:
+    def update_activation_mm(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update NMF activations by MM algorithm.
 
         Update :math:`v_{kjn}` as follows:
@@ -958,6 +967,9 @@ class GaussILRMA(ILRMABase):
             \right]^{\frac{p}{p+2}}v_{kjn}.
         """
         p = self.domain
+
+        if flooring_fn is None:
+            flooring_fn = identity
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -995,7 +1007,7 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
@@ -1187,7 +1199,9 @@ class GaussILRMA(ILRMABase):
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_ip1(self) -> None:
+    def update_spatial_model_ip1(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
@@ -1240,9 +1254,11 @@ class GaussILRMA(ILRMABase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_spatial_model_ip2(self) -> None:
+    def update_spatial_model_ip2(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection \
         following [#nakashima2021faster]_.
 
@@ -1352,10 +1368,12 @@ class GaussILRMA(ILRMABase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            W, U, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
-    def update_spatial_model_iss1(self) -> None:
+    def update_spatial_model_iss1(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
 
         Update :math:`y_{ijn}` as follows:
@@ -1401,9 +1419,11 @@ class GaussILRMA(ILRMABase):
 
         varphi = 1 / R
 
-        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
+        self.output = update_by_iss1(Y, varphi, flooring_fn=flooring_fn)
 
-    def update_spatial_model_iss2(self) -> None:
+    def update_spatial_model_iss2(
+        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+    ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
         Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
@@ -1482,7 +1502,7 @@ class GaussILRMA(ILRMABase):
         varphi = 1 / R
 
         self.output = update_by_iss2(
-            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            Y, varphi, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
     def compute_loss(self) -> float:

@@ -10,7 +10,7 @@ from ..algorithm import (
     projection_back,
 )
 from ..linalg import eigh, prox
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
 from ..transform import whiten
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import (
@@ -81,7 +81,7 @@ class IVABase(IterativeMethodBase):
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         if flooring_fn is None:
-            self.flooring_fn = lambda x: x
+            self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
 
