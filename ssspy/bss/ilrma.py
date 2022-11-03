@@ -1564,6 +1564,18 @@ class TILRMA(ILRMAbase):
 
         return s.format(**self.__dict__)
 
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of ILRMA.
+        """
+        super()._reset(**kwargs)
+
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            self.demix_filter = None
+
     def update_once(self) -> None:
         r"""Update NMF parameters and demixing filters once."""
         self.update_source_model()
@@ -2455,6 +2467,18 @@ class GGDILRMA(ILRMAbase):
         s += ")"
 
         return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of ILRMA.
+        """
+        super()._reset(**kwargs)
+
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            self.demix_filter = None
 
     def update_once(self) -> None:
         r"""Update NMF parameters and demixing filters once."""
