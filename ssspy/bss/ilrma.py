@@ -801,7 +801,7 @@ class GaussILRMA(ILRMABase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
         super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
