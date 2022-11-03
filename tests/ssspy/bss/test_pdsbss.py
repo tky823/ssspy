@@ -1,14 +1,20 @@
-from typing import Optional, Union, Callable, List, Dict, Any
+import os
+import sys
+from typing import Any, Callable, Dict, List, Optional, Union
 
-import pytest
 import numpy as np
+import pytest
 import scipy.signal as ss
 
 from ssspy.bss.pdsbss import PDSBSS
-from ssspy.utils.dataset import download_sample_speech_data
-from tests.dummy.callback import DummyCallback, dummy_function
 
-max_samples = 16000
+ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(ssspy_tests_dir)
+
+from dummy.callback import DummyCallback, dummy_function  # noqa: E402
+from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
+
+max_duration = 0.5
 n_fft = 2048
 hop_length = 1024
 n_bins = n_fft // 2 + 1
@@ -33,13 +39,13 @@ def test_pdsbss(
 ):
     np.random.seed(111)
 
-    waveform_src_img = download_sample_speech_data(
+    waveform_src_img, _ = download_sample_speech_data(
         sisec2010_root="./tests/.data/SiSEC2010",
         mird_root="./tests/.data/MIRD",
         n_sources=n_sources,
         sisec2010_tag="dev1_female3",
-        max_samples=max_samples,
-        conv=True
+        max_duration=max_duration,
+        conv=True,
     )
     waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
 
@@ -55,8 +61,7 @@ def test_pdsbss(
                 The shape is (n_sources, n_bins, n_frames).
 
         Returns:
-            np.ndarray:
-                The shape is (n_sources, n_frames).
+            np.ndarray of the shape is (n_sources, n_frames).
         """
         return 2 * np.linalg.norm(y, axis=1)
 
@@ -75,8 +80,7 @@ def test_pdsbss(
                 Step size. Default: 1.
 
         Returns:
-            np.ndarray:
-                The shape is (n_sources, n_bins, n_frames).
+            np.ndarray of the shape is (n_sources, n_bins, n_frames).
         """
         norm = np.linalg.norm(y, axis=1, keepdims=True)
         return y * np.maximum(1 - step_size / norm, 0)
