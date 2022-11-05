@@ -1,0 +1,275 @@
+import functools
+from typing import Callable, List, Optional, Union
+
+import numpy as np
+
+from ..algorithm import projection_back
+from ._flooring import identity, max_flooring
+from ._psd import to_psd
+from .base import IterativeMethodBase
+
+EPS = 1e-10
+
+
+class IPSDTAbase(IterativeMethodBase):
+    r"""Base class of independent positive semidefinite tensor analysis (IPSDTA).
+
+    Args:
+        n_basis (int):
+            Number of PSDTF bases.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["IPSDTAbase"], None], List[Callable[["IPSDTAbase"], None]]]
+        ] = None,
+        scale_restoration: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        self.normalization: Optional[Union[bool, str]]
+
+        super().__init__(callbacks=callbacks, record_loss=record_loss)
+
+        self.n_basis = n_basis
+
+        if flooring_fn is None:
+            self.flooring_fn = identity
+        else:
+            self.flooring_fn = flooring_fn
+
+        self.input = None
+        self.scale_restoration = scale_restoration
+
+        if reference_id is None and scale_restoration:
+            raise ValueError("Specify 'reference_id' if scale_restoration=True.")
+        else:
+            self.reference_id = reference_id
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        self.rng = rng
+
+    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: ``100``.
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        super().__call__(n_iter=n_iter)
+
+        if self.scale_restoration:
+            self.restore_scale()
+
+        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+
+        return self.output
+
+    def __repr__(self) -> str:
+        s = "IPSDTA("
+        s += "n_basis={n_basis}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of IPSDTA.
+        """
+        assert self.input is not None, "Specify data!"
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+        X = self.input
+
+        n_channels, n_bins, n_frames = X.shape
+        n_sources = n_channels  # n_channels == n_sources
+
+        self.n_sources, self.n_channels = n_sources, n_channels
+        self.n_bins, self.n_frames = n_bins, n_frames
+
+        if not hasattr(self, "demix_filter"):
+            W = np.eye(n_sources, n_channels, dtype=np.complex128)
+            W = np.tile(W, reps=(n_bins, 1, 1))
+        else:
+            if self.demix_filter is None:
+                W = None
+            else:
+                # To avoid overwriting ``demix_filter`` given by keyword arguments.
+                W = self.demix_filter.copy()
+
+        self.demix_filter = W
+        self.output = self.separate(X, demix_filter=W)
+
+        self._init_psdtf(flooring_fn=self.flooring_fn, rng=self.rng)
+
+    def _init_psdtf(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        r"""Initialize PSDTF.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        n_basis = self.n_basis
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+
+        if flooring_fn is None:
+            flooring_fn = identity
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        if not hasattr(self, "basis"):
+            # should be positive semi-definite
+            U = 0.5 * rng.random(n_sources, n_basis, n_bins, n_bins) + 0.5j * rng.random(
+                n_sources, n_basis, n_bins, n_bins
+            )
+            U = U.swapaxes(-2, -1).conj() @ U
+            U = to_psd(U, axis1=3, axis2=4)
+            self.basis = U.transpose(0, 2, 3, 1)  # (n_sources, n_bins, n_bins, n_basis)
+            U = flooring_fn(U)
+        else:
+            # To avoid overwriting.
+            U = self.basis.copy()
+
+        if not hasattr(self, "activation"):
+            V = rng.random((n_sources, n_basis, n_frames))
+            V = flooring_fn(V)
+        else:
+            # To avoid overwriting.
+            V = self.activation.copy()
+
+        self.basis, self.activation = U, V
+
+        if self.normalization:
+            self.normalize()
+
+    def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
+        r"""Separate ``input`` using ``demixing_filter``.
+
+        .. math::
+            \boldsymbol{y}_{ij}
+            = \boldsymbol{W}_{i}\boldsymbol{x}_{ij}
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            demix_filter (numpy.ndarray):
+                The demixing filters to separate ``input``.
+                The shape is (n_bins, n_sources, n_channels).
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        X, W = input, demix_filter
+        Y = W @ X.transpose(1, 0, 2)
+        output = Y.transpose(1, 0, 2)
+
+        return output
+
+    def normalize(self) -> None:
+        r"""Normalize PSDTF parameters."""
+        normalization = self.normalization
+        U, V = self.basis, self.activation
+
+        assert normalization, "Set normalization."
+
+        trace = np.trace(U, axis1=1, axis2=2).real  # (n_sources, n_basis)
+        U = U / trace[:, np.newaxis, np.newaxis, :]
+        V = V * trace[:, :, np.newaxis]
+
+        self.basis, self.activation = U, V
+
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms."""
+        assert self.scale_restoration, "Set self.scale_restoration=True."
+
+        X, W = self.input, self.demix_filter
+        W_scaled = projection_back(W, reference_id=self.reference_id)
+        Y_scaled = self.separate(X, demix_filter=W_scaled)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
