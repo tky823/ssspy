@@ -189,10 +189,9 @@ class IPSDTAbase(IterativeMethodBase):
 
         if not hasattr(self, "basis"):
             # should be positive semi-definite
-            basis_shape = (n_sources, n_basis, n_bins, n_bins)
-            U = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
-            U = U.swapaxes(-2, -1).conj() @ U
-            U = to_psd(U, axis1=2, axis2=3)
+            eye = np.eye(n_bins, dtype=np.complex128)
+            rand = rng.random((n_sources, n_basis, n_bins))
+            U = rand[..., np.newaxis] * eye
         else:
             # To avoid overwriting.
             U = self.basis.copy()
@@ -499,16 +498,22 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
         if not hasattr(self, "basis"):
             # should be positive semi-definite
-            basis_shape = (n_sources, n_basis, n_blocks - n_remains, n_neighbors, n_neighbors)
-            U = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
-            U = U.swapaxes(-2, -1).conj() @ U
-            U = to_psd(U, axis1=-2, axis2=-1)
+            eye = np.eye(n_neighbors, dtype=np.complex128)
+            rand = rng.random((n_sources, n_basis, n_blocks - n_remains, n_neighbors))
+            U = rand[..., np.newaxis] * eye
 
             if n_remains > 0:
-                basis_shape = (n_sources, n_basis, n_remains, n_neighbors + 1, n_neighbors + 1)
-                U_high = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
-                U_high = U_high.swapaxes(-2, -1).conj() @ U_high
-                U_high = to_psd(U_high, axis1=-2, axis2=-1)
+                eye = np.eye(n_neighbors + 1, dtype=np.complex128)
+                rand = rng.random(
+                    (
+                        n_sources,
+                        n_basis,
+                        n_remains,
+                        n_neighbors + 1,
+                        n_neighbors + 1,
+                    )
+                )
+                U_high = rand[..., np.newaxis] * eye
 
                 U = U, U_high
         else:
