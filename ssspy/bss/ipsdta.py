@@ -278,6 +278,87 @@ class IPSDTAbase(IterativeMethodBase):
 
         return R
 
+    def reconstruct_block_diagonal_psdtf(
+        self, basis: np.ndarray, activation: np.ndarray, axis1: int = -2, axis2: int = -1
+    ) -> np.ndarray:
+        r"""Reconstruct block-diagonal PSDTF.
+
+        Args:
+            basis (numpy.ndarray):
+                Block-diagonal basis matrix.
+                The shape is (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                if ``axis1=-1`` and ``axis2=-2``.
+                Otherwise, (n_sources, n_blocks, n_neighbors, n_neighbors, n_basis).
+            activation (numpy.ndarray):
+                Activation matrix.
+                The shape is (n_sources, n_basis, n_frames).
+            axis1 (int):
+                First axis of covariance matrix. Default: ``-2``.
+            axis2 (int):
+                Second axis of covariance matrix. Default: ``-1``.
+
+        Returns:
+            numpy.ndarray of reconstructed PSDTF.
+            The shape is (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+        """
+
+        def _reconstruct(
+            basis: np.ndarray, activation: np.ndarray, axis1: int = -2, axis2: int = -1
+        ) -> np.ndarray:
+            r"""Reconstruct block-diagonal PSDTF.
+
+            Args:
+                basis (numpy.ndarray):
+                    Block-diagonal basis matrix.
+                    The shape is (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                    if ``axis1=-1`` and ``axis2=-2``.
+                    Otherwise, (n_sources, n_blocks, n_neighbors, n_neighbors, n_basis).
+                activation (numpy.ndarray):
+                    Activation matrix.
+                    The shape is (n_sources, n_basis, n_frames).
+                axis1 (int):
+                    First axis of covariance matrix. Default: ``-2``.
+                axis2 (int):
+                    Second axis of covariance matrix. Default: ``-1``.
+
+            Returns:
+                numpy.ndarray of reconstructed PSDTF.
+                The shape is (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+            """
+            U, V = basis, activation
+            n_dims = U.ndim
+
+            axis1 = n_dims + axis1 if axis1 < 0 else axis1
+            axis2 = n_dims + axis2 if axis2 < 0 else axis2
+
+            assert (axis1 == 2 and axis2 == 3) or (axis1 == 3 and axis2 == 4)
+
+            if axis1 == 2 and axis2 == 3:
+                U = U.transpose(0, 4, 1, 2, 3)
+
+            R = np.sum(
+                U[:, :, np.newaxis, :, :, :] * V[:, :, :, np.newaxis, np.newaxis, np.newaxis],
+                axis=1,
+            )
+            R = to_psd(R, axis1=3, axis2=4)
+
+            return R
+
+        n_remains = self.n_remains
+
+        if n_remains > 0:
+            U_low, U_high = basis
+            V = activation
+            R_low = _reconstruct(U_low, V, axis1=axis1, axis2=axis2)
+            R_high = _reconstruct(U_high, V, axis1=-axis1, axis2=axis2)
+            R = R_low, R_high
+        else:
+            U = basis
+            V = activation
+            R = _reconstruct(U, V, axis1=axis1, axis2=axis2)
+
+        return R
+
     def update_once(self) -> None:
         r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
