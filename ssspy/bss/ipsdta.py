@@ -186,13 +186,10 @@ class IPSDTAbase(IterativeMethodBase):
 
         if not hasattr(self, "basis"):
             # should be positive semi-definite
-            U = 0.5 * rng.random(n_sources, n_basis, n_bins, n_bins) + 0.5j * rng.random(
-                n_sources, n_basis, n_bins, n_bins
-            )
+            basis_shape = (n_sources, n_basis, n_bins, n_bins)
+            U = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
             U = U.swapaxes(-2, -1).conj() @ U
-            U = to_psd(U, axis1=3, axis2=4)
-            self.basis = U.transpose(0, 2, 3, 1)  # (n_sources, n_bins, n_bins, n_basis)
-            U = flooring_fn(U)
+            U = to_psd(U, axis1=2, axis2=3)
         else:
             # To avoid overwriting.
             U = self.basis.copy()
@@ -368,8 +365,8 @@ class IPSDTAbase(IterativeMethodBase):
 
         assert normalization, "Set normalization."
 
-        trace = np.trace(U, axis1=1, axis2=2).real  # (n_sources, n_basis)
-        U = U / trace[:, np.newaxis, np.newaxis, :]
+        trace = np.trace(U, axis1=-2, axis2=-1).real
+        U = U / trace[:, :, np.newaxis, np.newaxis]
         V = V * trace[:, :, np.newaxis]
 
         self.basis, self.activation = U, V
