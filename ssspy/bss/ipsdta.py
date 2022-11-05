@@ -291,6 +291,28 @@ class IPSDTAbase(IterativeMethodBase):
 
         self.basis, self.activation = U, V
 
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        Returns:
+            Computed loss.
+        """
+        raise NotImplementedError("Implement 'compute_loss' method.")
+
+    def compute_logdet(self, demix_filter: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant of demixing filter
+
+        Args:
+            demix_filter (numpy.ndarray):
+                Demixing filters with shape of (n_bins, n_sources, n_channels).
+
+        Returns:
+            numpy.ndarray of computed log-determinant values.
+        """
+        _, logdet = np.linalg.slogdet(demix_filter)  # (n_bins,)
+
+        return logdet
+
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
