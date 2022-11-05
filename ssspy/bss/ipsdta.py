@@ -269,10 +269,8 @@ class IPSDTAbase(IterativeMethodBase):
         assert (axis1 == 1 and axis2 == 2) or (axis1 == 2 and axis2 == 3)
 
         if axis1 == 1 and axis2 == 2:
-            # (n_sources, n_bins, n_bins, n_basis) -> (n_sources, n_basis, n_bins, n_bins)
             U = U.transpose(0, 3, 1, 2)
 
-        # (n_sources, n_basis, n_bins, n_bins) -> (n_sources, n_frames, n_bins, n_bins)
         R = np.sum(U[:, :, np.newaxis, :, :] * V[:, :, :, np.newaxis, np.newaxis], axis=1)
         R = to_psd(R, axis1=2, axis2=3)
 
