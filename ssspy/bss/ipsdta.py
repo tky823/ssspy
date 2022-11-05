@@ -234,6 +234,54 @@ class IPSDTAbase(IterativeMethodBase):
 
         return output
 
+    def reconstruct_psdtf(
+        self,
+        basis: np.ndarray,
+        activation: np.ndarray,
+        axis1: int = -2,
+        axis2: int = -1,
+    ) -> np.ndarray:
+        r"""Reconstruct PSDTF.
+
+        Args:
+            basis (numpy.ndarray):
+                Basis matrix.
+                The shape is (n_sources, n_basis, n_bins, n_bins) if ``axis1=-1`` and ``axis2=-2``.
+                Otherwise, (n_sources, n_bins, n_bins, n_basis).
+            activation (numpy.ndarray):
+                Activation matrix.
+                The shape is (n_sources, n_basis, n_frames).
+            axis1 (int):
+                First axis of covariance matrix. Default: ``-2``.
+            axis2 (int):
+                Second axis of covariance matrix. Default: ``-1``.
+
+        Returns:
+            numpy.ndarray of reconstructed PSDTF.
+            The shape is (n_sources, n_frames, n_bins, n_bins).
+        """
+        U, V = basis, activation
+        n_dims = U.ndim
+
+        axis1 = n_dims + axis1 if axis1 < 0 else axis1
+        axis2 = n_dims + axis2 if axis2 < 0 else axis2
+
+        assert (axis1 == 1 and axis2 == 2) or (axis1 == 2 and axis2 == 3)
+
+        if axis1 == 1 and axis2 == 2:
+            # (n_sources, n_bins, n_bins, n_basis) -> (n_sources, n_basis, n_bins, n_bins)
+            U = U.transpose(0, 3, 1, 2)
+
+        # (n_sources, n_basis, n_bins, n_bins) -> (n_sources, n_frames, n_bins, n_bins)
+        R = np.sum(U[:, :, np.newaxis, :, :] * V[:, :, :, np.newaxis, np.newaxis], axis=1)
+        R = to_psd(R, axis1=2, axis2=3)
+
+        return R
+
+    def update_once(self) -> None:
+        r"""Update demixing filters once."""
+        raise NotImplementedError("Implement 'update_once' method.")
+
     def normalize(self) -> None:
         r"""Normalize PSDTF parameters."""
         normalization = self.normalization
