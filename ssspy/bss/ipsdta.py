@@ -8,6 +8,8 @@ from ._flooring import identity, max_flooring
 from ._psd import to_psd
 from .base import IterativeMethodBase
 
+spatial_algorithms = ["fixed-point", "VCD"]
+source_algorithms = ["EM", "MM"]
 EPS = 1e-10
 
 
@@ -639,3 +641,79 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         V = V * trace[:, :, np.newaxis]
 
         self.basis, self.activation = U, V
+
+
+class GaussIPDSTA(BlockDecompositionIPSDTAbase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_blocks: int,
+        source_algorithm: str = "MM",
+        spatial_algorithm: str = "VCD",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["GaussIPDSTA"], None],
+                List[Callable[["GaussIPDSTA"], None]],
+            ]
+        ] = None,
+        scale_restoration: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_blocks,
+            flooring_fn,
+            callbacks,
+            scale_restoration,
+            record_loss,
+            reference_id,
+            rng,
+        )
+
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithms)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
+
+        self.source_algorithm = source_algorithm
+        self.spatial_algorithm = spatial_algorithm
+
+    def __repr__(self) -> str:
+        s = "GaussIPSDTA("
+        s += "n_basis={n_basis}"
+        s += ", n_blocks={n_blocks}"
+        s += ", source_algorithm={source_algorithm}"
+        s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", normalization={normalization}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of IPSDTA.
+        """
+        super()._reset(**kwargs)
+
+        if self.spatial_algorithm == "fixed-point":
+            if not hasattr(self, "fixed_point"):
+                n_sources = self.n_sources
+                n_bins = self.n_bins
+
+                self.fixed_point = np.ones((n_sources, n_bins), dtype=np.complex128)
+            else:
+                self.fixed_point = self.fixed_point.copy()
