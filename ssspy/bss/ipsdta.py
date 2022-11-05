@@ -112,6 +112,7 @@ class IPSDTAbase(IterativeMethodBase):
     def __repr__(self) -> str:
         s = "IPSDTA("
         s += "n_basis={n_basis}"
+        s += ", normalization={normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -273,14 +274,247 @@ class IPSDTAbase(IterativeMethodBase):
 
         return R
 
-    def reconstruct_block_diagonal_psdtf(
+    def update_once(self) -> None:
+        r"""Update demixing filters once."""
+        raise NotImplementedError("Implement 'update_once' method.")
+
+    def normalize(self) -> None:
+        r"""Normalize PSDTF parameters."""
+        normalization = self.normalization
+        U, V = self.basis, self.activation
+
+        assert normalization, "Set normalization."
+
+        trace = np.trace(U, axis1=-2, axis2=-1).real
+        U = U / trace[:, :, np.newaxis, np.newaxis]
+        V = V * trace[:, :, np.newaxis]
+
+        self.basis, self.activation = U, V
+
+    def restore_scale(self) -> None:
+        r"""Restore scale ambiguity.
+
+        If ``self.scale_restoration=projection_back``, we use projection back technique.
+        """
+        scale_restoration = self.scale_restoration
+
+        assert scale_restoration, "Set self.scale_restoration=True."
+
+        if type(scale_restoration) is bool:
+            scale_restoration = "projection_back"
+
+        if scale_restoration == "projection_back":
+            self.apply_projection_back()
+        else:
+            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
+
+    def apply_projection_back(self) -> None:
+        r"""Apply projection back technique to estimated spectrograms."""
+        assert self.scale_restoration, "Set self.scale_restoration=True."
+
+        X, W = self.input, self.demix_filter
+        W_scaled = projection_back(W, reference_id=self.reference_id)
+        Y_scaled = self.separate(X, demix_filter=W_scaled)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
+
+
+class BlockDecompositionIPSDTAbase(IPSDTAbase):
+    r"""Base class of independent positive semidefinite tensor analysis (IPSDTA) \
+    using block decomposition of bases.
+
+    Args:
+        n_basis (int):
+            Number of PSDTF bases.
+        n_blocks (int):
+            Number of sub-blocks.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        n_blocks: int,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["BlockDecompositionIPSDTAbase"], None],
+                List[Callable[["BlockDecompositionIPSDTAbase"], None]],
+            ]
+        ] = None,
+        scale_restoration: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis=n_basis,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            scale_restoration=scale_restoration,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+        self.n_blocks = n_blocks
+
+    def __repr__(self) -> str:
+        s = "IPSDTA("
+        s += "n_basis={n_basis}"
+        s += ", n_blocks={n_blocks}"
+        s += ", normalization={normalization}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        We also set variance of Gaussian distribution.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of IPSDTA.
+        """
+        assert self.input is not None, "Specify data!"
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+        X = self.input
+        n_blocks = self.n_blocks
+
+        n_channels, n_bins, n_frames = X.shape
+        n_sources = n_channels  # n_channels == n_sources
+
+        self.n_sources, self.n_channels = n_sources, n_channels
+        self.n_bins, self.n_frames = n_bins, n_frames
+        self.n_remains = n_bins % n_blocks
+
+        if not hasattr(self, "demix_filter"):
+            W = np.eye(n_sources, n_channels, dtype=np.complex128)
+            W = np.tile(W, reps=(n_bins, 1, 1))
+        else:
+            if self.demix_filter is None:
+                W = None
+            else:
+                # To avoid overwriting ``demix_filter`` given by keyword arguments.
+                W = self.demix_filter.copy()
+
+        self.demix_filter = W
+        self.output = self.separate(X, demix_filter=W)
+
+        self._init_block_decomposition_psdtf(flooring_fn=self.flooring_fn, rng=self.rng)
+
+    def _init_block_decomposition_psdtf(
+        self,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        r"""Initialize PSDTF using block decomposition of bases.
+
+        Args:
+            flooring_fn (callable, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        n_basis = self.n_basis
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+
+        n_neighbors = n_bins // n_blocks
+
+        if flooring_fn is None:
+            flooring_fn = identity
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        if not hasattr(self, "basis"):
+            # should be positive semi-definite
+            basis_shape = (n_sources, n_basis, n_blocks - n_remains, n_neighbors, n_neighbors)
+            U = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
+            U = U.swapaxes(-2, -1).conj() @ U
+            U = to_psd(U, axis1=-2, axis2=-1)
+
+            if n_remains > 0:
+                basis_shape = (n_sources, n_basis, n_remains, n_neighbors + 1, n_neighbors + 1)
+                U_high = 0.5 * rng.random(basis_shape) + 0.5j * rng.random(basis_shape)
+                U_high = U_high.swapaxes(-2, -1).conj() @ U_high
+                U_high = to_psd(U_high, axis1=-2, axis2=-1)
+
+                U = U, U_high
+        else:
+            # To avoid overwriting.
+            if n_remains > 0:
+                U_low, U_high = self.basis
+                U = U_low.copy(), U_high.copy()
+            else:
+                U = self.basis.copy()
+
+        if not hasattr(self, "activation"):
+            V = rng.random((n_sources, n_basis, n_frames))
+            V = flooring_fn(V)
+        else:
+            # To avoid overwriting.
+            V = self.activation.copy()
+
+        self.basis, self.activation = U, V
+
+        if self.normalization:
+            self.normalize_block_decomposition()
+
+    def reconstruct_block_decomposition_psdtf(
         self, basis: np.ndarray, activation: np.ndarray, axis1: int = -2, axis2: int = -1
     ) -> np.ndarray:
-        r"""Reconstruct block-diagonal PSDTF.
+        r"""Reconstruct PSDTF using block decomposition of bases.
 
         Args:
             basis (numpy.ndarray):
-                Block-diagonal basis matrix.
+                Basis matrix.
                 The shape is (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
                 if ``axis1=-1`` and ``axis2=-2``.
                 Otherwise, (n_sources, n_blocks, n_neighbors, n_neighbors, n_basis).
@@ -300,11 +534,11 @@ class IPSDTAbase(IterativeMethodBase):
         def _reconstruct(
             basis: np.ndarray, activation: np.ndarray, axis1: int = -2, axis2: int = -1
         ) -> np.ndarray:
-            r"""Reconstruct block-diagonal PSDTF.
+            r"""Reconstruct PSDTF using block decomposition of bases.
 
             Args:
                 basis (numpy.ndarray):
-                    Block-diagonal basis matrix.
+                    Basis matrix.
                     The shape is (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
                     if ``axis1=-1`` and ``axis2=-2``.
                     Otherwise, (n_sources, n_blocks, n_neighbors, n_neighbors, n_basis).
@@ -354,46 +588,33 @@ class IPSDTAbase(IterativeMethodBase):
 
         return R
 
-    def update_once(self) -> None:
-        r"""Update demixing filters once."""
-        raise NotImplementedError("Implement 'update_once' method.")
+    def normalize_block_decomposition(self, axis1: int = -2, axis2: int = -1) -> None:
+        r"""Normalize PSDTF parameters using block decomposition of bases.
 
-    def normalize(self) -> None:
-        r"""Normalize PSDTF parameters."""
+        Args:
+            axis1 (int):
+                First axis of covariance matrix. Default: ``-2``.
+            axis2 (int):
+                Second axis of covariance matrix. Default: ``-1``.
+        """
         normalization = self.normalization
+        n_remains = self.n_remains
         U, V = self.basis, self.activation
 
         assert normalization, "Set normalization."
 
-        trace = np.trace(U, axis1=-2, axis2=-1).real
-        U = U / trace[:, :, np.newaxis, np.newaxis]
+        if n_remains > 0:
+            U_low, U_high = U
+            trace_low = np.trace(U_low, axis1=axis1, axis2=axis2).real
+            trace_high = np.trace(U_high, axis1=axis1, axis2=axis2).real
+            trace = np.sum(trace_low, axis=-1) + np.sum(trace_high, axis=-1)
+            U = U / trace[:, :, :, np.newaxis, np.newaxis]
+        else:
+            # (n_sources, n_basis, n_blocks)
+            trace = np.trace(U, axis1=axis1, axis2=axis2).real
+            trace = np.sum(trace, axis=-1)
+            U = U / trace[:, :, :, np.newaxis, np.newaxis]
+
         V = V * trace[:, :, np.newaxis]
 
         self.basis, self.activation = U, V
-
-    def restore_scale(self) -> None:
-        r"""Restore scale ambiguity.
-
-        If ``self.scale_restoration=projection_back``, we use projection back technique.
-        """
-        scale_restoration = self.scale_restoration
-
-        assert scale_restoration, "Set self.scale_restoration=True."
-
-        if type(scale_restoration) is bool:
-            scale_restoration = "projection_back"
-
-        if scale_restoration == "projection_back":
-            self.apply_projection_back()
-        else:
-            raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
-
-    def apply_projection_back(self) -> None:
-        r"""Apply projection back technique to estimated spectrograms."""
-        assert self.scale_restoration, "Set self.scale_restoration=True."
-
-        X, W = self.input, self.demix_filter
-        W_scaled = projection_back(W, reference_id=self.reference_id)
-        Y_scaled = self.separate(X, demix_filter=W_scaled)
-
-        self.output, self.demix_filter = Y_scaled, W_scaled
