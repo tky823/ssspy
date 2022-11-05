@@ -610,10 +610,9 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             trace = np.sum(trace_low, axis=-1) + np.sum(trace_high, axis=-1)
             U = U / trace[:, :, :, np.newaxis, np.newaxis]
         else:
-            # (n_sources, n_basis, n_blocks)
             trace = np.trace(U, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace, axis=-1)
-            U = U / trace[:, :, :, np.newaxis, np.newaxis]
+            U = U / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
 
         V = V * trace[:, :, np.newaxis]
 
