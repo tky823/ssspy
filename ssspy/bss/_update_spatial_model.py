@@ -389,3 +389,95 @@ def update_by_ip2_one_pair(
     W_mn = W_mn_conj.transpose(0, 2, 1).conj()
 
     return W_mn
+
+
+def update_by_block_decomposition_vcd(
+    demix_filter: np.ndarray,
+    weighted_covariance: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+    overwrite: bool = True,
+) -> np.ndarray:
+    r"""
+    Args:
+        demix_filter (numpy.ndarray):
+            Demixing filters to be updated.
+            The shape is (n_blocks, n_neighbors, n_sources, n_channels).
+        weighted_covariance (numpy.ndarray):
+            Weighted covariance matrix.
+            The shape is (n_blocks, n_neighbors, n_neighbors, n_sources, n_channels, n_channels).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        overwrite (bool):
+            Overwrite ``demix_filter`` if ``overwrite=True``.
+            Default: ``True``.
+    """
+    if flooring_fn is None:
+        flooring_fn = identity
+
+    if overwrite:
+        W = demix_filter
+    else:
+        W = demix_filter.copy()
+
+    na = np.newaxis
+
+    n_blocks, n_neighbors, n_sources, _ = W.shape
+
+    RXX = weighted_covariance
+    U = np.diagonal(RXX, axis1=1, axis2=2)
+    U = np.real(U)
+    U = np.maximum(U, 0)
+
+    E_i = np.eye(n_neighbors, n_neighbors)
+    E_n = np.eye(n_sources, n_sources)
+    E_n = np.tile(E_n, reps=(n_blocks, 1, 1))
+
+    for neighbor_idx in range(n_neighbors):
+        e_i = E_i[neighbor_idx]
+
+        U_i = U[:, :, :, :, neighbor_idx]
+        RXX_i = RXX[:, :, neighbor_idx, :, :, :]
+
+        for source_idx in range(n_sources):
+            e_n = E_n[:, source_idx, :]
+            W_i = W[:, neighbor_idx, :, :]
+            w_in = W[:, :, source_idx, :].conj()
+            U_in = U_i[:, source_idx, :, :]
+
+            gamma_in = RXX_i[:, :, source_idx, :, :] @ w_in[:, :, :, na]
+            gamma_in = np.sum(gamma_in[..., 0] * (1 - e_i[:, na]), axis=1)
+
+            WU_in = W_i @ U_in
+
+            eta_in = np.linalg.solve(WU_in, e_n)
+            eta_hat_in = np.linalg.solve(U_in, gamma_in)
+
+            xi_in = eta_in[:, na, :].conj() @ U_in @ eta_in[:, :, na]
+            xi_hat_in = eta_in[:, na, :].conj() @ U_in @ eta_hat_in[:, :, na]
+
+            xi_in = np.real(xi_in[..., 0])
+            xi_in = np.maximum(xi_in, 0)
+            xi_hat_in = xi_hat_in[..., 0]
+
+            abs_xi_hat_in = np.abs(xi_hat_in)
+            singular_condition = flooring_fn(abs_xi_hat_in) != abs_xi_hat_in  # TODO: generalization
+
+            # for numerical stability, but these will be ignored by multiplying 0.
+            xi_hat_in[singular_condition] = flooring_fn(0)
+
+            coeff = (xi_hat_in / (2 * xi_in)) * (
+                1 - np.sqrt(1 + 4 * xi_in / (np.abs(xi_hat_in) ** 2))
+            )
+            coeff_singular = 1 / np.sqrt(xi_in)
+            coeff[singular_condition] = coeff_singular[singular_condition]
+
+            w_in = coeff * eta_in - eta_hat_in
+            W[:, neighbor_idx, source_idx, :] = w_in.conj()
+
+    return W
