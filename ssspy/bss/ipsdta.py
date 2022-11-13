@@ -619,7 +619,6 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             axis2 (int):
                 Second axis of covariance matrix. Default: ``-1``.
         """
-        return
         normalization = self.normalization
         n_remains = self.n_remains
         U, V = self.basis, self.activation
@@ -631,7 +630,9 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             trace_low = np.trace(U_low, axis1=axis1, axis2=axis2).real
             trace_high = np.trace(U_high, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace_low, axis=-1) + np.sum(trace_high, axis=-1)
-            U = U / trace[:, :, :, np.newaxis, np.newaxis]
+            U_low = U_low / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            U_high = U_high / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            U = U_low, U_high
         else:
             trace = np.trace(U, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace, axis=-1)
