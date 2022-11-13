@@ -595,9 +595,9 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
             return R
 
-        n_remains = self.n_remains
+        if type(basis) is tuple:
+            assert self.n_remains > 0, "n_remains is expected to be positive."
 
-        if n_remains > 0:
             U_low, U_high = basis
             V = activation
             R_low = _reconstruct(U_low, V, axis1=axis1, axis2=axis2)
