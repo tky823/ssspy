@@ -807,6 +807,8 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
 
             W = update_by_block_decomposition_vcd(W, U, flooring_fn=self.flooring_fn)
 
+            W = W.reshape(n_blocks * n_neighbors, n_sources, n_channels)
+
         self.demix_filter = W
 
     def compute_loss(self) -> float:
