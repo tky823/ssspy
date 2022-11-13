@@ -6,6 +6,7 @@ import numpy as np
 from ..algorithm import projection_back
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
+from ._update_spatial_model import update_by_block_decomposition_vcd
 from .base import IterativeMethodBase
 
 spatial_algorithms = ["fixed-point", "VCD"]
@@ -504,15 +505,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
             if n_remains > 0:
                 eye = np.eye(n_neighbors + 1, dtype=np.complex128)
-                rand = rng.random(
-                    (
-                        n_sources,
-                        n_basis,
-                        n_remains,
-                        n_neighbors + 1,
-                        n_neighbors + 1,
-                    )
-                )
+                rand = rng.random((n_sources, n_basis, n_remains, n_neighbors + 1))
                 U_high = rand[..., np.newaxis] * eye
 
                 U = U, U_high
@@ -608,7 +601,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             U_low, U_high = basis
             V = activation
             R_low = _reconstruct(U_low, V, axis1=axis1, axis2=axis2)
-            R_high = _reconstruct(U_high, V, axis1=-axis1, axis2=axis2)
+            R_high = _reconstruct(U_high, V, axis1=axis1, axis2=axis2)
             R = R_low, R_high
         else:
             U = basis
@@ -626,6 +619,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             axis2 (int):
                 Second axis of covariance matrix. Default: ``-1``.
         """
+        return
         normalization = self.normalization
         n_remains = self.n_remains
         U, V = self.basis, self.activation
@@ -664,6 +658,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
                 List[Callable[["GaussIPDSTA"], None]],
             ]
         ] = None,
+        normalization: Optional[Union[bool, str]] = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -685,6 +680,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
 
         self.source_algorithm = source_algorithm
         self.spatial_algorithm = spatial_algorithm
+        self.normalization = normalization
 
     def __repr__(self) -> str:
         s = "GaussIPSDTA("
@@ -722,3 +718,171 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
                 self.fixed_point = np.ones((n_sources, n_bins), dtype=np.complex128)
             else:
                 self.fixed_point = self.fixed_point.copy()
+
+            raise NotImplementedError("IPSDTA with fixed-point iteration is not supported.")
+
+    def update_once(self) -> None:
+        self.update_source_model()
+        self.update_spatial_model()
+
+    def update_source_model(self) -> None:
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+    def update_source_model_mm(self):
+        raise NotImplementedError("Implement 'update_source_model_mm'.")
+
+    def update_spatial_model(self) -> None:
+        if self.spatial_algorithm == "VCD":
+            self.update_spatial_model_vcd()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+    def update_spatial_model_vcd(self) -> None:
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        na = np.newaxis
+
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        U, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(U, V)
+
+        if self.n_remains > 0:
+            X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+            R_low_inverse = np.linalg.inv(R_low)
+            R_high_inverse = np.linalg.inv(R_high)
+
+            X_low = X_low.reshape(n_channels, n_blocks - n_remains, n_neighbors, n_frames)
+            X_high = X_high.reshape(n_channels, n_remains, n_neighbors + 1, n_frames)
+            W_low = W_low.reshape(n_blocks - n_remains, n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+            R_low_inverse = R_low_inverse.transpose(2, 3, 4, 0, 1)
+            R_high_inverse = R_high_inverse.transpose(2, 3, 4, 0, 1)
+
+            # lower frequency bins
+            XX_low = X_low[na, :, :, :, :] * X_low[:, na, :, :, :].conj()
+
+            U_low = np.mean(
+                R_low_inverse[na, na, :, :, :, :, :] * XX_low[:, :, :, na, :, na, :], axis=-1
+            )
+            U_low = U_low.transpose(2, 3, 4, 5, 0, 1)
+
+            W_low = update_by_block_decomposition_vcd(W_low, U_low)
+
+            # higher frequency bins
+            XX_high = X_high[na, :, :, :, :] * X_high[:, na, :, :, :].conj()
+
+            U_high = np.mean(
+                R_high_inverse[na, na, :, :, :, :, :] * XX_high[:, :, :, na, :, na, :], axis=-1
+            )
+            U_high = U_high.transpose(2, 3, 4, 5, 0, 1)
+
+            W_high = update_by_block_decomposition_vcd(W_high, U_high)
+
+            W_low = W_low.reshape((n_blocks - n_remains) * n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains * (n_neighbors + 1), n_sources, n_channels)
+
+            W = np.concatenate([W_low, W_high], axis=0)
+        else:
+            R_inverse = np.linalg.inv(R)
+
+            X = X.reshape(n_channels, n_blocks, n_neighbors, n_frames)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+            R_inverse = R_inverse.transpose(2, 3, 4, 0, 1)
+
+            XX = X[na, :, :, :, :] * X[:, na, :, :, :].conj()
+
+            U = np.mean(R_inverse[na, na, :, :, :, :, :] * XX[:, :, :, na, :, na, :], axis=-1)
+            U = U.transpose(2, 3, 4, 5, 0, 1)
+
+            W = update_by_block_decomposition_vcd(W)
+
+        self.demix_filter = W
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        Returns:
+            Computed loss.
+        """
+
+        def _compute_block_decomposition_loss(
+            separated: np.ndarray, demix_filter: np.ndarray, covariance: np.ndarray
+        ) -> float:
+            r"""
+            Args:
+                separated (np.ndarray):
+                    Separated signal with shape of (n_sources, n_frames, n_blocks, n_neighbors).
+                demix_filter (np.ndarray):
+                    (n_blocks, n_neighbors, n_sources, n_channels).
+                covariance:
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors)
+            """
+            Y, W = separated, demix_filter
+            R = covariance
+
+            n_sources, n_frames, n_blocks, n_neighbors = Y.shape
+
+            Y = Y.reshape(n_sources, n_frames, n_blocks, n_neighbors, 1)
+            R_inverse = np.linalg.inv(R)
+            Y_Hermite = np.swapaxes(Y, 3, 4).conj()
+            YRY = np.sum(Y_Hermite @ R_inverse @ Y, axis=(0, 2, 3, 4))
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            _, logdetR = np.linalg.slogdet(R)
+            logdetR = logdetR.sum(axis=(0, 2))
+            logdetW = self.compute_logdet(W)
+
+            loss = np.mean(YRY + logdetR, axis=0) - 2 * logdetW.sum(axis=(0, 1))
+            loss = loss.item()
+
+            return loss
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+        Y = Y.transpose(0, 2, 1)
+        U, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(U, V)
+
+        if n_remains > 0:
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=2)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+
+            Y_low = Y_low.reshape(n_sources, n_frames, (n_blocks - n_remains), n_neighbors)
+            Y_high = Y_high.reshape(n_sources, n_frames, n_remains, n_neighbors + 1)
+            W_low = W_low.reshape((n_blocks - n_remains), n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+
+            loss_low = _compute_block_decomposition_loss(
+                Y_low, demix_filter=W_low, covariance=R_low
+            )
+            loss_high = _compute_block_decomposition_loss(
+                Y_high, demix_filter=W_high, covariance=R_high
+            )
+
+            loss = loss_low + loss_high
+        else:
+            Y = Y.reshape(n_sources, n_frames, n_blocks, n_neighbors)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+
+            loss = _compute_block_decomposition_loss(Y, demix_filter=W, covariance=R)
+
+        return loss
