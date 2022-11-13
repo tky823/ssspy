@@ -805,7 +805,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
             U = np.mean(R_inverse[na, na, :, :, :, :, :] * XX[:, :, :, na, :, na, :], axis=-1)
             U = U.transpose(2, 3, 4, 5, 0, 1)
 
-            W = update_by_block_decomposition_vcd(W)
+            W = update_by_block_decomposition_vcd(W, U)
 
         self.demix_filter = W
 
