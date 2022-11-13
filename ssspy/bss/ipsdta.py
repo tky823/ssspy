@@ -777,7 +777,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
             )
             U_low = U_low.transpose(2, 3, 4, 5, 0, 1)
 
-            W_low = update_by_block_decomposition_vcd(W_low, U_low)
+            W_low = update_by_block_decomposition_vcd(W_low, U_low, flooring_fn=self.flooring_fn)
 
             # higher frequency bins
             XX_high = X_high[na, :, :, :, :] * X_high[:, na, :, :, :].conj()
@@ -787,7 +787,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
             )
             U_high = U_high.transpose(2, 3, 4, 5, 0, 1)
 
-            W_high = update_by_block_decomposition_vcd(W_high, U_high)
+            W_high = update_by_block_decomposition_vcd(W_high, U_high, flooring_fn=self.flooring_fn)
 
             W_low = W_low.reshape((n_blocks - n_remains) * n_neighbors, n_sources, n_channels)
             W_high = W_high.reshape(n_remains * (n_neighbors + 1), n_sources, n_channels)
@@ -805,7 +805,7 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
             U = np.mean(R_inverse[na, na, :, :, :, :, :] * XX[:, :, :, na, :, na, :], axis=-1)
             U = U.transpose(2, 3, 4, 5, 0, 1)
 
-            W = update_by_block_decomposition_vcd(W, U)
+            W = update_by_block_decomposition_vcd(W, U, flooring_fn=self.flooring_fn)
 
         self.demix_filter = W
 
