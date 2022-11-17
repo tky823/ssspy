@@ -1,5 +1,5 @@
 import functools
-from typing import Callable, List, Optional, Union
+from typing import Callable, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -733,7 +733,75 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
     def update_source_model_mm(self):
-        raise NotImplementedError("Implement 'update_source_model_mm'.")
+        self.update_basis_mm()
+        self.update_activation_mm()
+
+    def update_basis_mm(self):
+        raise NotImplementedError("Implement 'update_basis_mm'.")
+
+    def update_activation_mm(self) -> None:
+        def _compute_traces(
+            basis: np.ndarray, activation: np.ndarray, separated: np.ndarray = None
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+
+            Returns:
+                Tuple of numerator and denominator.
+                Type of each item is ``numpy.ndarray``.
+            """
+            U, V = basis, activation
+            Y = separated
+            na = np.newaxis
+            _, _, _, n_neighbors, _ = U.shape
+
+            R = self.reconstruct_block_decomposition_psdtf(U, V)
+            R_inverse = np.linalg.inv(R)
+            Y = Y.transpose(0, 3, 1, 2)
+            YY_Hermite = Y[:, :, :, :, np.newaxis] @ Y[:, :, :, np.newaxis, :].conj()
+
+            eps = self.flooring_fn(np.zeros((n_neighbors,)))
+            YY_Hermite = YY_Hermite + eps[:, na] * np.eye(n_neighbors)
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+
+            num = np.trace(RYYR[:, na, :, :, :, :] @ U[:, :, na, :, :, :], axis1=-2, axis2=-1)
+            denom = np.trace(
+                R_inverse[:, na, :, :, :, :] @ U[:, :, na, :, :, :], axis1=-2, axis2=-1
+            )
+            num = np.real(num).sum(axis=-1)
+            denom = np.real(denom).sum(axis=-1)
+
+            return num, denom
+
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        U, V = self.basis, self.activation
+        Y = self.separate(X, demix_filter=W)
+
+        if n_remains > 0:
+            U_low, U_high = U
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+
+            num_low, denom_low = _compute_traces(U_low, V, separated=Y_low)
+            num_high, denom_high = _compute_traces(U_high, V, separated=Y_high)
+
+            num = num_low + num_high
+            denom = denom_low + denom_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            num, denom = _compute_traces(U, V, separated=Y)
+
+        self.activation = V * np.sqrt(num / denom)
 
     def update_spatial_model(self) -> None:
         if self.spatial_algorithm == "VCD":
