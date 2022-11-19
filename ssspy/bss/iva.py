@@ -2965,19 +2965,24 @@ class AuxGaussIVA(AuxIVA):
         X, W = self.input, self.demix_filter
         R = self.variance
 
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
             R_mn = R[(m, n), :]
 
-            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs, variance=R_mn) / denom_mn
+            norm = np.linalg.norm(Y_mn, axis=1)
+            denom = self.flooring_fn(2 * norm)
+            weight_mn = self.d_contrast_fn(norm, variance=R_mn) / denom
+            GXX_mn = weight_mn[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+            U_mn = np.mean(GXX_mn, axis=-1)
 
             W[:, (m, n), :] = update_by_ip2_one_pair(
-                Y_mn,
-                demix_filter_pair=W_mn,
-                weight_pair=weight_mn[:, np.newaxis, :],
+                W,
+                U_mn,
+                pair=(m, n),
                 flooring_fn=self.flooring_fn,
             )
 
