@@ -1014,6 +1014,12 @@ class AuxFDICA(FDICAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
+        .. warning::
+            The current implementation of IP2 is based on
+            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
+            but this is not what is actually known as IP2.
+            See https://github.com/tky823/ssspy/issues/178 for more details.
+
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
 
