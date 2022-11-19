@@ -37,6 +37,12 @@ sphinx-autobuild docs docs/_build/html
 ```
 
 ## Blind Source Separation Methods
+### Notes
+The current implementation of IP2 is based on
+"Auxiliary-function-based independent component analysis for super-Gaussian sources,"
+but this is not what is actually known as IP2.
+See https://github.com/tky823/ssspy/issues/178 for more details.
+
 | Method | Notebooks |
 |:-:|:-:|
 | Independent Component Analysis (ICA) [1-3] | Gradient-descent-based ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/GradICA.ipynb) <br> Natural-gradient-descent-based ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/NaturalGradICA.ipynb) <br> Fast ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/FastICA.ipynb) |
