@@ -11,6 +11,7 @@ def warning_ip2(spatial_algorithm: str) -> None:
                 '"Auxiliary-function-based independent component analysis '
                 'for super-Gaussian sources", ',
                 "but this is not what is actually known as IP2.",
+                "See https://github.com/tky823/ssspy/issues/178 for more details.",
             ),
             UserWarning,
         )
