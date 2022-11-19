@@ -1101,18 +1101,24 @@ class AuxFDICA(FDICAbase):
 
         X, W = self.input, self.demix_filter
 
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
 
-            Y_mn_abs = np.abs(Y_mn)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
+            Y_abs_mn = np.abs(Y_mn)
+            denom = self.flooring_fn(2 * Y_abs_mn)
+            varphi_mn = self.d_contrast_fn(Y_abs_mn) / denom
+            varphi_mn = varphi_mn.transpose(1, 0, 2)
+            GXX_mn = varphi_mn[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+            U_mn = np.mean(GXX_mn, axis=-1)
 
             W[:, (m, n), :] = update_by_ip2_one_pair(
-                Y_mn,
-                demix_filter_pair=W_mn,
-                weight_pair=weight_mn,
+                W,
+                U_mn,
+                pair=(m, n),
                 flooring_fn=self.flooring_fn,
             )
 
