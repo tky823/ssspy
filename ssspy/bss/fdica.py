@@ -4,7 +4,6 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 from ..algorithm import projection_back
-from ..utils.bss import warning_ip2
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._solve_permutation import correlation_based_permutation_solver
@@ -906,8 +905,6 @@ class AuxFDICA(FDICAbase):
                 self.pair_selector = sequential_pair_selector
         else:
             self.pair_selector = pair_selector
-
-        warning_ip2(self.spatial_algorithm)
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.

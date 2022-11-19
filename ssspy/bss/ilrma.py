@@ -5,7 +5,6 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 from ..algorithm import projection_back
-from ..utils.bss import warning_ip2
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
@@ -683,8 +682,6 @@ class GaussILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
-
-        warning_ip2(self.spatial_algorithm)
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -1524,8 +1521,6 @@ class TILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
-
-        warning_ip2(self.spatial_algorithm)
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -2436,8 +2431,6 @@ class GGDILRMA(ILRMAbase):
                 self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
-
-        warning_ip2(self.spatial_algorithm)
 
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
