@@ -9,9 +9,9 @@ def warning_ip2(spatial_algorithm: str) -> None:
             (
                 "The current implementation of IP2 is based on "
                 '"Auxiliary-function-based independent component analysis '
-                'for super-Gaussian sources", ',
-                "but this is not what is actually known as IP2.",
-                "See https://github.com/tky823/ssspy/issues/178 for more details.",
+                'for super-Gaussian sources", '
+                "but this is not what is actually known as IP2."
+                "See https://github.com/tky823/ssspy/issues/178 for more details."
             ),
             UserWarning,
         )
