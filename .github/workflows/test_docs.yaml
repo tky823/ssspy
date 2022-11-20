@@ -23,4 +23,5 @@ jobs:
           pip install -e ".[docs]"
       - name: Build docs
         run: |
-          sphinx-build -W docs/ docs/_build/html/
+          cd docs/
+          sphinx-build -W ./ ./_build/html/
