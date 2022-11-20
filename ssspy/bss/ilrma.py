@@ -1141,13 +1141,13 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             r_{ijn}
-            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
         if ``partitioning=True``. Otherwise
 
         .. math::
             r_{ijn}
-            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
         """
         p = self.domain
         Y = self.output
@@ -2727,14 +2727,14 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
 
         if ``partitioning=True``. Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta
@@ -2786,7 +2786,7 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
 
         if ``partitioning=True``. \
         Otherwise,
@@ -2794,7 +2794,7 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
 
         Using :math:`\boldsymbol{U}_{in_{1}}` and
         :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
@@ -2912,14 +2912,14 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
 
         if ``partitioning=True``. Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta
