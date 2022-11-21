@@ -126,55 +126,15 @@ def update_by_ip2(
     else:
         W = demix_filter.copy()
 
-    U = weighted_covariance.transpose(1, 0, 2, 3)
+    U = weighted_covariance
 
-    n_bins, n_sources, n_channels = W.shape
-
-    E = np.eye(n_sources, n_channels)
-    E = np.tile(E, reps=(n_bins, 1, 1))
-    E = E.transpose(0, 2, 1)
+    _, n_sources, _ = W.shape
 
     for m, n in pair_selector(n_sources):
-        U_mn = U[(m, n), :, :, :]
-        E_mn = E[:, :, (m, n)]
-
-        U_m, U_n = U_mn
-
-        WU_m = W @ U_m
-        WU_n = W @ U_n
-
-        P_m = np.linalg.solve(WU_m, E_mn)
-        P_n = np.linalg.solve(WU_n, E_mn)
-
-        PUP_m = P_m.transpose(0, 2, 1).conj() @ U_m @ P_m
-        PUP_n = P_n.transpose(0, 2, 1).conj() @ U_n @ P_n
-
-        _, H_mn = eigh(PUP_m, PUP_n)
-        H_mn = H_mn[..., ::-1]
-
-        H_mn = H_mn.transpose(2, 0, 1)
-        h_m, h_n = H_mn
-
-        hUh_m = h_m[:, np.newaxis, :].conj() @ PUP_m @ h_m[:, :, np.newaxis]
-        hUh_m = np.real(hUh_m[..., 0])
-        hUh_m = np.maximum(hUh_m, 0)
-        denom = np.sqrt(hUh_m)
-        denom = flooring_fn(denom)
-        h_m = h_m / denom
-
-        hUh_n = h_n[:, np.newaxis, :].conj() @ PUP_n @ h_n[:, :, np.newaxis]
-        hUh_n = np.real(hUh_n[..., 0])
-        hUh_n = np.maximum(hUh_n, 0)
-        denom = np.sqrt(hUh_n)
-        denom = flooring_fn(denom)
-        h_n = h_n / denom
-
-        w_m = P_m @ h_m[..., np.newaxis]
-        w_n = P_n @ h_n[..., np.newaxis]
-
-        W_mn_conj = np.concatenate([w_m, w_n], axis=-1)
-
-        W[:, (m, n), :] = W_mn_conj.transpose(0, 2, 1).conj()
+        pair = (m, n)
+        W[:, pair, :] = update_by_ip2_one_pair(
+            W, U[:, pair, :, :], pair=pair, flooring_fn=flooring_fn
+        )
 
     return W
 
