@@ -1257,7 +1257,7 @@ class GradLaplaceFDICA(GradFDICA):
         return s.format(**self.__dict__)
 
 
-class NaturalGradLaplaceFDICA(GradFDICA):
+class NaturalGradLaplaceFDICA(NaturalGradFDICA):
     r"""Frequency-domain independent component analysis (FDICA) \
     using the natural gradient descent on a Laplace distribution.
 
