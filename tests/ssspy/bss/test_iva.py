@@ -126,7 +126,7 @@ def test_grad_iva_base(
                 The shape is (n_sources, n_bins, n_frames).
         """
         norm = np.linalg.norm(y, axis=1, keepdims=True)
-        norm = np.maximum(norm, 1e-10)
+        norm = np.maximum(norm, 1e-15)
         return y / norm
 
     iva = GradIVAbase(
@@ -184,7 +184,7 @@ def test_grad_iva(
                 The shape is (n_sources, n_bins, n_frames).
         """
         norm = np.linalg.norm(y, axis=1, keepdims=True)
-        norm = np.maximum(norm, 1e-10)
+        norm = np.maximum(norm, 1e-15)
         return y / norm
 
     iva = GradIVA(
@@ -248,7 +248,7 @@ def test_natural_grad_iva(
                 The shape is (n_sources, n_bins, n_frames).
         """
         norm = np.linalg.norm(y, axis=1, keepdims=True)
-        norm = np.maximum(norm, 1e-10)
+        norm = np.maximum(norm, 1e-15)
         return y / norm
 
     iva = NaturalGradIVA(
