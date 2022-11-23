@@ -6,7 +6,7 @@ import numpy as np
 
 from ._flooring import identity, max_flooring
 
-EPS = 1e-10
+EPS = 1e-15
 
 
 def correlation_based_permutation_solver(
@@ -33,7 +33,7 @@ def correlation_based_permutation_solver(
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``, \
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-10)``.
+            Default: ``partial(max_flooring, eps=1e-15)``.
         overwrite (bool):
             Overwrite ``demix_filter`` if ``overwrite=True``. \
             Default: ``True``.

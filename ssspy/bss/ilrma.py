@@ -14,7 +14,7 @@ from .base import IterativeMethodBase
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
 
 spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
-EPS = 1e-10
+EPS = 1e-15
 
 
 class ILRMAbase(IterativeMethodBase):
@@ -30,7 +30,7 @@ class ILRMAbase(IterativeMethodBase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+            Default: ``functools.partial(max_flooring, eps=1e-15)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -529,7 +529,7 @@ class GaussILRMA(ILRMAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+            Default: ``functools.partial(max_flooring, eps=1e-15)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
             If ``None`` is given, ``sequential_pair_selector`` is used.
@@ -1369,7 +1369,7 @@ class TILRMA(ILRMAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+            Default: ``functools.partial(max_flooring, eps=1e-15)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
             If ``None`` is given, ``sequential_pair_selector`` is used.
@@ -2280,7 +2280,7 @@ class GGDILRMA(ILRMAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+            Default: ``functools.partial(max_flooring, eps=1e-15)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
             If ``None`` is given, ``sequential_pair_selector`` is used.

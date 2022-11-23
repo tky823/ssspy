@@ -1,6 +1,6 @@
 import numpy as np
 
-EPS = 1e-10
+EPS = 1e-15
 
 
 def identity(input: np.ndarray) -> np.ndarray:
