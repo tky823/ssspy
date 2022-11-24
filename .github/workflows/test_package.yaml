@@ -31,8 +31,13 @@ jobs:
         run: |
           sudo apt-get install libsndfile1
       - name: Pytest (skip redundant tests)
+        if: ${{ github.head_ref }} != tests/*
         run: |
           pytest -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
+      - name: Pytest (run all tests including redundant ones)
+        if: ${{ github.head_ref }} == tests/*
+        run: |
+          pytest --run-redundant -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v3
         with:
