@@ -30,7 +30,13 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get install libsndfile1
-      - name: Pytest
+      - name: Pytest (run all tests including redundant ones)
+        id: run_redundant
+        if: startsWith(github.head_ref, 'releases/')
+        run: |
+          pytest --run-redundant -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
+      - name: Pytest (skip redundant tests)
+        if: steps.run_redundant.conclusion == 'skipped'
         run: |
           pytest -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Upload coverage to codecov

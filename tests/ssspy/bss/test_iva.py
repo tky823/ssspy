@@ -450,6 +450,9 @@ def test_aux_iva(
     scale_restoration: Union[str, bool],
     reset_kwargs: Dict[Any, Any],
 ):
+    if spatial_algorithm in ["IP", "ISS"] and not pytest.run_redundant:
+        pytest.skip(reason="Need --run-redundant option to run.")
+
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
@@ -662,6 +665,9 @@ def test_aux_laplace_iva(
     scale_restoration: Union[str, bool],
     reset_kwargs: Dict[Any, Any],
 ):
+    if spatial_algorithm in ["IP", "ISS"] and not pytest.run_redundant:
+        pytest.skip(reason="Need --run-redundant option to run.")
+
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
@@ -706,6 +712,9 @@ def test_aux_gauss_iva(
     scale_restoration: Union[str, bool],
     reset_kwargs: Dict[Any, Any],
 ):
+    if spatial_algorithm in ["IP", "ISS"] and not pytest.run_redundant:
+        pytest.skip(reason="Need --run-redundant option to run.")
+
     np.random.seed(111)
 
     waveform_src_img, _ = download_sample_speech_data(
