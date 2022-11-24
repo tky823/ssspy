@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 spatial_algorithms = ["IP", "IP1", "IP2"]
-EPS = 1e-15
+EPS = 1e-12
 
 
 class FDICAbase(IterativeMethodBase):

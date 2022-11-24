@@ -7,7 +7,7 @@ from ..linalg import eigh2, inv2
 from ._flooring import identity, max_flooring
 from ._select_pair import sequential_pair_selector
 
-EPS = 1e-15
+EPS = 1e-12
 
 
 def update_by_ip1(

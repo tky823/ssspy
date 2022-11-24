@@ -32,7 +32,7 @@ __all__ = [
 ]
 
 spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
-EPS = 1e-15
+EPS = 1e-12
 
 
 class IVAbase(IterativeMethodBase):
