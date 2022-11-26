@@ -44,7 +44,7 @@ class IVAbase(IterativeMethodBase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -268,7 +268,7 @@ class GradIVAbase(IVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -379,7 +379,7 @@ class FastIVAbase(IVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -621,7 +621,7 @@ class GradIVA(GradIVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -650,7 +650,7 @@ class GradIVA(GradIVAbase):
 
             >>> def score_fn(y):
             ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
-            ...     return y / np.maximum(norm, 1e-15)
+            ...     return y / np.maximum(norm, 1e-12)
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -674,7 +674,7 @@ class GradIVA(GradIVAbase):
 
             >>> def score_fn(y):
             ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
-            ...     return y / np.maximum(norm, 1e-15)
+            ...     return y / np.maximum(norm, 1e-12)
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -799,7 +799,7 @@ class NaturalGradIVA(GradIVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -828,7 +828,7 @@ class NaturalGradIVA(GradIVAbase):
 
             >>> def score_fn(y):
             ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
-            ...     return y / np.maximum(norm, 1e-15)
+            ...     return y / np.maximum(norm, 1e-12)
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -852,7 +852,7 @@ class NaturalGradIVA(GradIVAbase):
 
             >>> def score_fn(y):
             ...     norm = np.linalg.norm(y, axis=1, keepdims=True)
-            ...     return y / np.maximum(norm, 1e-15)
+            ...     return y / np.maximum(norm, 1e-12)
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -972,7 +972,7 @@ class FastIVA(FastIVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1169,7 +1169,7 @@ class FasterIVA(FastIVAbase):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1906,7 +1906,7 @@ class GradLaplaceIVA(GradIVA):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -2073,7 +2073,7 @@ class GradGaussIVA(GradIVA):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -2223,7 +2223,7 @@ class NaturalGradLaplaceIVA(NaturalGradIVA):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -2393,7 +2393,7 @@ class NaturalGradGaussIVA(NaturalGradIVA):
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-12)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
