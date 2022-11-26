@@ -45,21 +45,25 @@ class IterativeMethodBase:
         else:
             self.loss = None
 
-    def __call__(self, *args, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(self, *args, n_iter: int = 100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Iteratively call ``update_once``.
 
         Args:
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
         """
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
+        if initial_call:
+            if self.record_loss:
+                loss = self.compute_loss()
+                self.loss.append(loss)
 
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
+            if self.callbacks is not None:
+                for callback in self.callbacks:
+                    callback(self)
 
         for _ in range(n_iter):
             self.update_once()
