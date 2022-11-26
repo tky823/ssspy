@@ -88,7 +88,9 @@ class ILRMAbase(IterativeMethodBase):
 
         self.rng = rng
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -98,6 +100,9 @@ class ILRMAbase(IterativeMethodBase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -107,7 +112,7 @@ class ILRMAbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__(n_iter=n_iter)
+        super().__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -683,7 +688,9 @@ class GaussILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -693,6 +700,9 @@ class GaussILRMA(ILRMAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -703,7 +713,7 @@ class GaussILRMA(ILRMAbase):
         self._reset(**kwargs)
 
         # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter)
+        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1518,7 +1528,9 @@ class TILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -1528,6 +1540,9 @@ class TILRMA(ILRMAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -1538,7 +1553,7 @@ class TILRMA(ILRMAbase):
         self._reset(**kwargs)
 
         # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter)
+        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -2424,7 +2439,9 @@ class GGDILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -2434,6 +2451,9 @@ class GGDILRMA(ILRMAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -2444,7 +2464,7 @@ class GGDILRMA(ILRMAbase):
         self._reset(**kwargs)
 
         # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter)
+        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()

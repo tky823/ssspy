@@ -56,7 +56,9 @@ class GradICAbase(IterativeMethodBase):
 
         self.input = None
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a time-domain multichannel signal.
 
         Args:
@@ -66,6 +68,9 @@ class GradICAbase(IterativeMethodBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of separated signal in time-domain.
@@ -75,7 +80,7 @@ class GradICAbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__(n_iter=n_iter)
+        super().__call__(n_iter=n_iter, initial_call=initial_call)
 
         self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
@@ -240,7 +245,9 @@ class FastICAbase(IterativeMethodBase):
 
         self.input = None
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a time-domain multichannel signal.
 
         Args:
@@ -250,6 +257,9 @@ class FastICAbase(IterativeMethodBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in time-domain.
@@ -259,7 +269,7 @@ class FastICAbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__(n_iter=n_iter)
+        super().__call__(n_iter=n_iter, initial_call=initial_call)
 
         self.output = self.separate(
             self.whitened_input, demix_filter=self.demix_filter, use_whitening=False

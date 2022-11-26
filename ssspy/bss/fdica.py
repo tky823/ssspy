@@ -91,7 +91,9 @@ class FDICAbase(IterativeMethodBase):
         else:
             self.reference_id = reference_id
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -101,6 +103,9 @@ class FDICAbase(IterativeMethodBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -110,7 +115,7 @@ class FDICAbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__(n_iter=n_iter)
+        super().__call__(n_iter=n_iter, initial_call=initial_call)
 
         raise NotImplementedError("Implement '__call__' method.")
 
@@ -326,7 +331,9 @@ class GradFDICAbase(FDICAbase):
         else:
             self.score_fn = score_fn
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -336,6 +343,9 @@ class GradFDICAbase(FDICAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -346,7 +356,7 @@ class GradFDICAbase(FDICAbase):
         self._reset(**kwargs)
 
         # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
-        super(FDICAbase, self).__call__(n_iter=n_iter)
+        super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
@@ -906,7 +916,9 @@ class AuxFDICA(FDICAbase):
         else:
             self.pair_selector = pair_selector
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -916,6 +928,9 @@ class AuxFDICA(FDICAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -926,7 +941,7 @@ class AuxFDICA(FDICAbase):
         self._reset(**kwargs)
 
         # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
-        super(FDICAbase, self).__call__(n_iter=n_iter)
+        super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
             Y, W = self.output, self.demix_filter
