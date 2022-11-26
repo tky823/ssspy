@@ -87,7 +87,9 @@ class IVAbase(IterativeMethodBase):
         else:
             self.reference_id = reference_id
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -97,6 +99,9 @@ class IVAbase(IterativeMethodBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -324,7 +329,9 @@ class GradIVAbase(IVAbase):
 
         self.is_holonomic = is_holonomic
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -334,6 +341,9 @@ class GradIVAbase(IVAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates. \
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray:
@@ -345,7 +355,7 @@ class GradIVAbase(IVAbase):
         self._reset(**kwargs)
 
         # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter)
+        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -571,7 +581,9 @@ class AuxIVAbase(IVAbase):
         self.contrast_fn = contrast_fn
         self.d_contrast_fn = d_contrast_fn
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -581,12 +593,15 @@ class AuxIVAbase(IVAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
             The shape is (n_channels, n_bins, n_frames).
         """
-        return super().__call__(input, n_iter=n_iter, **kwargs)
+        return super().__call__(input, n_iter=n_iter, initial_call=initial_call, **kwargs)
 
     def __repr__(self) -> str:
         s = "AuxIVA("
@@ -1062,7 +1077,9 @@ class FastIVA(FastIVAbase):
         else:
             self.dd_contrast_fn = dd_contrast_fn
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -1072,6 +1089,9 @@ class FastIVA(FastIVAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -1082,7 +1102,7 @@ class FastIVA(FastIVAbase):
         self._reset(**kwargs)
 
         # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter)
+        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1248,7 +1268,9 @@ class FasterIVA(FastIVAbase):
         else:
             self.d_contrast_fn = d_contrast_fn
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -1258,6 +1280,9 @@ class FasterIVA(FastIVAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -1268,7 +1293,7 @@ class FasterIVA(FastIVAbase):
         self._reset(**kwargs)
 
         # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter)
+        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1512,7 +1537,9 @@ class AuxIVA(AuxIVAbase):
         else:
             self.pair_selector = pair_selector
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -1522,6 +1549,9 @@ class AuxIVA(AuxIVAbase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -1532,7 +1562,7 @@ class AuxIVA(AuxIVAbase):
         self._reset(**kwargs)
 
         # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter)
+        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
