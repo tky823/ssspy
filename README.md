@@ -37,11 +37,6 @@ sphinx-autobuild docs docs/_build/html
 ```
 
 ## Blind Source Separation Methods
-### Notes
-The current implementation of IP2 is based on
-"Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-but this is not what is actually known as IP2.
-See https://github.com/tky823/ssspy/issues/178 for more details.
 
 | Method | Notebooks |
 |:-:|:-:|

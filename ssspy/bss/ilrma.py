@@ -5,7 +5,6 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 
 from ..algorithm import projection_back
-from ..utils.bss import warning_ip2
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
@@ -684,8 +683,6 @@ class GaussILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-        warning_ip2(self.spatial_algorithm)
-
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
@@ -1012,33 +1009,13 @@ class GaussILRMA(ILRMAbase):
         r"""Update demixing filters once using pairwise iterative projection \
         following [#nakashima2021faster]_.
 
-        .. warning::
-            The current implementation of IP2 is based on
-            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-            but this is not what is actually known as IP2.
-            See https://github.com/tky823/ssspy/issues/178 for more details.
-
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{1}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{r_{ijn_{2}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
-
-        where
-
-        .. math::
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
+            \boldsymbol{U}_{in}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{r_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}},
 
         :math:`r_{ijn}` is computed by
 
@@ -1053,43 +1030,59 @@ class GaussILRMA(ILRMAbase):
             r_{ijn}
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
 
-        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
+        Using :math:`\boldsymbol{U}_{in_{1}}` and
+        :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i}
+            = \lambda_{i}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i},
 
-        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        where
+
+        .. math::
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
-            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
-            \end{array}
-            )
+            \boldsymbol{w}_{in_{1}}
+            &\leftarrow \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{1}} \\
+            \boldsymbol{w}_{in_{2}}
+            &\leftarrow \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{2}}
 
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
@@ -1148,13 +1141,13 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             r_{ijn}
-            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}},
+            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}},
 
         if ``partitioning=True``. Otherwise
 
         .. math::
             r_{ijn}
-            = \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{2}{p}}.
+            = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
         """
         p = self.domain
         Y = self.output
@@ -1525,8 +1518,6 @@ class TILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-        warning_ip2(self.spatial_algorithm)
-
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
@@ -1893,33 +1884,13 @@ class TILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        .. warning::
-            The current implementation of IP2 is based on
-            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-            but this is not what is actually known as IP2.
-            See https://github.com/tky823/ssspy/issues/178 for more details.
-
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`), \
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
-
-        where
-
-        .. math::
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
+            \boldsymbol{U}_{in}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{\tilde{r}_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}},
 
         :math:`\tilde{r}_{ijn}` is computed by
 
@@ -1936,43 +1907,59 @@ class TILRMA(ILRMAbase):
             = \frac{\nu}{\nu+2}\left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}
             + \frac{2}{\nu+2}|y_{ijn}|^{2}.
 
-        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
+        Using :math:`\boldsymbol{U}_{in_{1}}` and
+        :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i}
+            = \lambda_{i}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i},
 
-        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        where
+
+        .. math::
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
-            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
-            \end{array}
-            )
+            \boldsymbol{w}_{in_{1}}
+            &\leftarrow \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{1}} \\
+            \boldsymbol{w}_{in_{2}}
+            &\leftarrow \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{2}}
 
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
@@ -2437,8 +2424,6 @@ class GGDILRMA(ILRMAbase):
         else:
             self.pair_selector = pair_selector
 
-        warning_ip2(self.spatial_algorithm)
-
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
@@ -2742,14 +2727,14 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
 
         if ``partitioning=True``. Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta
@@ -2788,85 +2773,82 @@ class GGDILRMA(ILRMAbase):
     def update_spatial_model_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        .. warning::
-            The current implementation of IP2 is based on
-            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-            but this is not what is actually known as IP2.
-            See https://github.com/tky823/ssspy/issues/178 for more details.
-
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{1}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\frac{1}{\tilde{r}_{ijn_{2}}} \
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
+            \boldsymbol{U}_{in}
+            = \frac{1}{J}\sum_{j}
+            \frac{1}{\tilde{r}_{ijn}}\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}},
+
+        :math:`\tilde{r}_{ijn}` is computed by
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
+
+        if ``partitioning=True``. \
+        Otherwise,
+
+        .. math::
+            \tilde{r}_{ijn}
+            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
+
+        Using :math:`\boldsymbol{U}_{in_{1}}` and
+        :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
+
+        .. math::
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i}
+            = \lambda_{i}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
             \end{array}
-            \right).
+            ), \\
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ).
 
-        :math:`\tilde{r}_{ijn}` is computed as
-
-        .. math::
-            \tilde{r}_{ijn}
-            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
-
-        if ``partitioning=True``. Otherwise,
-
-        .. math::
-            \tilde{r}_{ijn}
-            = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
-
-        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
-
-        .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
-
-        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
-            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
-            \end{array}
-            )
+            \boldsymbol{w}_{in_{1}}
+            &\leftarrow \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{1}} \\
+            \boldsymbol{w}_{in_{2}}
+            &\leftarrow \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{2}}
 
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
@@ -2930,14 +2912,14 @@ class GGDILRMA(ILRMAbase):
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}},
+            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}},
 
         if ``partitioning=True``. Otherwise,
 
         .. math::
             \tilde{r}_{ijn}
             = \frac{2|y_{ijn}|^{2-\beta}}{\beta}
-            \left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)^{\frac{\beta}{p}}.
+            \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{\beta}{p}}.
         """
         p = self.domain
         beta = self.beta

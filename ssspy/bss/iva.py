@@ -6,7 +6,6 @@ import numpy as np
 from ..algorithm import projection_back
 from ..linalg import eigh
 from ..transform import whiten
-from ..utils.bss import warning_ip2
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import (
@@ -1513,8 +1512,6 @@ class AuxIVA(AuxIVAbase):
         else:
             self.pair_selector = pair_selector
 
-        warning_ip2(self.spatial_algorithm)
-
     def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
@@ -1637,12 +1634,6 @@ class AuxIVA(AuxIVAbase):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        .. warning::
-            The current implementation of IP2 is based on
-            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-            but this is not what is actually known as IP2.
-            See https://github.com/tky823/ssspy/issues/178 for more details.
-
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
 
@@ -1652,66 +1643,75 @@ class AuxIVA(AuxIVAbase):
             \bar{r}_{jn_{2}}
             &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}
 
-        Then, compute weighted covariance matrix as follows:
+        Then, for :math:`n=n_{1},n_{2}`, compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{1}})
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}} \\
-            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{2}})
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}{\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}},
+            \boldsymbol{U}_{in_{1}}
+            &= \frac{1}{J}\sum_{j}
+            \varphi(\bar{r}_{jn_{1}})\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}, \\
+            \boldsymbol{U}_{in_{2}}
+            &= \frac{1}{J}\sum_{j}
+            \varphi(\bar{r}_{jn_{2}})\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}},
 
         where
 
         .. math::
             \varphi(\bar{r}_{jn})
-            &= \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}} \\
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            &= \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
+            = \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}.
 
-        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
+        Using :math:`\boldsymbol{U}_{in_{1}}` and
+        :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i}
+            = \lambda_{i}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i},
 
-        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        where
+
+        .. math::
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
-            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
-            \end{array}
-            )
+            \boldsymbol{w}_{in_{1}}
+            &\leftarrow \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{1}} \\
+            \boldsymbol{w}_{in_{2}}
+            &\leftarrow \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{2}}.
 
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
@@ -1719,19 +1719,23 @@ class AuxIVA(AuxIVAbase):
         n_sources = self.n_sources
 
         X, W = self.input, self.demix_filter
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
 
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
 
-            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs) / denom_mn
+            norm = np.linalg.norm(Y_mn, axis=1)
+            denom = self.flooring_fn(2 * norm)
+            weight = self.d_contrast_fn(norm) / denom
+            GXX_mn = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+            U_mn = np.mean(GXX_mn, axis=-1)
 
             W[:, (m, n), :] = update_by_ip2_one_pair(
-                Y_mn,
-                demix_filter_pair=W_mn,
-                weight_pair=weight_mn[:, np.newaxis, :],
+                W,
+                U_mn,
+                pair=(m, n),
                 flooring_fn=self.flooring_fn,
             )
 
@@ -2877,81 +2881,84 @@ class AuxGaussIVA(AuxIVA):
     def update_once_ip2(self) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
-        .. warning::
-            The current implementation of IP2 is based on
-            "Auxiliary-function-based independent component analysis for super-Gaussian sources,"
-            but this is not what is actually known as IP2.
-            See https://github.com/tky823/ssspy/issues/178 for more details.
-
-        Update auxiliary variables:
+        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
+        compute auxiliary variables:
 
         .. math::
             \bar{r}_{jn_{1}}
             &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{1}}\|_{2} \\
             \bar{r}_{jn_{2}}
-            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}.
+            &\leftarrow\|\vec{\boldsymbol{y}}_{jn_{2}}\|_{2}
 
-        For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
-        compute weighted covariance matrix as follows:
+        Then, for :math:`n=n_{1},n_{2}`, compute weighted covariance matrix as follows:
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{1}})\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            {\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}, \\
-            \boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
-            &= \frac{1}{J}\sum_{j}\varphi(\bar{r}_{jn_{2}})\boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            {\boldsymbol{y}_{ij}^{(n_{1},n_{2})}}^{\mathsf{H}}, \\
-            \varphi(\bar{r}_{jn})
-            &= \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}
+            \boldsymbol{U}_{in_{1}}
+            &= \frac{1}{J}\sum_{j}
+            \varphi(\bar{r}_{jn_{1}})\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}, \\
+            \boldsymbol{U}_{in_{2}}
+            &= \frac{1}{J}\sum_{j}
+            \varphi(\bar{r}_{jn_{2}})\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}},
 
         where
 
         .. math::
-            \boldsymbol{y}_{ij}^{(n_{1},n_{2})}
-            = \left(
-            \begin{array}{c}
-                \boldsymbol{w}_{in_{1}}^{\mathsf{H}}\boldsymbol{x}_{ij} \\
-                \boldsymbol{w}_{in_{2}}^{\mathsf{H}}\boldsymbol{x}_{ij}
-            \end{array}
-            \right).
+            \varphi(\bar{r}_{jn})
+            = \frac{G'_{\mathbb{R}}(\bar{r}_{jn})}{2\bar{r}_{jn}}.
 
-        Using :math:`\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}` and
-        :math:`\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}`, we compute generalized eigenvectors.
+        Using :math:`\boldsymbol{U}_{in_{1}}` and
+        :math:`\boldsymbol{U}_{in_{2}}`, we compute generalized eigenvectors.
 
         .. math::
-            \boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}
-            = \lambda_{i}^{(n_{1},n_{2})}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{i}.
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i}
+            = \lambda_{i}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)\boldsymbol{h}_{i},
 
-        After that, we update two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
+        where
+
+        .. math::
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{in_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{n_{1}} & \boldsymbol{e}_{n_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{in_{1}}`
         and :math:`\boldsymbol{h}_{in_{2}}`.
 
         .. math::
             \boldsymbol{h}_{in_{1}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{1}}}
-            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}\boldsymbol{G}_{in_{1}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{1}}
+            \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{1}}}}, \\
             \boldsymbol{h}_{in_{2}}
             &\leftarrow\frac{\boldsymbol{h}_{in_{2}}}
-            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}\boldsymbol{G}_{in_{2}}^{(n_{1},n_{2})}
+            {\sqrt{\boldsymbol{h}_{in_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}}^{\mathsf{H}}\boldsymbol{U}_{in_{2}}
+            \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\right)
             \boldsymbol{h}_{in_{2}}}}.
 
         Then, update :math:`\boldsymbol{w}_{in_{1}}` and :math:`\boldsymbol{w}_{in_{2}}`
         simultaneously.
 
         .. math::
-            (
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )\leftarrow(
-            \begin{array}{cc}
-                \boldsymbol{w}_{in_{1}} & \boldsymbol{w}_{in_{2}}
-            \end{array}
-            )(
-            \begin{array}{cc}
-                \boldsymbol{h}_{in_{1}} & \boldsymbol{h}_{in_{2}}
-            \end{array}
-            )
+            \boldsymbol{w}_{in_{1}}
+            &\leftarrow \boldsymbol{P}_{in_{1}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{1}} \\
+            \boldsymbol{w}_{in_{2}}
+            &\leftarrow \boldsymbol{P}_{in_{2}}^{(n_{1},n_{2})}\boldsymbol{h}_{in_{2}}.
 
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
@@ -2961,19 +2968,24 @@ class AuxGaussIVA(AuxIVA):
         X, W = self.input, self.demix_filter
         R = self.variance
 
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
             R_mn = R[(m, n), :]
 
-            Y_mn_abs = np.linalg.norm(Y_mn, axis=1)
-            denom_mn = self.flooring_fn(2 * Y_mn_abs)
-            weight_mn = self.d_contrast_fn(Y_mn_abs, variance=R_mn) / denom_mn
+            norm = np.linalg.norm(Y_mn, axis=1)
+            denom = self.flooring_fn(2 * norm)
+            weight_mn = self.d_contrast_fn(norm, variance=R_mn) / denom
+            GXX_mn = weight_mn[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+            U_mn = np.mean(GXX_mn, axis=-1)
 
             W[:, (m, n), :] = update_by_ip2_one_pair(
-                Y_mn,
-                demix_filter_pair=W_mn,
-                weight_pair=weight_mn[:, np.newaxis, :],
+                W,
+                U_mn,
+                pair=(m, n),
                 flooring_fn=self.flooring_fn,
             )
 

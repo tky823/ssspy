@@ -106,16 +106,16 @@ def test_update_by_ip2_one_pair(
 
     varphi = 1 / rng.random((2, n_bins, n_frames))
     X = rng.standard_normal((n_channels, n_bins, n_frames))
-    real = rng.standard_normal((n_bins, 2, n_channels))
-    imag = rng.standard_normal((n_bins, 2, n_channels))
-    W_pair = real + 1j * imag
+    real = rng.standard_normal((n_bins, n_sources, n_channels))
+    imag = rng.standard_normal((n_bins, n_sources, n_channels))
+    W = real + 1j * imag
+    XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
+    GXX = np.mean(varphi[:, np.newaxis, np.newaxis, :, :] * XX[np.newaxis, :, :, :, :], axis=-1)
+    GXX = GXX.transpose(3, 0, 1, 2)
 
-    Y_pair = W_pair @ X.transpose(1, 0, 2)  # (n_bins, 2, n_frames)
-    Y_pair = Y_pair.transpose(1, 0, 2)  # (2, n_bins, n_frames)
+    W_updated = update_by_ip2_one_pair(W, GXX, pair=(1, 0), flooring_fn=flooring_fn)
 
-    W_updated = update_by_ip2_one_pair(Y_pair, W_pair, weight_pair=varphi, flooring_fn=flooring_fn)
-
-    assert W_updated.shape == W_pair.shape
+    assert W_updated.shape == (n_bins, 2, n_channels)
 
 
 @pytest.mark.parametrize("n_bins, n_frames", parameters)
