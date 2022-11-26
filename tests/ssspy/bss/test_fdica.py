@@ -58,7 +58,7 @@ def test_grad_fdica_base(
         return 2 * np.abs(y)
 
     def score_fn(y):
-        denominator = np.maximum(np.abs(y), 1e-10)
+        denominator = np.maximum(np.abs(y), 1e-12)
         return y / denominator
 
     fdica = GradFDICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
@@ -93,7 +93,7 @@ def test_grad_fdica(
         return 2 * np.abs(y)
 
     def score_fn(y):
-        denominator = np.maximum(np.abs(y), 1e-10)
+        denominator = np.maximum(np.abs(y), 1e-12)
         return y / denominator
 
     fdica = GradFDICA(
@@ -136,7 +136,7 @@ def test_natural_grad_fdica(
         return 2 * np.abs(y)
 
     def score_fn(y):
-        denominator = np.maximum(np.abs(y), 1e-10)
+        denominator = np.maximum(np.abs(y), 1e-12)
         return y / denominator
 
     fdica = NaturalGradFDICA(
