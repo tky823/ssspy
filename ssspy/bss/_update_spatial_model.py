@@ -3,7 +3,7 @@ from typing import Callable, Iterable, Optional, Tuple
 
 import numpy as np
 
-from ..linalg import eigh, eigh2, inv2
+from ..linalg import eigh2, inv2
 from ._flooring import identity, max_flooring
 from ._select_pair import sequential_pair_selector
 
@@ -362,7 +362,7 @@ def update_by_ip2_one_pair(
     PUP_m = P_m.transpose(0, 2, 1).conj() @ U_m @ P_m
     PUP_n = P_n.transpose(0, 2, 1).conj() @ U_n @ P_n
 
-    _, H_mn = eigh(PUP_m, PUP_n)
+    _, H_mn = eigh2(PUP_m, PUP_n)
     H_mn = H_mn[..., ::-1]
 
     H_mn = H_mn.transpose(2, 0, 1)
