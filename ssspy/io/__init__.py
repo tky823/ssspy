@@ -1,10 +1,16 @@
 import struct
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
 
-def wavread(filename: str, frame_offset: int = 0, num_frames: int = -1) -> Tuple[np.ndarray, int]:
+def wavread(
+    filename: str,
+    frame_offset: int = 0,
+    num_frames: int = -1,
+    return_2d: Optional[bool] = None,
+    channels_first: Optional[bool] = None,
+) -> Tuple[np.ndarray, int]:
     with open(filename, mode="rb") as f:
         riff = f.read(4)
 
@@ -38,10 +44,6 @@ def wavread(filename: str, frame_offset: int = 0, num_frames: int = -1) -> Tuple
             raise NotImplementedError(f"Invalid header {fmt} is detected.")
 
         n_channels = struct.unpack("<H", f.read(2))[0]
-
-        if n_channels != 1:
-            raise NotImplementedError("Support only monoral data.")
-
         sample_rate = struct.unpack("<I", f.read(4))[0]
         byte_rate = struct.unpack("<I", f.read(4))[0]
         block_align = struct.unpack("<H", f.read(2))[0]
@@ -59,18 +61,30 @@ def wavread(filename: str, frame_offset: int = 0, num_frames: int = -1) -> Tuple
         bytes_per_sample = block_align // n_channels
         n_full_samples = data_chunk_size // bytes_per_sample
 
-        start = f.tell() + bytes_per_sample * frame_offset
+        start = f.tell() + block_align * frame_offset
 
         if num_frames > 0:
-            shape = (num_frames,)
+            shape = (n_channels * num_frames,)
         elif num_frames == -1:
-            shape = (n_full_samples - frame_offset,)
+            shape = (n_full_samples - n_channels * frame_offset,)
         else:
             raise ValueError(
                 f"Invalid num_frames={num_frames} is given. Set -1 or positive integer."
             )
 
         data = np.memmap(f, dtype=f"<i{bytes_per_sample}", mode="c", offset=start, shape=shape)
+
+        if n_channels > 1:
+            data = data.reshape(-1, n_channels)
+
+            if channels_first:
+                data = data.transpose(1, 0)
+        else:
+            if return_2d:
+                data = data.reshape(-1, n_channels)
+
+                if channels_first:
+                    data = data.transpose(1, 0)
 
     vmax = 2 ** (8 * bytes_per_sample - 1)
 
