@@ -4,7 +4,11 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ..algorithm import projection_back
+from ..algorithm import (
+    MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS,
+    minimal_distortion_principle,
+    projection_back,
+)
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
@@ -481,6 +485,8 @@ class ILRMAbase(IterativeMethodBase):
 
         if scale_restoration == "projection_back":
             self.apply_projection_back()
+        elif scale_restoration in MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS:
+            self.apply_minimal_distortion_principle()
         else:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
@@ -491,6 +497,20 @@ class ILRMAbase(IterativeMethodBase):
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
         Y_scaled = self.separate(X, demix_filter=W_scaled)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
+
+    def apply_minimal_distortion_principle(self) -> None:
+        r"""Apply minimal distortion principle to estimated spectrograms."""
+        assert self.scale_restoration, "Set self.scale_restoration=True."
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+        Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
+        X = X.transpose(1, 0, 2)
+        Y = Y_scaled.transpose(1, 0, 2)
+        X_Hermite = X.transpose(0, 2, 1).conj()
+        W_scaled = Y @ X_Hermite @ np.linalg.inv(X @ X_Hermite)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
 
@@ -1326,6 +1346,16 @@ class GaussILRMA(ILRMAbase):
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
+
+    def apply_minimal_distortion_principle(self) -> None:
+        r"""Apply minimal distortion principle to estimated spectrograms."""
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            super().apply_minimal_distortion_principle()
+        else:
+            X, Y = self.input, self.output
+            Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
 
@@ -2239,6 +2269,16 @@ class TILRMA(ILRMAbase):
 
             self.output = Y_scaled
 
+    def apply_minimal_distortion_principle(self) -> None:
+        r"""Apply minimal distortion principle to estimated spectrograms."""
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            super().apply_minimal_distortion_principle()
+        else:
+            X, Y = self.input, self.output
+            Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
+
 
 class GGDILRMA(ILRMAbase):
     r"""Independent low-rank matrix analysis (ILRMA) on a generalized Gaussian distribution.
@@ -3130,5 +3170,15 @@ class GGDILRMA(ILRMAbase):
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
+
+            self.output = Y_scaled
+
+    def apply_minimal_distortion_principle(self) -> None:
+        r"""Apply minimal distortion principle to estimated spectrograms."""
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            super().apply_minimal_distortion_principle()
+        else:
+            X, Y = self.input, self.output
+            Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
