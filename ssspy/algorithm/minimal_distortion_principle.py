@@ -32,11 +32,11 @@ def minimal_distortion_principle(
     X_conj = reference.conj()
 
     if reference_id is None:
-        num = np.sum(Y * X_conj[:, np.newaxis, :, :], axis=-1)
+        num = np.sum(Y * X_conj[:, np.newaxis, :, :], axis=-1, keepdims=True)
     else:
-        num = np.sum(Y * X_conj[reference_id], axis=-1)
+        num = np.sum(Y * X_conj[reference_id], axis=-1, keepdims=True)
 
-    denom = np.sum(np.abs(Y) ** 2, axis=-1)
+    denom = np.sum(np.abs(Y) ** 2, axis=-1, keepdims=True)
     Z = num / denom
     output_scaled = Z.conj() * Y
 
