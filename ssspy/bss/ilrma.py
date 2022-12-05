@@ -6,6 +6,7 @@ import numpy as np
 
 from ..algorithm import (
     MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS,
+    PROJECTION_BACK_KEYWORDS,
     minimal_distortion_principle,
     projection_back,
 )
@@ -481,9 +482,9 @@ class ILRMAbase(IterativeMethodBase):
         assert scale_restoration, "Set self.scale_restoration=True."
 
         if type(scale_restoration) is bool:
-            scale_restoration = "projection_back"
+            scale_restoration = PROJECTION_BACK_KEYWORDS[0]
 
-        if scale_restoration == "projection_back":
+        if scale_restoration in PROJECTION_BACK_KEYWORDS:
             self.apply_projection_back()
         elif scale_restoration in MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS:
             self.apply_minimal_distortion_principle()
@@ -568,14 +569,13 @@ class GaussILRMA(ILRMAbase):
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
             If ``scale_restoration=True``, the projection back technique is applied to
-            estimated spectrograms. You can also specify ``projection_back`` explicitly.
-            Default: ``True``.
+            estimated spectrograms. You can also specify ``projection_back``
+            or ``minimal_distortion_principle``. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back and minimal distortion principle. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
@@ -1417,14 +1417,13 @@ class TILRMA(ILRMAbase):
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
             If ``scale_restoration=True``, the projection back technique is applied to
-            estimated spectrograms. You can also specify ``projection_back`` explicitly.
-            Default: ``True``.
+            estimated spectrograms. You can also specify ``projection_back``
+            or ``minimal_distortion_principle``. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back and minimal distortion principle. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
@@ -2337,14 +2336,13 @@ class GGDILRMA(ILRMAbase):
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
             If ``scale_restoration=True``, the projection back technique is applied to
-            estimated spectrograms. You can also specify ``projection_back`` explicitly.
-            Default: ``True``.
+            estimated spectrograms. You can also specify ``projection_back``
+            or ``minimal_distortion_principle``. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
-            Reference channel for projection back.
-            Default: ``0``.
+            Reference channel for projection back and minimal distortion principle. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize NMF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
