@@ -233,6 +233,8 @@ class IVAbase(IterativeMethodBase):
         r"""Restore scale ambiguity.
 
         If ``self.scale_restoration=projection_back``, we use projection back technique.
+        If ``self.scale_restoration=minimal_distortion_principle``,
+        we use minimal distortion principle.
         """
         scale_restoration = self.scale_restoration
 

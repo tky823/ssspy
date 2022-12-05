@@ -841,7 +841,7 @@ class AuxFDICA(FDICAbase):
             estimated spectrograms. You can also specify ``projection_back``
             or ``minimal_distortion_principle``. Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
+            Record the loss at each iteration of the demixing filter update if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back and minimal distortion principle. Default: ``0``.
@@ -1478,7 +1478,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             estimated spectrograms. You can also specify ``projection_back``
             or ``minimal_distortion_principle``. Default: ``True``.
         record_loss (bool):
-            Record the loss at each iteration of the gradient descent if ``record_loss=True``.
+            Record the loss at each iteration of the demixing filter update if ``record_loss=True``.
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back and minimal distortion principle. Default: ``0``.
