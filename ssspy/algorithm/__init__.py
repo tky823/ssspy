@@ -3,6 +3,7 @@ from .projection_back import projection_back
 
 __all__ = ["minimal_distortion_principle", "projection_back"]
 
+PROJECTION_BACK_KEYWORDS = ["projection_back", "projection-back", "PB"]
 MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS = [
     "minimal_distortion_principle",
     "minimal-distortion-principle",
