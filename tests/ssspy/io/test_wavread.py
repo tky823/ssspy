@@ -6,13 +6,19 @@ from ssspy import wavread
 
 parameters_frame_offset = [0, 10]
 parameters_num_frames = [None, 100]
-parameters_channels_first = [True, False]
+parameters_channels_first = [True, False, None]
 
 
 @pytest.mark.parametrize("frame_offset", parameters_frame_offset)
 @pytest.mark.parametrize("num_frames", parameters_num_frames)
-def test_wavread_monoral(frame_offset: int, num_frames: int):
+@pytest.mark.parametrize("channels_first", parameters_channels_first)
+def test_wavread_monoral(frame_offset: int, num_frames: int, channels_first: bool):
     filename = "./tests/mock/audio/monoral_16k_5sec.wav"
+
+    if channels_first is not None:
+        return_2d = True
+    else:
+        return_2d = False
 
     # load file using scipy
     sample_rate_scipy, waveform_scipy = wavfile.read(filename)
@@ -20,10 +26,20 @@ def test_wavread_monoral(frame_offset: int, num_frames: int):
 
     # load file using ssspy
     waveform_ssspy, sample_rate_ssspy = wavread(
-        filename, frame_offset=frame_offset, num_frames=num_frames
+        filename,
+        frame_offset=frame_offset,
+        num_frames=num_frames,
+        return_2d=return_2d,
+        channels_first=channels_first,
     )
 
     assert sample_rate_scipy == sample_rate_ssspy
+
+    if return_2d:
+        if channels_first:
+            waveform_ssspy = waveform_ssspy.squeeze(axis=0)
+        else:
+            waveform_ssspy = waveform_ssspy.squeeze(axis=1)
 
     if num_frames is not None:
         assert np.all(waveform_scipy[frame_offset : frame_offset + num_frames] == waveform_ssspy)
