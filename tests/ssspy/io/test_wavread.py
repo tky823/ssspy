@@ -5,7 +5,7 @@ from scipy.io import wavfile
 from ssspy import wavread
 
 parameters_frame_offset = [0, 10]
-parameters_num_frames = [-1, 100]
+parameters_num_frames = [None, 100]
 parameters_channels_first = [True, False]
 
 
@@ -25,7 +25,7 @@ def test_wavread_monoral(frame_offset: int, num_frames: int):
 
     assert sample_rate_scipy == sample_rate_ssspy
 
-    if num_frames > 0:
+    if num_frames is not None:
         assert np.all(waveform_scipy[frame_offset : frame_offset + num_frames] == waveform_ssspy)
     else:
         assert np.all(waveform_scipy[frame_offset:] == waveform_ssspy)
@@ -52,7 +52,7 @@ def test_wavread_stereo(frame_offset: int, num_frames: int, channels_first: bool
         # same order as that of scipy
         waveform_ssspy = waveform_ssspy.transpose(1, 0)
 
-    if num_frames > 0:
+    if num_frames is not None:
         assert np.all(waveform_scipy[frame_offset : frame_offset + num_frames] == waveform_ssspy)
     else:
         assert np.all(waveform_scipy[frame_offset:] == waveform_ssspy)
