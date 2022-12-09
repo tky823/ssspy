@@ -56,3 +56,35 @@ def test_wavread_stereo(frame_offset: int, num_frames: int, channels_first: bool
         assert np.all(waveform_scipy[frame_offset : frame_offset + num_frames] == waveform_ssspy)
     else:
         assert np.all(waveform_scipy[frame_offset:] == waveform_ssspy)
+
+
+@pytest.mark.parametrize("frame_offset", parameters_frame_offset)
+def test_wavread_invalid_monoral(frame_offset: int):
+    # invalid memory size
+    filename = "./tests/mock/audio/monoral_16k_5sec.wav"
+    max_frame = 5 * 16000
+    valid_num_frames = max_frame - frame_offset
+    invalid_num_frames = valid_num_frames + 1
+
+    wavread(filename, frame_offset=frame_offset, num_frames=valid_num_frames)
+
+    with pytest.raises(ValueError) as e:
+        wavread(filename, frame_offset=frame_offset, num_frames=invalid_num_frames)
+
+    assert str(e.value) == f"num_frames={invalid_num_frames} exceeds maximum frame {max_frame}."
+
+
+@pytest.mark.parametrize("frame_offset", parameters_frame_offset)
+def test_wavread_invalid_stereo(frame_offset: int):
+    # invalid memory size
+    filename = "./tests/mock/audio/stereo_16k_5sec.wav"
+    max_frame = 5 * 16000
+    valid_num_frames = max_frame - frame_offset
+    invalid_num_frames = valid_num_frames + 1
+
+    wavread(filename, frame_offset=frame_offset, num_frames=valid_num_frames)
+
+    with pytest.raises(ValueError) as e:
+        wavread(filename, frame_offset=frame_offset, num_frames=invalid_num_frames)
+
+    assert str(e.value) == f"num_frames={invalid_num_frames} exceeds maximum frame {max_frame}."
