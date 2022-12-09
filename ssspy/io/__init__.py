@@ -7,7 +7,7 @@ import numpy as np
 def wavread(
     filename: str,
     frame_offset: int = 0,
-    num_frames: int = -1,
+    num_frames: Optional[int] = None,
     return_2d: Optional[bool] = None,
     channels_first: Optional[bool] = None,
 ) -> Tuple[np.ndarray, int]:
@@ -62,15 +62,19 @@ def wavread(
         n_full_samples = data_chunk_size // bytes_per_sample
 
         start = f.tell() + block_align * frame_offset
+        max_frame = data_chunk_size // block_align
 
-        if num_frames > 0:
-            shape = (n_channels * num_frames,)
-        elif num_frames == -1:
+        if num_frames is None:
             shape = (n_full_samples - n_channels * frame_offset,)
+            end_frame = data_chunk_size // block_align
+        elif num_frames >= 0:
+            shape = (n_channels * num_frames,)
+            end_frame = frame_offset + num_frames
         else:
-            raise ValueError(
-                f"Invalid num_frames={num_frames} is given. Set -1 or positive integer."
-            )
+            raise ValueError(f"Invalid num_frames={num_frames} is given. Set nonnegative integer.")
+
+        if end_frame > max_frame:
+            raise ValueError(f"num_frames={num_frames} exceeds maximum frame {max_frame}.")
 
         data = np.memmap(f, dtype=f"<i{bytes_per_sample}", mode="c", offset=start, shape=shape)
 
