@@ -4,7 +4,7 @@ import numpy as np
 
 
 def minimal_distortion_principle(
-    input: np.ndarray,
+    estimated: np.ndarray,
     reference: Optional[np.ndarray] = None,
     reference_id: Optional[int] = 0,
 ) -> np.ndarray:
@@ -13,7 +13,7 @@ def minimal_distortion_principle(
     The implementation is based on [#matsuoka2002minimal]_.
 
     Args:
-        input (numpy.ndarray):
+        estimated (numpy.ndarray):
             Estimated spectrograms with shape of (n_channels, n_bins, n_frames).
         reference (numpy.ndarray, optional):
             Reference spectrogram with shape of (n_sources, n_bins, n_frames).
@@ -28,7 +28,7 @@ def minimal_distortion_principle(
         "Minimal distortion principle for blind source separation,"
         in *Proc. ICA*, 2001, pp. 722-727.
     """
-    Y = input
+    Y = estimated
     X_conj = reference.conj()
 
     if reference_id is None:
