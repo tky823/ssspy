@@ -30,7 +30,7 @@ n_iter = 3
 
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_is_holonomic = [True, False]
-parameters_scale_restoration = [True, False, "projection_back"]
+parameters_scale_restoration = [True, False, "projection_back", "minimal_distortion_principle"]
 parameters_spatial_algorithm = ["IP", "IP1", "IP2"]
 parameters_grad_fdica = [
     (2, {}),
