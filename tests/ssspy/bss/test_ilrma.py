@@ -25,7 +25,7 @@ parameters_dof = [100]
 parameters_beta = [0.5, 1.5]
 parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
-parameters_scale_restoration = [True, False, "projection_back"]
+parameters_scale_restoration = [True, False, "projection_back", "minimal_distortion_principle"]
 parameters_ilrma_base = [2]
 parameters_ilrma_latent = [
     (
