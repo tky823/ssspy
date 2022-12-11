@@ -36,6 +36,10 @@ def invsqrtmh(
     Args:
         X (numpy.ndarray):
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive and return the same shape as that of X.
+            By default, the identity function (``lambda x: x``) is used.
 
     Returns:
         numpy.ndarray of inversion of square root. The shape is same as that of input.
