@@ -193,10 +193,10 @@ class IPSDTAbase(IterativeMethodBase):
             # should be positive semi-definite
             eye = np.eye(n_bins, dtype=np.complex128)
             rand = rng.random((n_sources, n_basis, n_bins))
-            U = rand[..., np.newaxis] * eye
+            T = rand[..., np.newaxis] * eye
         else:
             # To avoid overwriting.
-            U = self.basis.copy()
+            T = self.basis.copy()
 
         if not hasattr(self, "activation"):
             V = rng.random((n_sources, n_basis, n_frames))
@@ -205,7 +205,7 @@ class IPSDTAbase(IterativeMethodBase):
             # To avoid overwriting.
             V = self.activation.copy()
 
-        self.basis, self.activation = U, V
+        self.basis, self.activation = T, V
 
         if self.normalization:
             self.normalize()
@@ -261,8 +261,8 @@ class IPSDTAbase(IterativeMethodBase):
             numpy.ndarray of reconstructed PSDTF.
             The shape is (n_sources, n_frames, n_bins, n_bins).
         """
-        U, V = basis, activation
-        n_dims = U.ndim
+        T, V = basis, activation
+        n_dims = T.ndim
 
         axis1 = n_dims + axis1 if axis1 < 0 else axis1
         axis2 = n_dims + axis2 if axis2 < 0 else axis2
@@ -270,9 +270,9 @@ class IPSDTAbase(IterativeMethodBase):
         assert (axis1 == 1 and axis2 == 2) or (axis1 == 2 and axis2 == 3)
 
         if axis1 == 1 and axis2 == 2:
-            U = U.transpose(0, 3, 1, 2)
+            T = T.transpose(0, 3, 1, 2)
 
-        R = np.sum(U[:, :, np.newaxis, :, :] * V[:, :, :, np.newaxis, np.newaxis], axis=1)
+        R = np.sum(T[:, :, np.newaxis, :, :] * V[:, :, :, np.newaxis, np.newaxis], axis=1)
         R = to_psd(R, axis1=2, axis2=3)
 
         return R
@@ -284,15 +284,15 @@ class IPSDTAbase(IterativeMethodBase):
     def normalize(self) -> None:
         r"""Normalize PSDTF parameters."""
         normalization = self.normalization
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
 
         assert normalization, "Set normalization."
 
-        trace = np.trace(U, axis1=-2, axis2=-1).real
-        U = U / trace[:, :, np.newaxis, np.newaxis]
+        trace = np.trace(T, axis1=-2, axis2=-1).real
+        T = T / trace[:, :, np.newaxis, np.newaxis]
         V = V * trace[:, :, np.newaxis]
 
-        self.basis, self.activation = U, V
+        self.basis, self.activation = T, V
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
@@ -502,21 +502,21 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             # should be positive semi-definite
             eye = np.eye(n_neighbors, dtype=np.complex128)
             rand = rng.random((n_sources, n_basis, n_blocks - n_remains, n_neighbors))
-            U = rand[..., np.newaxis] * eye
+            T = rand[..., np.newaxis] * eye
 
             if n_remains > 0:
                 eye = np.eye(n_neighbors + 1, dtype=np.complex128)
                 rand = rng.random((n_sources, n_basis, n_remains, n_neighbors + 1))
-                U_high = rand[..., np.newaxis] * eye
+                T_high = rand[..., np.newaxis] * eye
 
-                U = U, U_high
+                T = T, T_high
         else:
             # To avoid overwriting.
             if n_remains > 0:
-                U_low, U_high = self.basis
-                U = U_low.copy(), U_high.copy()
+                T_low, T_high = self.basis
+                T = T_low.copy(), T_high.copy()
             else:
-                U = self.basis.copy()
+                T = self.basis.copy()
 
         if not hasattr(self, "activation"):
             V = rng.random((n_sources, n_basis, n_frames))
@@ -525,7 +525,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             # To avoid overwriting.
             V = self.activation.copy()
 
-        self.basis, self.activation = U, V
+        self.basis, self.activation = T, V
 
         if self.normalization:
             self.normalize_block_decomposition()
@@ -577,8 +577,8 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
                 numpy.ndarray of reconstructed PSDTF.
                 The shape is (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
             """
-            U, V = basis, activation
-            n_dims = U.ndim
+            T, V = basis, activation
+            n_dims = T.ndim
 
             axis1 = n_dims + axis1 if axis1 < 0 else axis1
             axis2 = n_dims + axis2 if axis2 < 0 else axis2
@@ -586,10 +586,10 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             assert (axis1 == 2 and axis2 == 3) or (axis1 == 3 and axis2 == 4)
 
             if axis1 == 2 and axis2 == 3:
-                U = U.transpose(0, 4, 1, 2, 3)
+                T = T.transpose(0, 4, 1, 2, 3)
 
             R = np.sum(
-                U[:, :, np.newaxis, :, :, :] * V[:, :, :, np.newaxis, np.newaxis, np.newaxis],
+                T[:, :, np.newaxis, :, :, :] * V[:, :, :, np.newaxis, np.newaxis, np.newaxis],
                 axis=1,
             )
             R = to_psd(R, axis1=3, axis2=4)
@@ -599,15 +599,15 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         if type(basis) is tuple:
             assert self.n_remains > 0, "n_remains is expected to be positive."
 
-            U_low, U_high = basis
+            T_low, T_high = basis
             V = activation
-            R_low = _reconstruct(U_low, V, axis1=axis1, axis2=axis2)
-            R_high = _reconstruct(U_high, V, axis1=axis1, axis2=axis2)
+            R_low = _reconstruct(T_low, V, axis1=axis1, axis2=axis2)
+            R_high = _reconstruct(T_high, V, axis1=axis1, axis2=axis2)
             R = R_low, R_high
         else:
-            U = basis
+            T = basis
             V = activation
-            R = _reconstruct(U, V, axis1=axis1, axis2=axis2)
+            R = _reconstruct(T, V, axis1=axis1, axis2=axis2)
 
         return R
 
@@ -622,26 +622,26 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         """
         normalization = self.normalization
         n_remains = self.n_remains
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
 
         assert normalization, "Set normalization."
 
         if n_remains > 0:
-            U_low, U_high = U
-            trace_low = np.trace(U_low, axis1=axis1, axis2=axis2).real
-            trace_high = np.trace(U_high, axis1=axis1, axis2=axis2).real
+            T_low, T_high = T
+            trace_low = np.trace(T_low, axis1=axis1, axis2=axis2).real
+            trace_high = np.trace(T_high, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace_low, axis=-1) + np.sum(trace_high, axis=-1)
-            U_low = U_low / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
-            U_high = U_high / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
-            U = U_low, U_high
+            T_low = T_low / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            T_high = T_high / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            T = T_low, T_high
         else:
-            trace = np.trace(U, axis1=axis1, axis2=axis2).real
+            trace = np.trace(T, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace, axis=-1)
-            U = U / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            T = T / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
 
         V = V * trace[:, :, np.newaxis]
 
-        self.basis, self.activation = U, V
+        self.basis, self.activation = T, V
 
 
 class GaussIPSDTA(BlockDecompositionIPSDTAbase):
@@ -753,12 +753,12 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             Returns:
                 numpy.ndarray of updated basis matrix.
             """
-            U, V = basis, activation
+            T, V = basis, activation
             Y = separated
             na = np.newaxis
-            _, _, n_blocks, n_neighbors, _ = U.shape
+            _, _, n_blocks, n_neighbors, _ = T.shape
 
-            R = self.reconstruct_block_decomposition_psdtf(U, V)
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
             Y = Y.transpose(0, 3, 1, 2)
 
@@ -780,12 +780,12 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             )
             Q_sqrt = sqrtmh(Q)
 
-            QUPUQ = Q_sqrt @ U @ P @ U @ Q_sqrt
-            QUPUQ = to_psd(QUPUQ, flooring_fn=self.flooring_fn)
-            U = U @ Q_sqrt @ invsqrtmh(QUPUQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ U
-            U = to_psd(U, flooring_fn=self.flooring_fn)
+            QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
+            QTPTQ = to_psd(QTPTQ, flooring_fn=self.flooring_fn)
+            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ T
+            T = to_psd(T, flooring_fn=self.flooring_fn)
 
-            return U
+            return T
 
         n_bins = self.n_bins
         n_blocks = self.n_blocks
@@ -793,23 +793,23 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         n_neighbors = n_bins // n_blocks
 
         X, W = self.input, self.demix_filter
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
         Y = self.separate(X, demix_filter=W)
 
         if n_remains > 0:
-            U_low, U_high = U
+            T_low, T_high = T
             Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
             Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
             Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
 
-            U_low = _update_basis_mm(U_low, V, separated=Y_low)
-            U_high = _update_basis_mm(U_high, V, separated=Y_high)
-            U = U_low, U_high
+            T_low = _update_basis_mm(T_low, V, separated=Y_low)
+            T_high = _update_basis_mm(T_high, V, separated=Y_high)
+            T = T_low, T_high
         else:
             Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
-            U = _update_basis_mm(U, V, separated=Y)
+            T = _update_basis_mm(T, V, separated=Y)
 
-        self.basis = U
+        self.basis = T
 
     def update_activation_mm(self) -> None:
         def _compute_traces(
@@ -825,12 +825,12 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 Tuple of numerator and denominator.
                 Type of each item is ``numpy.ndarray``.
             """
-            U, V = basis, activation
+            T, V = basis, activation
             Y = separated
             na = np.newaxis
-            _, _, _, n_neighbors, _ = U.shape
+            _, _, _, n_neighbors, _ = T.shape
 
-            R = self.reconstruct_block_decomposition_psdtf(U, V)
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
             Y = Y.transpose(0, 3, 1, 2)
             YY_Hermite = Y[:, :, :, :, np.newaxis] @ Y[:, :, :, np.newaxis, :].conj()
@@ -839,9 +839,9 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             YY_Hermite = YY_Hermite + eps[:, na] * np.eye(n_neighbors)
             RYYR = R_inverse @ YY_Hermite @ R_inverse
 
-            num = np.trace(RYYR[:, na, :, :, :, :] @ U[:, :, na, :, :, :], axis1=-2, axis2=-1)
+            num = np.trace(RYYR[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1)
             denom = np.trace(
-                R_inverse[:, na, :, :, :, :] @ U[:, :, na, :, :, :], axis1=-2, axis2=-1
+                R_inverse[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1
             )
             num = np.real(num).sum(axis=-1)
             denom = np.real(denom).sum(axis=-1)
@@ -855,23 +855,23 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         n_neighbors = n_bins // n_blocks
 
         X, W = self.input, self.demix_filter
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
         Y = self.separate(X, demix_filter=W)
 
         if n_remains > 0:
-            U_low, U_high = U
+            T_low, T_high = T
             Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
             Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
             Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
 
-            num_low, denom_low = _compute_traces(U_low, V, separated=Y_low)
-            num_high, denom_high = _compute_traces(U_high, V, separated=Y_high)
+            num_low, denom_low = _compute_traces(T_low, V, separated=Y_low)
+            num_high, denom_high = _compute_traces(T_high, V, separated=Y_high)
 
             num = num_low + num_high
             denom = denom_low + denom_high
         else:
             Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
-            num, denom = _compute_traces(U, V, separated=Y)
+            num, denom = _compute_traces(T, V, separated=Y)
 
         self.activation = V * np.sqrt(num / denom)
 
@@ -891,9 +891,9 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         n_neighbors = n_bins // n_blocks
 
         X, W = self.input, self.demix_filter
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
 
-        R = self.reconstruct_block_decomposition_psdtf(U, V)
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
 
         if self.n_remains > 0:
             X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
@@ -1000,9 +1000,9 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
         Y = Y.transpose(0, 2, 1)
-        U, V = self.basis, self.activation
+        T, V = self.basis, self.activation
 
-        R = self.reconstruct_block_decomposition_psdtf(U, V)
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
 
         if n_remains > 0:
             Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=2)
