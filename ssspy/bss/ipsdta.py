@@ -727,6 +727,9 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         self.update_source_model()
         self.update_spatial_model()
 
+        if self.normalization:
+            self.normalize_block_decomposition()
+
     def update_source_model(self) -> None:
         if self.source_algorithm == "MM":
             self.update_source_model_mm()
