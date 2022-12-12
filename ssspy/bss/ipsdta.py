@@ -644,7 +644,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         self.basis, self.activation = U, V
 
 
-class GaussIPDSTA(BlockDecompositionIPSDTAbase):
+class GaussIPSDTA(BlockDecompositionIPSDTAbase):
     def __init__(
         self,
         n_basis: int,
@@ -656,8 +656,8 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
         ),
         callbacks: Optional[
             Union[
-                Callable[["GaussIPDSTA"], None],
-                List[Callable[["GaussIPDSTA"], None]],
+                Callable[["GaussIPSDTA"], None],
+                List[Callable[["GaussIPSDTA"], None]],
             ]
         ] = None,
         normalization: Optional[Union[bool, str]] = True,
