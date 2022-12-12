@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Tuple, Union
 import numpy as np
 
 from ..algorithm import projection_back
+from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
 from ._update_spatial_model import update_by_block_decomposition_vcd
@@ -736,8 +737,79 @@ class GaussIPDSTA(BlockDecompositionIPSDTAbase):
         self.update_basis_mm()
         self.update_activation_mm()
 
-    def update_basis_mm(self):
-        raise NotImplementedError("Implement 'update_basis_mm'.")
+    def update_basis_mm(self) -> None:
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        def _update_basis_mm(
+            basis: np.ndarray, activation: np.ndarray, separated: np.ndarray = None
+        ) -> np.ndarray:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+
+            Returns:
+                numpy.ndarray of updated basis matrix.
+            """
+            U, V = basis, activation
+            Y = separated
+            na = np.newaxis
+            _, _, n_blocks, n_neighbors, _ = U.shape
+
+            R = self.reconstruct_block_decomposition_psdtf(U, V)
+            R_inverse = np.linalg.inv(R)
+            Y = Y.transpose(0, 3, 1, 2)
+
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
+            # TODO: stable flooring operation
+            eps = self.flooring_fn(np.zeros((n_neighbors,)))
+            YY_Hermite = YY_Hermite + eps[:, na] * np.eye(n_neighbors)
+
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+            RYYR = to_psd(RYYR)
+
+            P = np.mean(
+                V[:, :, :, na, na, na] * R_inverse[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q = np.mean(
+                V[:, :, :, na, na, na] * RYYR[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q_sqrt = sqrtmh(Q)
+
+            QUPUQ = Q_sqrt @ U @ P @ U @ Q_sqrt
+            QUPUQ = to_psd(QUPUQ, flooring_fn=self.flooring_fn)
+            U = U @ Q_sqrt @ invsqrtmh(QUPUQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ U
+            U = to_psd(U, flooring_fn=self.flooring_fn)
+
+            return U
+
+        n_bins = self.n_bins
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        U, V = self.basis, self.activation
+        Y = self.separate(X, demix_filter=W)
+
+        if n_remains > 0:
+            U_low, U_high = U
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+
+            U_low = _update_basis_mm(U_low, V, separated=Y_low)
+            U_high = _update_basis_mm(U_high, V, separated=Y_high)
+            U = U_low, U_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            U = _update_basis_mm(U, V, separated=Y)
+
+        self.basis = U
 
     def update_activation_mm(self) -> None:
         def _compute_traces(
