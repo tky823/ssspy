@@ -439,14 +439,12 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             setattr(self, key, kwargs[key])
 
         X = self.input
-        n_blocks = self.n_blocks
 
         n_channels, n_bins, n_frames = X.shape
         n_sources = n_channels  # n_channels == n_sources
 
         self.n_sources, self.n_channels = n_sources, n_channels
         self.n_bins, self.n_frames = n_bins, n_frames
-        self.n_remains = n_bins % n_blocks
 
         if not hasattr(self, "demix_filter"):
             W = np.eye(n_sources, n_channels, dtype=np.complex128)
@@ -529,6 +527,13 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
         if self.normalization:
             self.normalize_block_decomposition()
+
+    @property
+    def n_remains(self) -> int:
+        if not hasattr(self, "n_bins"):
+            raise AttributeError("Since n_bins is not defined, n_remains cannot be computed.")
+
+        return self.n_bins % self.n_blocks
 
     def reconstruct_block_decomposition_psdtf(
         self, basis: np.ndarray, activation: np.ndarray, axis1: int = -2, axis2: int = -1
