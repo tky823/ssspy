@@ -890,6 +890,40 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
     def update_spatial_model_vcd(self) -> None:
+        def _update(input: np.ndarray, demix_filter: np.ndarray, covariance: np.ndarray):
+            r"""
+            Args:
+                input (np.ndarray):
+                    Mixture spectrogram.
+                    The shape is (n_channels, n_blocks, n_neighbors, n_frames).
+                demix_filter (np.ndarray):
+                    Demixing filter split by frequnecy bands.
+                    The shape is (n_blocks, n_neighbors, n_sources, n_channels).
+                covariance (np.ndarray):
+                    Rconstructed PSDTF.
+                    The shape is (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                np.ndarray of demixing filters after update.
+            """
+            X, W = input, demix_filter
+            R = covariance
+
+            XX = X[:, na, :, :, na] * X[na, :, :, na, :].conj()
+            XX = XX.transpose(2, 3, 4, 0, 1, 5)
+
+            R_inverse = np.linalg.inv(R)
+            R_inverse = to_psd(R_inverse, flooring_fn=self.flooring_fn)
+            R_inverse = R_inverse.transpose(2, 4, 3, 0, 1)
+
+            RXX = np.mean(R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
+
+            W = update_by_block_decomposition_vcd(
+                W, weighted_covariance=RXX, flooring_fn=self.flooring_fn
+            )
+
+            return W
+
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins, n_frames = self.n_bins, self.n_frames
         n_blocks = self.n_blocks
@@ -907,54 +941,24 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
             W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
             R_low, R_high = R
-            R_low_inverse = np.linalg.inv(R_low)
-            R_high_inverse = np.linalg.inv(R_high)
 
+            # Lower frequency
             X_low = X_low.reshape(n_channels, n_blocks - n_remains, n_neighbors, n_frames)
-            X_high = X_high.reshape(n_channels, n_remains, n_neighbors + 1, n_frames)
             W_low = W_low.reshape(n_blocks - n_remains, n_neighbors, n_sources, n_channels)
+            W_low = _update(X_low, demix_filter=W_low, covariance=R_low)
+
+            # Higher frequency
+            X_high = X_high.reshape(n_channels, n_remains, n_neighbors + 1, n_frames)
             W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
-            R_low_inverse = R_low_inverse.transpose(2, 3, 4, 0, 1)
-            R_high_inverse = R_high_inverse.transpose(2, 3, 4, 0, 1)
-
-            # lower frequency bins
-            XX_low = X_low[na, :, :, :, :] * X_low[:, na, :, :, :].conj()
-
-            U_low = np.mean(
-                R_low_inverse[na, na, :, :, :, :, :] * XX_low[:, :, :, na, :, na, :], axis=-1
-            )
-            U_low = U_low.transpose(2, 3, 4, 5, 0, 1)
-
-            W_low = update_by_block_decomposition_vcd(W_low, U_low, flooring_fn=self.flooring_fn)
-
-            # higher frequency bins
-            XX_high = X_high[na, :, :, :, :] * X_high[:, na, :, :, :].conj()
-
-            U_high = np.mean(
-                R_high_inverse[na, na, :, :, :, :, :] * XX_high[:, :, :, na, :, na, :], axis=-1
-            )
-            U_high = U_high.transpose(2, 3, 4, 5, 0, 1)
-
-            W_high = update_by_block_decomposition_vcd(W_high, U_high, flooring_fn=self.flooring_fn)
+            W_high = _update(X_high, demix_filter=W_high, covariance=R_high)
 
             W_low = W_low.reshape((n_blocks - n_remains) * n_neighbors, n_sources, n_channels)
             W_high = W_high.reshape(n_remains * (n_neighbors + 1), n_sources, n_channels)
-
             W = np.concatenate([W_low, W_high], axis=0)
         else:
-            R_inverse = np.linalg.inv(R)
-
             X = X.reshape(n_channels, n_blocks, n_neighbors, n_frames)
             W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
-            R_inverse = R_inverse.transpose(2, 3, 4, 0, 1)
-
-            XX = X[na, :, :, :, :] * X[:, na, :, :, :].conj()
-
-            U = np.mean(R_inverse[na, na, :, :, :, :, :] * XX[:, :, :, na, :, na, :], axis=-1)
-            U = U.transpose(2, 3, 4, 5, 0, 1)
-
-            W = update_by_block_decomposition_vcd(W, U, flooring_fn=self.flooring_fn)
-
+            W = _update(X, demix_filter=W, covariance=R)
             W = W.reshape(n_blocks * n_neighbors, n_sources, n_channels)
 
         self.demix_filter = W
