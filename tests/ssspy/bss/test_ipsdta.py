@@ -41,7 +41,7 @@ def test_ipsdta_base_normalize(
     U, V = ipsdta.basis.copy(), ipsdta.activation.copy()
     R_old = ipsdta.reconstruct_psdtf(U, V)
 
-    ipsdta.normalize()
+    ipsdta.normalize_psdtf()
 
     U, V = ipsdta.basis.copy(), ipsdta.activation.copy()
     R = ipsdta.reconstruct_psdtf(U, V)
@@ -81,7 +81,7 @@ def test_block_decomposition_ipsdta_base(
     U, V = ipsdta.basis, ipsdta.activation
     R_old = ipsdta.reconstruct_block_decomposition_psdtf(U, V)
 
-    ipsdta.normalize_block_decomposition()
+    ipsdta.normalize_block_decomposition_psdtf()
 
     U, V = ipsdta.basis, ipsdta.activation
     R = ipsdta.reconstruct_block_decomposition_psdtf(U, V)
