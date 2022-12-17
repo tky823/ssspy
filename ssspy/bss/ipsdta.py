@@ -61,7 +61,7 @@ class IPSDTAbase(IterativeMethodBase):
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
     ) -> None:
-        self.normalization: Optional[Union[bool, str]]
+        self.source_normalization: Optional[Union[bool, str]]
 
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
@@ -116,7 +116,7 @@ class IPSDTAbase(IterativeMethodBase):
     def __repr__(self) -> str:
         s = "IPSDTA("
         s += "n_basis={n_basis}"
-        s += ", normalization={normalization}"
+        s += ", source_normalization={source_normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -207,8 +207,8 @@ class IPSDTAbase(IterativeMethodBase):
 
         self.basis, self.activation = T, V
 
-        if self.normalization:
-            self.normalize()
+        if self.source_normalization:
+            self.normalize_psdtf()
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
@@ -281,12 +281,12 @@ class IPSDTAbase(IterativeMethodBase):
         r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
-    def normalize(self) -> None:
+    def normalize_psdtf(self) -> None:
         r"""Normalize PSDTF parameters."""
-        normalization = self.normalization
+        source_normalization = self.source_normalization
         T, V = self.basis, self.activation
 
-        assert normalization, "Set normalization."
+        assert source_normalization, "Set source_normalization."
 
         trace = np.trace(T, axis1=-2, axis2=-1).real
         T = T / trace[:, :, np.newaxis, np.newaxis]
@@ -413,7 +413,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         s = "IPSDTA("
         s += "n_basis={n_basis}"
         s += ", n_blocks={n_blocks}"
-        s += ", normalization={normalization}"
+        s += ", source_normalization={source_normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -525,8 +525,8 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
         self.basis, self.activation = T, V
 
-        if self.normalization:
-            self.normalize_block_decomposition()
+        if self.source_normalization:
+            self.normalize_block_decomposition_psdtf()
 
     @property
     def n_remains(self) -> int:
@@ -616,7 +616,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
         return R
 
-    def normalize_block_decomposition(self, axis1: int = -2, axis2: int = -1) -> None:
+    def normalize_block_decomposition_psdtf(self, axis1: int = -2, axis2: int = -1) -> None:
         r"""Normalize PSDTF parameters using block decomposition of bases.
 
         Args:
@@ -625,11 +625,11 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             axis2 (int):
                 Second axis of covariance matrix. Default: ``-1``.
         """
-        normalization = self.normalization
+        source_normalization = self.source_normalization
         n_remains = self.n_remains
         T, V = self.basis, self.activation
 
-        assert normalization, "Set normalization."
+        assert source_normalization, "Set source_normalization."
 
         if n_remains > 0:
             T_low, T_high = T
@@ -673,8 +673,8 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        normalization (bool or str, optional):
-            If ``normalization=True``, normalize demixing filters and PSDTF parameters.
+        source_normalization (bool):
+            If ``source_normalization=True``, normalize PSDTF parameters.
             Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -708,7 +708,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 List[Callable[["GaussIPSDTA"], None]],
             ]
         ] = None,
-        normalization: Optional[Union[bool, str]] = True,
+        source_normalization: Optional[Union[bool, str]] = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -730,7 +730,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
 
         self.source_algorithm = source_algorithm
         self.spatial_algorithm = spatial_algorithm
-        self.normalization = normalization
+        self.source_normalization = source_normalization
 
     def __repr__(self) -> str:
         s = "GaussIPSDTA("
@@ -738,7 +738,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         s += ", n_blocks={n_blocks}"
         s += ", source_algorithm={source_algorithm}"
         s += ", spatial_algorithm={spatial_algorithm}"
-        s += ", normalization={normalization}"
+        s += ", source_normalization={source_normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -776,15 +776,15 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         self.update_source_model()
         self.update_spatial_model()
 
-        if self.normalization:
-            self.normalize_block_decomposition()
-
     def update_source_model(self) -> None:
         r"""Update PSDTF basis matrices and activations."""
         if self.source_algorithm == "MM":
             self.update_source_model_mm()
         else:
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+        if self.source_normalization:
+            self.normalize_block_decomposition_psdtf()
 
     def update_source_model_mm(self):
         r"""Update PSDTF basis matrices and activations by MM algorithm."""
