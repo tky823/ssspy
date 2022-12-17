@@ -764,7 +764,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             T, V = basis, activation
             Y = separated
             na = np.newaxis
-            _, _, n_blocks, n_neighbors, _ = T.shape
+            _, _, _, n_neighbors, _ = T.shape
 
             R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
@@ -903,7 +903,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
 
         R = self.reconstruct_block_decomposition_psdtf(T, V)
 
-        if self.n_remains > 0:
+        if n_remains > 0:
             X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
             W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
             R_low, R_high = R
