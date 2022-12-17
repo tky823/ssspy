@@ -919,7 +919,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             RXX = np.mean(R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
 
             W = update_by_block_decomposition_vcd(
-                W, weighted_covariance=RXX, flooring_fn=self.flooring_fn
+                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < self.flooring_fn(0)
             )
 
             return W
