@@ -752,8 +752,6 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
     def _reset(self, **kwargs) -> None:
         r"""Reset attributes by given keyword arguments.
 
-        We also set variance of Gaussian distribution.
-
         Args:
             kwargs:
                 Keyword arguments to set as attributes of IPSDTA.
