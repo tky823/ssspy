@@ -1030,9 +1030,10 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 separated (np.ndarray):
                     Separated signal with shape of (n_sources, n_frames, n_blocks, n_neighbors).
                 demix_filter (np.ndarray):
-                    (n_blocks, n_neighbors, n_sources, n_channels).
+                    Demixing filters with shape of (n_blocks, n_neighbors, n_sources, n_channels).
                 covariance:
-                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors)
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
             """
             Y, W = separated, demix_filter
             R = covariance
