@@ -10,7 +10,7 @@ from ._psd import to_psd
 from ._update_spatial_model import update_by_block_decomposition_vcd
 from .base import IterativeMethodBase
 
-spatial_algorithms = ["fixed-point", "VCD"]
+spatial_algorithms = ["FPI", "VCD"]
 source_algorithms = ["EM", "MM"]
 EPS = 1e-10
 
@@ -717,7 +717,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         """
         super()._reset(**kwargs)
 
-        if self.spatial_algorithm == "fixed-point":
+        if self.spatial_algorithm == "FPI":
             if not hasattr(self, "fixed_point"):
                 n_sources = self.n_sources
                 n_bins = self.n_bins
