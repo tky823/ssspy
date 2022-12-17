@@ -772,6 +772,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             raise NotImplementedError("IPSDTA with fixed-point iteration is not supported.")
 
     def update_once(self) -> None:
+        r"""Update PSDTF parameters and demixing filters once."""
         self.update_source_model()
         self.update_spatial_model()
 
@@ -779,16 +780,19 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             self.normalize_block_decomposition()
 
     def update_source_model(self) -> None:
+        r"""Update PSDTF basis matrices and activations."""
         if self.source_algorithm == "MM":
             self.update_source_model_mm()
         else:
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
     def update_source_model_mm(self):
+        r"""Update PSDTF basis matrices and activations by MM algorithm."""
         self.update_basis_mm()
         self.update_activation_mm()
 
     def update_basis_mm(self) -> None:
+        r"""Update PSDTF basis matrices by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
 
@@ -863,6 +867,8 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         self.basis = T
 
     def update_activation_mm(self) -> None:
+        r"""Update PSDTF activations by MM algorithm."""
+
         def _compute_traces(
             basis: np.ndarray, activation: np.ndarray, separated: np.ndarray = None
         ) -> Tuple[np.ndarray, np.ndarray]:
@@ -927,12 +933,15 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         self.activation = V * np.sqrt(num / denom)
 
     def update_spatial_model(self) -> None:
+        r"""Update demixing filters once."""
         if self.spatial_algorithm == "VCD":
             self.update_spatial_model_vcd()
         else:
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
     def update_spatial_model_vcd(self) -> None:
+        r"""Update demixing filters once by VCD."""
+
         def _update(input: np.ndarray, demix_filter: np.ndarray, covariance: np.ndarray):
             r"""
             Args:
