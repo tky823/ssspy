@@ -650,6 +650,49 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
 
 
 class GaussIPSDTA(BlockDecompositionIPSDTAbase):
+    r"""Independent positive semidefinite tensor analysis (IPSDTA) \
+    on Gaussian distribution.
+
+    Args:
+        n_basis (int):
+            Number of PSDTF bases.
+        n_blocks (int):
+            Number of sub-blocks.
+        source_algorithm (str):
+            Algorithm for PSDTF updates.
+            Choose ``EM``, or ``MM``. Default: ``MM``.
+        spatial_algorithm (str):
+            Algorithm for demixing filter updates.
+            Choose ``FPI``, or ``VCD``. Default: ``VCD``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        normalization (bool or str, optional):
+            If ``normalization=True``, normalize demixing filters and PSDTF parameters.
+            Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
     def __init__(
         self,
         n_basis: int,
