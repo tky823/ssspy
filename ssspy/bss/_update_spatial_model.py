@@ -389,3 +389,98 @@ def update_by_ip2_one_pair(
     W_mn = W_mn_conj.transpose(0, 2, 1).conj()
 
     return W_mn
+
+
+def update_by_block_decomposition_vcd(
+    demix_filter: np.ndarray,
+    weighted_covariance: np.ndarray,
+    singular_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+    overwrite: bool = True,
+) -> np.ndarray:
+    r"""
+    Args:
+        demix_filter (numpy.ndarray):
+            Demixing filters to be updated.
+            The shape is (n_blocks, n_neighbors, n_sources, n_channels).
+        weighted_covariance (numpy.ndarray):
+            Weighted covariance matrix.
+            The shape is (n_blocks, n_neighbors, n_neighbors, n_sources, n_channels, n_channels).
+        singular_fn (callable, optional):
+            A flooring function to return singular condition.
+            This function is expected to return the same shape bool tensor as the input.
+            If ``singular_fn=None``,``lambda x: x == 0`` is used.
+        overwrite (bool):
+            Overwrite ``demix_filter`` if ``overwrite=True``.
+            Default: ``True``.
+
+    Returns:
+        numpy.ndarray of updated demixing filters.
+        The shape is (n_blocks, n_neighbors, n_sources, n_channels).
+    """
+    na = np.newaxis
+
+    if singular_fn is None:
+
+        def _is_zero(x: np.ndarray) -> np.ndarray:
+            return x == 0
+
+        singular_fn = _is_zero
+
+    if overwrite:
+        W = demix_filter
+    else:
+        W = demix_filter.copy()
+
+    RXX = weighted_covariance
+    U = np.diagonal(RXX, axis1=1, axis2=2)
+
+    n_blocks, n_neighbors, n_sources, n_channels = W.shape
+
+    E_i = np.eye(n_neighbors)
+    E_n = np.eye(n_sources)
+    E_n = np.tile(E_n, reps=(n_blocks, 1, 1))
+
+    for neighbor_idx in range(n_neighbors):
+        pad_mask_i = 1 - E_i[neighbor_idx]
+
+        U_i = U[:, :, :, :, neighbor_idx]
+        RXX_i = RXX[:, neighbor_idx]
+
+        for source_idx in range(n_sources):
+            e_n = E_n[:, source_idx, :]
+            U_in = U_i[:, source_idx, :, :]
+            RXX_in = RXX_i[:, :, source_idx]
+            w_n_conj = W[:, :, source_idx, :].conj()
+
+            RXY_in = RXX_in @ w_n_conj[:, :, :, na]
+
+            gamma_in = np.sum(pad_mask_i[:, na] * RXY_in[..., 0], axis=1)
+
+            WU_in = W[:, neighbor_idx, :, :] @ U_in
+            eta_in = np.linalg.solve(WU_in, e_n)
+            eta_hat_in = np.linalg.solve(U_in, gamma_in)
+            eta_U_in = eta_in[:, na, :].conj() @ U_in
+
+            xi_in = eta_U_in @ eta_in[:, :, na]
+            xi_hat_in = eta_U_in @ eta_hat_in[:, :, na]
+
+            xi_in = np.real(xi_in[..., 0])
+            xi_in = np.maximum(xi_in, 0)
+            xi_hat_in = xi_hat_in[..., 0]
+
+            singular_condition = singular_fn(xi_hat_in)
+
+            # to avoid zero division, but these will be ignored.
+            xi_hat_in[singular_condition] = 1
+
+            coeff = (xi_hat_in / (2 * xi_in)) * (
+                1 - np.sqrt(1 + 4 * xi_in / (np.abs(xi_hat_in) ** 2))
+            )
+            coeff_singular = 1 / np.sqrt(xi_in)
+            coeff = np.where(singular_condition, coeff_singular, coeff)
+
+            w_in = coeff * eta_in - eta_hat_in
+
+            W[:, neighbor_idx, source_idx, :] = w_in.conj()
+
+    return W
