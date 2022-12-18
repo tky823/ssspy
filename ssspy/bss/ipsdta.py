@@ -1238,7 +1238,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Args:
                 Y (np.ndarray):
                     Separated spectrams with shape of
-                    (n_sources, n_frames, n_blocks, n_neighbors).
+                    (n_sources, n_blocks, n_neighbors, n_frames).
                 R (np.ndarray):
                     Covariance matrix with shape of
                     (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
@@ -1246,6 +1246,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Returns:
                 Quadratic forms with shape of (n_sources, n_frames).
             """
+            Y = Y.transpose(0, 3, 1, 2)
             R_inverse = np.linalg.inv(R)
 
             YRY = quadratic(Y, R_inverse)
@@ -1321,8 +1322,8 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
             R_low, R_high = R
 
-            YRY_low = _quadratic(Y_low.transpose(0, 3, 1, 2), R_low)
-            YRY_high = _quadratic(Y_high.transpose(0, 3, 1, 2), R_high)
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
 
             YRY = YRY_low + YRY_high
             pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
@@ -1332,7 +1333,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             T = T_low, T_high
         else:
             Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
-            YRY = _quadratic(Y.transpose(0, 3, 1, 2), R)
+            YRY = _quadratic(Y, R)
             pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
 
             T = _update_basis_mm(T, V, separated=Y, weight=pi)
@@ -1347,7 +1348,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Args:
                 Y (np.ndarray):
                     Separated spectrams with shape of
-                    (n_sources, n_frames, n_blocks, n_neighbors).
+                    (n_sources, n_blocks, n_neighbors, n_frames).
                 R (np.ndarray):
                     Covariance matrix with shape of
                     (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
@@ -1355,6 +1356,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Returns:
                 Quadratic forms with shape of (n_sources, n_frames).
             """
+            Y = Y.transpose(0, 3, 1, 2)
             R_inverse = np.linalg.inv(R)
 
             YRY = quadratic(Y, R_inverse)
@@ -1420,8 +1422,8 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
             R_low, R_high = R
 
-            YRY_low = _quadratic(Y_low.transpose(0, 3, 1, 2), R_low)
-            YRY_high = _quadratic(Y_high.transpose(0, 3, 1, 2), R_high)
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
 
             YRY = YRY_low + YRY_high
             pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
@@ -1433,7 +1435,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             denom = denom_low + denom_high
         else:
             Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
-            YRY = _quadratic(Y.transpose(0, 3, 1, 2), R)
+            YRY = _quadratic(Y, R)
             pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
 
             num, denom = _compute_traces(T, V, separated=Y, weight=pi)
@@ -1463,7 +1465,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Args:
                 Y (np.ndarray):
                     Separated spectrams with shape of
-                    (n_sources, n_frames, n_blocks, n_neighbors).
+                    (n_sources, n_blocks, n_neighbors, n_frames).
                 R (np.ndarray):
                     Covariance matrix with shape of
                     (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
@@ -1471,6 +1473,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             Returns:
                 Quadratic forms with shape of (n_sources, n_frames).
             """
+            Y = Y.transpose(0, 3, 1, 2)
             R_inverse = np.linalg.inv(R)
 
             YRY = quadratic(Y, R_inverse)
@@ -1492,18 +1495,17 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
-        Y = Y.transpose(0, 2, 1)
         T, V = self.basis, self.activation
 
         R = self.reconstruct_block_decomposition_psdtf(T, V)
 
         if n_remains > 0:
-            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=2)
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
             W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
             R_low, R_high = R
 
-            Y_low = Y_low.reshape(n_sources, n_frames, (n_blocks - n_remains), n_neighbors)
-            Y_high = Y_high.reshape(n_sources, n_frames, n_remains, n_neighbors + 1)
+            Y_low = Y_low.reshape(n_sources, (n_blocks - n_remains), n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
             W_low = W_low.reshape((n_blocks - n_remains), n_neighbors, n_sources, n_channels)
             W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
 
@@ -1525,7 +1527,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
             logdetW = logdetW_low.sum(axis=(0, 1)) + logdetW_high.sum(axis=(0, 1))
         else:
-            Y = Y.reshape(n_sources, n_frames, n_blocks, n_neighbors)
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
             W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
 
             YRY = _quadratic(Y, R)
