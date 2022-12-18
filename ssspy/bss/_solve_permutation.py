@@ -6,7 +6,7 @@ import numpy as np
 
 from ._flooring import identity, max_flooring
 
-EPS = 1e-12
+EPS = 1e-10
 
 
 def correlation_based_permutation_solver(

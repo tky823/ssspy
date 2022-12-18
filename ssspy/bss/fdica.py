@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 spatial_algorithms = ["IP", "IP1", "IP2"]
-EPS = 1e-12
+EPS = 1e-10
 
 
 class FDICAbase(IterativeMethodBase):
@@ -42,7 +42,7 @@ class FDICAbase(IterativeMethodBase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -302,7 +302,7 @@ class GradFDICAbase(FDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -435,7 +435,7 @@ class GradFDICA(GradFDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -465,7 +465,7 @@ class GradFDICA(GradFDICAbase):
             ...     return 2 * np.abs(y)
 
             >>> def score_fn(y):
-            ...     denom = np.maximum(np.abs(y), 1e-12)
+            ...     denom = np.maximum(np.abs(y), 1e-10)
             ...     return y / denom
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -490,7 +490,7 @@ class GradFDICA(GradFDICAbase):
             ...     return 2 * np.abs(y)
 
             >>> def score_fn(y):
-            ...     denom = np.maximum(np.abs(y), 1e-12)
+            ...     denom = np.maximum(np.abs(y), 1e-10)
             ...     return y / denom
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -630,7 +630,7 @@ class NaturalGradFDICA(GradFDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -660,7 +660,7 @@ class NaturalGradFDICA(GradFDICAbase):
             ...     return 2 * np.abs(y)
 
             >>> def score_fn(y):
-            ...     denom = np.maximum(np.abs(y), 1e-12)
+            ...     denom = np.maximum(np.abs(y), 1e-10)
             ...     return y / denom
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -685,7 +685,7 @@ class NaturalGradFDICA(GradFDICAbase):
             ...     return 2 * np.abs(y)
 
             >>> def score_fn(y):
-            ...     denom = np.maximum(np.abs(y), 1e-12)
+            ...     denom = np.maximum(np.abs(y), 1e-10)
             ...     return y / denom
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
@@ -824,7 +824,7 @@ class AuxFDICA(FDICAbase):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
             If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
@@ -1181,7 +1181,7 @@ class GradLaplaceFDICA(GradFDICA):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1319,7 +1319,7 @@ class NaturalGradLaplaceFDICA(NaturalGradFDICA):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -1461,7 +1461,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-12)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair in ``IP2`` and ``ISS2``.
             If ``None`` is given, ``partial(sequential_pair_selector, sort=True)`` is used.
