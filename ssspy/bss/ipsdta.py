@@ -1100,3 +1100,109 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             loss = _compute_block_decomposition_loss(Y, demix_filter=W, covariance=R)
 
         return loss
+
+
+class TIPSDTA(BlockDecompositionIPSDTAbase):
+    r"""Independent positive semidefinite tensor analysis (IPSDTA) \
+    on Student's t distribution.
+
+    Args:
+        n_basis (int):
+            Number of PSDTF bases.
+        n_blocks (int):
+            Number of sub-blocks.
+        dof (float):
+            Degree of freedom parameter.
+        source_algorithm (str):
+            Algorithm for PSDTF updates.
+            Only ``MM`` is supported. Default: ``MM``.
+        spatial_algorithm (str):
+            Algorithm for demixing filter updates.
+            Only ``VCD`` is supported. Default: ``VCD``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        source_normalization (bool):
+            If ``source_normalization=True``, normalize PSDTF parameters.
+            Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        n_blocks: int,
+        dof: float,
+        source_algorithm: str = "MM",
+        spatial_algorithm: str = "VCD",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["GaussIPSDTA"], None],
+                List[Callable[["GaussIPSDTA"], None]],
+            ]
+        ] = None,
+        source_normalization: Optional[Union[bool, str]] = True,
+        scale_restoration: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_blocks,
+            flooring_fn,
+            callbacks,
+            scale_restoration,
+            record_loss,
+            reference_id,
+            rng,
+        )
+
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
+
+        self.dof = dof
+        self.source_algorithm = source_algorithm
+        self.source_normalization = source_normalization
+        self.spatial_algorithm = spatial_algorithm
+
+    def __repr__(self) -> str:
+        s = "GaussIPSDTA("
+        s += "n_basis={n_basis}"
+        s += ", n_blocks={n_blocks}"
+        s += ", dof={dof}"
+        s += ", source_algorithm={source_algorithm}"
+        s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", source_normalization={source_normalization}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
