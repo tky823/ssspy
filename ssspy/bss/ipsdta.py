@@ -1230,11 +1230,162 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
     def update_basis_mm(self) -> None:
         r"""Update PSDTF basis matrices by MM algorithm."""
-        raise NotImplementedError("update_basis_mm is not implemented.")
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        def _update_basis_mm(
+            basis: np.ndarray, activation: np.ndarray, separated: np.ndarray = None
+        ) -> np.ndarray:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+
+            Returns:
+                numpy.ndarray of updated basis matrix.
+            """
+            T, V = basis, activation
+            Y = separated
+            na = np.newaxis
+
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
+            R_inverse = np.linalg.inv(R)
+            Y = Y.transpose(0, 3, 1, 2)
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+
+            P = np.mean(
+                V[:, :, :, na, na, na] * R_inverse[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q = np.mean(
+                V[:, :, :, na, na, na] * RYYR[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q = to_psd(Q, flooring_fn=self.flooring_fn)
+            Q_sqrt = sqrtmh(Q)
+
+            QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
+            QTPTQ = to_psd(QTPTQ, flooring_fn=self.flooring_fn)
+            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ T
+            T = to_psd(T, flooring_fn=self.flooring_fn)
+
+            return T
+
+        n_bins = self.n_bins
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+        Y = self.separate(X, demix_filter=W)
+
+        if n_remains > 0:
+            T_low, T_high = T
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+
+            T_low = _update_basis_mm(T_low, V, separated=Y_low)
+            T_high = _update_basis_mm(T_high, V, separated=Y_high)
+            T = T_low, T_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            T = _update_basis_mm(T, V, separated=Y)
+
+        self.basis = T
 
     def update_activation_mm(self) -> None:
         r"""Update PSDTF activations by MM algorithm."""
-        raise NotImplementedError("update_activation_mm is not implemented.")
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        def _compute_traces(
+            basis: np.ndarray,
+            activation: np.ndarray,
+            separated: np.ndarray = None,
+            weight: np.ndarray = None,
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+
+            Returns:
+                Tuple of numerator and denominator.
+                Type of each item is ``numpy.ndarray``.
+            """
+            T, V = basis, activation
+            Y = separated.transpose(0, 3, 1, 2)
+            pi = weight
+            na = np.newaxis
+
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
+            R_inverse = np.linalg.inv(R)
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+
+            piRYYR = pi[:, :, na, na, na] * RYYR
+
+            num = np.trace(piRYYR[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            denom = np.trace(R_inverse[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            num = np.real(num).sum(axis=-1)
+            denom = np.real(denom).sum(axis=-1)
+
+            return num, denom
+
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        nu = self.dof
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+        Y = self.separate(X, demix_filter=W)
+
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            T_low, T_high = T
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+            R_low, R_high = R
+
+            YRY_low = _quadratic(Y_low.transpose(0, 3, 1, 2), R_low)
+            YRY_high = _quadratic(Y_high.transpose(0, 3, 1, 2), R_high)
+
+            YRY = YRY_low + YRY_high
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            num_low, denom_low = _compute_traces(T_low, V, separated=Y_low, weight=pi)
+            num_high, denom_high = _compute_traces(T_high, V, separated=Y_high, weight=pi)
+
+            num = num_low + num_high
+            denom = denom_low + denom_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            YRY = _quadratic(Y.transpose(0, 3, 1, 2), R)
+
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            num, denom = _compute_traces(T, V, separated=Y, weight=pi)
+
+        self.activation = V * np.sqrt(num / denom)
 
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once."""
