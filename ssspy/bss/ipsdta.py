@@ -1643,5 +1643,6 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
             logdetW = logdetW.sum(axis=(0, 1))
 
         loss = np.mean(loss + logdetR, axis=0) - 2 * logdetW
+        loss = loss.item()
 
         return loss
