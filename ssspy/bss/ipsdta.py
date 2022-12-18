@@ -9,6 +9,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
+from ..linalg.quadratic import quadratic
 from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
@@ -1206,3 +1207,82 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
         s += ")"
 
         return s.format(**self.__dict__)
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        Returns:
+            Computed loss.
+        """
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+
+        nu = self.dof
+
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+        Y = Y.transpose(0, 2, 1)
+        T, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=2)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+
+            Y_low = Y_low.reshape(n_sources, n_frames, (n_blocks - n_remains), n_neighbors)
+            Y_high = Y_high.reshape(n_sources, n_frames, n_remains, n_neighbors + 1)
+            W_low = W_low.reshape((n_blocks - n_remains), n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+
+            loss = np.sum(((nu + 2 * n_bins) / 2) * np.log(1 + (2 / nu) * YRY), axis=0)
+
+            _, logdetR_low = np.linalg.slogdet(R_low)
+            logdetR_low = logdetR_low.sum(axis=(0, 2))
+            _, logdetR_high = np.linalg.slogdet(R_high)
+            logdetR_high = logdetR_high.sum(axis=(0, 2))
+            logdetR = logdetR_low + logdetR_high
+
+            logdetW_low = self.compute_logdet(W_low)
+            logdetW_high = self.compute_logdet(W_high)
+
+            logdetW = logdetW_low.sum(axis=(0, 1)) + logdetW_high.sum(axis=(0, 1))
+        else:
+            Y = Y.reshape(n_sources, n_frames, n_blocks, n_neighbors)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+
+            YRY = _quadratic(Y, R)
+
+            loss = np.sum(((nu + 2 * n_bins) / 2) * np.log(1 + (2 / nu) * YRY), axis=0)
+
+            _, logdetR = np.linalg.slogdet(R)
+            logdetR = logdetR.sum(axis=(0, 2))
+
+            logdetW = self.compute_logdet(W)
+            logdetW = logdetW.sum(axis=(0, 1))
+
+        loss = np.mean(loss + logdetR, axis=0) - 2 * logdetW
+
+        return loss
