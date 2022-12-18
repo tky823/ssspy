@@ -1191,7 +1191,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
         self.spatial_algorithm = spatial_algorithm
 
     def __repr__(self) -> str:
-        s = "GaussIPSDTA("
+        s = "TIPSDTA("
         s += "n_basis={n_basis}"
         s += ", n_blocks={n_blocks}"
         s += ", dof={dof}"
