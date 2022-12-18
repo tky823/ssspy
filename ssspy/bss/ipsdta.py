@@ -976,7 +976,6 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             XX = XX.transpose(2, 3, 4, 0, 1, 5)
 
             R_inverse = np.linalg.inv(R)
-            R_inverse = to_psd(R_inverse, flooring_fn=self.flooring_fn)
             R_inverse = R_inverse.transpose(2, 4, 3, 0, 1)
 
             RXX = np.mean(R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
