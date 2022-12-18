@@ -1301,6 +1301,18 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
         r"""Update PSDTF activations by MM algorithm."""
 
         def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
             R_inverse = np.linalg.inv(R)
 
             YRY = quadratic(Y, R_inverse)
@@ -1406,6 +1418,18 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
         """
 
         def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
             R_inverse = np.linalg.inv(R)
 
             YRY = quadratic(Y, R_inverse)
