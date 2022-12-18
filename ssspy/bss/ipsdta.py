@@ -9,6 +9,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
+from ..linalg.quadratic import quadratic
 from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
@@ -905,10 +906,8 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
             RYYR = R_inverse @ YY_Hermite @ R_inverse
 
-            num = np.trace(RYYR[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1)
-            denom = np.trace(
-                R_inverse[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1
-            )
+            num = np.trace(RYYR[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            denom = np.trace(R_inverse[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
             num = np.real(num).sum(axis=-1)
             denom = np.real(denom).sum(axis=-1)
 
@@ -946,7 +945,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         if self.spatial_algorithm == "VCD":
             self.update_spatial_model_vcd()
         else:
-            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_vcd(self) -> None:
         r"""Update demixing filters once by VCD."""
@@ -1100,5 +1099,550 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
 
             loss = _compute_block_decomposition_loss(Y, demix_filter=W, covariance=R)
+
+        return loss
+
+
+class TIPSDTA(BlockDecompositionIPSDTAbase):
+    r"""Independent positive semidefinite tensor analysis (IPSDTA) \
+    on Student's t distribution.
+
+    Args:
+        n_basis (int):
+            Number of PSDTF bases.
+        n_blocks (int):
+            Number of sub-blocks.
+        dof (float):
+            Degree of freedom parameter.
+        source_algorithm (str):
+            Algorithm for PSDTF updates.
+            Only ``MM`` is supported. Default: ``MM``.
+        spatial_algorithm (str):
+            Algorithm for demixing filter updates.
+            Only ``VCD`` is supported. Default: ``VCD``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        source_normalization (bool):
+            If ``source_normalization=True``, normalize PSDTF parameters.
+            Default: ``True``.
+        scale_restoration (bool or str):
+            Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel for projection back.
+            Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        n_blocks: int,
+        dof: float,
+        source_algorithm: str = "MM",
+        spatial_algorithm: str = "VCD",
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[
+                Callable[["GaussIPSDTA"], None],
+                List[Callable[["GaussIPSDTA"], None]],
+            ]
+        ] = None,
+        source_normalization: Optional[Union[bool, str]] = True,
+        scale_restoration: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_blocks,
+            flooring_fn,
+            callbacks,
+            scale_restoration,
+            record_loss,
+            reference_id,
+            rng,
+        )
+
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
+
+        self.dof = dof
+        self.source_algorithm = source_algorithm
+        self.source_normalization = source_normalization
+        self.spatial_algorithm = spatial_algorithm
+
+    def __repr__(self) -> str:
+        s = "TIPSDTA("
+        s += "n_basis={n_basis}"
+        s += ", n_blocks={n_blocks}"
+        s += ", dof={dof}"
+        s += ", source_algorithm={source_algorithm}"
+        s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", source_normalization={source_normalization}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def update_once(self) -> None:
+        r"""Update PSDTF parameters and demixing filters once."""
+        self.update_source_model()
+        self.update_spatial_model()
+
+    def update_source_model(self) -> None:
+        r"""Update PSDTF basis matrices and activations."""
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+        if self.source_normalization:
+            self.normalize_block_decomposition_psdtf()
+
+    def update_source_model_mm(self):
+        r"""Update PSDTF basis matrices and activations by MM algorithm."""
+        self.update_basis_mm()
+        self.update_activation_mm()
+
+    def update_basis_mm(self) -> None:
+        r"""Update PSDTF basis matrices by MM algorithm."""
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_blocks, n_neighbors, n_frames).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
+            Y = Y.transpose(0, 3, 1, 2)
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        def _update_basis_mm(
+            basis: np.ndarray,
+            activation: np.ndarray,
+            separated: np.ndarray = None,
+            weight: np.ndarray = None,
+        ) -> np.ndarray:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+                weight: (n_sources, n_frames)
+
+            Returns:
+                numpy.ndarray of updated basis matrix.
+            """
+            T, V = basis, activation
+            Y = separated
+            pi = weight
+            na = np.newaxis
+
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
+            R_inverse = np.linalg.inv(R)
+            Y = Y.transpose(0, 3, 1, 2)
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+            piRYYR = pi[:, :, na, na, na] * RYYR
+
+            P = np.mean(
+                V[:, :, :, na, na, na] * R_inverse[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q = np.mean(
+                V[:, :, :, na, na, na] * piRYYR[:, na, :, :, :, :],
+                axis=2,
+            )
+            Q = to_psd(Q, flooring_fn=self.flooring_fn)
+            Q_sqrt = sqrtmh(Q)
+
+            QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
+            QTPTQ = to_psd(QTPTQ, flooring_fn=self.flooring_fn)
+            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ T
+            T = to_psd(T, flooring_fn=self.flooring_fn)
+
+            return T
+
+        n_bins = self.n_bins
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        nu = self.dof
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        Y = self.separate(X, demix_filter=W)
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            T_low, T_high = T
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+            R_low, R_high = R
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            T_low = _update_basis_mm(T_low, V, separated=Y_low, weight=pi)
+            T_high = _update_basis_mm(T_high, V, separated=Y_high, weight=pi)
+            T = T_low, T_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            YRY = _quadratic(Y, R)
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            T = _update_basis_mm(T, V, separated=Y, weight=pi)
+
+        self.basis = T
+
+    def update_activation_mm(self) -> None:
+        r"""Update PSDTF activations by MM algorithm."""
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_blocks, n_neighbors, n_frames).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
+            Y = Y.transpose(0, 3, 1, 2)
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        def _compute_traces(
+            basis: np.ndarray,
+            activation: np.ndarray,
+            separated: np.ndarray = None,
+            weight: np.ndarray = None,
+        ) -> Tuple[np.ndarray, np.ndarray]:
+            r"""
+            Args:
+                basis: (n_sources, n_basis, n_blocks, n_neighbors, n_neighbors)
+                activation: (n_sources, n_basis, n_frames)
+                separated: (n_sources, n_blocks, n_neighbors, n_frames)
+
+            Returns:
+                Tuple of numerator and denominator.
+                Type of each item is ``numpy.ndarray``.
+            """
+            T, V = basis, activation
+            Y = separated.transpose(0, 3, 1, 2)
+            pi = weight
+            na = np.newaxis
+
+            R = self.reconstruct_block_decomposition_psdtf(T, V)
+            R_inverse = np.linalg.inv(R)
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
+            RYYR = R_inverse @ YY_Hermite @ R_inverse
+
+            piRYYR = pi[:, :, na, na, na] * RYYR
+
+            num = np.trace(piRYYR[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            denom = np.trace(R_inverse[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            num = np.real(num).sum(axis=-1)
+            denom = np.real(denom).sum(axis=-1)
+
+            return num, denom
+
+        n_sources = self.n_sources
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        nu = self.dof
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        Y = self.separate(X, demix_filter=W)
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            T_low, T_high = T
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            Y_low = Y_low.reshape(n_sources, n_blocks - n_remains, n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+            R_low, R_high = R
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            num_low, denom_low = _compute_traces(T_low, V, separated=Y_low, weight=pi)
+            num_high, denom_high = _compute_traces(T_high, V, separated=Y_high, weight=pi)
+
+            num = num_low + num_high
+            denom = denom_low + denom_high
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            YRY = _quadratic(Y, R)
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            num, denom = _compute_traces(T, V, separated=Y, weight=pi)
+
+        self.activation = V * np.sqrt(num / denom)
+
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once."""
+        if self.spatial_algorithm == "VCD":
+            self.update_spatial_model_vcd()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
+
+    def update_spatial_model_vcd(self) -> None:
+        r"""Update demixing filters once by VCD."""
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_blocks, n_neighbors, n_frames).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
+            Y = Y.transpose(2, 3, 0, 1)
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        def _update(
+            input: np.ndarray,
+            demix_filter: np.ndarray,
+            covariance: np.ndarray,
+            weight: np.ndarray = None,
+        ):
+            X, W = input, demix_filter
+            R = covariance
+            pi = weight
+
+            na = np.newaxis
+
+            XX = X[:, na, :, :, na] * X[na, :, :, na, :].conj()
+            XX = XX.transpose(2, 3, 4, 0, 1, 5)
+
+            R_inverse = np.linalg.inv(R)
+            R_inverse = R_inverse.transpose(2, 4, 3, 0, 1)
+            pi_R_inverse = pi * R_inverse
+
+            RXX = np.mean(pi_R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
+
+            W = update_by_block_decomposition_vcd(
+                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < self.flooring_fn(0)
+            )
+
+            return W
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        nu = self.dof
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+
+            # Lower frequency
+            X_low = X_low.reshape(n_channels, n_blocks - n_remains, n_neighbors, n_frames)
+            W_low = W_low.reshape(n_blocks - n_remains, n_neighbors, n_sources, n_channels)
+            Y_low = W_low @ X_low.transpose(1, 2, 0, 3)
+
+            # Higher frequency
+            X_high = X_high.reshape(n_channels, n_remains, n_neighbors + 1, n_frames)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+            Y_high = W_high @ X_high.transpose(1, 2, 0, 3)
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            W_low = _update(X_low, demix_filter=W_low, covariance=R_low, weight=pi)
+            W_high = _update(X_high, demix_filter=W_high, covariance=R_high, weight=pi)
+
+            W_low = W_low.reshape((n_blocks - n_remains) * n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains * (n_neighbors + 1), n_sources, n_channels)
+            W = np.concatenate([W_low, W_high], axis=0)
+        else:
+            X = X.reshape(n_channels, n_blocks, n_neighbors, n_frames)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+            Y = W @ X.transpose(1, 2, 0, 3)
+
+            YRY = _quadratic(Y, R)
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            W = _update(X, demix_filter=W, covariance=R, weight=pi)
+            W = W.reshape(n_blocks * n_neighbors, n_sources, n_channels)
+
+        self.demix_filter = W
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        Returns:
+            Computed loss.
+        """
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_blocks, n_neighbors, n_frames).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
+            Y = Y.transpose(0, 3, 1, 2)
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+
+        nu = self.dof
+
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+
+        n_neighbors = n_bins // n_blocks
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+        T, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            Y_low, Y_high = np.split(Y, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+
+            Y_low = Y_low.reshape(n_sources, (n_blocks - n_remains), n_neighbors, n_frames)
+            Y_high = Y_high.reshape(n_sources, n_remains, n_neighbors + 1, n_frames)
+            W_low = W_low.reshape((n_blocks - n_remains), n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+
+            loss = np.sum(((nu + 2 * n_bins) / 2) * np.log(1 + (2 / nu) * YRY), axis=0)
+
+            _, logdetR_low = np.linalg.slogdet(R_low)
+            logdetR_low = logdetR_low.sum(axis=(0, 2))
+            _, logdetR_high = np.linalg.slogdet(R_high)
+            logdetR_high = logdetR_high.sum(axis=(0, 2))
+            logdetR = logdetR_low + logdetR_high
+
+            logdetW_low = self.compute_logdet(W_low)
+            logdetW_high = self.compute_logdet(W_high)
+
+            logdetW = logdetW_low.sum(axis=(0, 1)) + logdetW_high.sum(axis=(0, 1))
+        else:
+            Y = Y.reshape(n_sources, n_blocks, n_neighbors, n_frames)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+
+            YRY = _quadratic(Y, R)
+
+            loss = np.sum(((nu + 2 * n_bins) / 2) * np.log(1 + (2 / nu) * YRY), axis=0)
+
+            _, logdetR = np.linalg.slogdet(R)
+            logdetR = logdetR.sum(axis=(0, 2))
+
+            logdetW = self.compute_logdet(W)
+            logdetW = logdetW.sum(axis=(0, 1))
+
+        loss = np.mean(loss + logdetR, axis=0) - 2 * logdetW
+        loss = loss.item()
 
         return loss
