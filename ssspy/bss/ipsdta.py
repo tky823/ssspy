@@ -1389,7 +1389,14 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once."""
-        raise NotImplementedError("update_spatial_model is not implemented.")
+        if self.spatial_algorithm == "VCD":
+            self.update_spatial_model_vcd()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+    def update_spatial_model_vcd(self) -> None:
+        r"""Update demixing filters once by VCD."""
+        raise NotImplementedError("update_spatial_model_vcd is not implemented.")
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
