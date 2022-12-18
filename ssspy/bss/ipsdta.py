@@ -945,7 +945,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         if self.spatial_algorithm == "VCD":
             self.update_spatial_model_vcd()
         else:
-            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_vcd(self) -> None:
         r"""Update demixing filters once by VCD."""
@@ -1447,7 +1447,7 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
         if self.spatial_algorithm == "VCD":
             self.update_spatial_model_vcd()
         else:
-            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+            raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_spatial_model_vcd(self) -> None:
         r"""Update demixing filters once by VCD."""
