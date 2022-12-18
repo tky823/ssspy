@@ -14,7 +14,7 @@ sys.path.append(ssspy_tests_dir)
 from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
-max_duration = 0.5
+max_duration = 0.1
 n_fft = 256
 hop_length = 128
 window = "hann"
@@ -22,6 +22,7 @@ n_bins = n_fft // 2 + 1
 n_iter = 3
 rng = np.random.default_rng(42)
 
+parameters_spatial_algorithm = ["FPI", "VCD"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_source_normalization = [True, False]
 parameters_scale_restoration = [True, False, "projection_back", "minimal_distortion_principle"]
@@ -29,14 +30,14 @@ parameters_ipsdta_base = [2]
 parameters_block_decomposition_ipsdta_base = [4]
 parameters_ipsdta = [
     (
-        3,
+        2,
         2,
         43,
         {
-            "demix_filter": np.tile(np.eye(3, dtype=np.complex128), (n_bins, 1, 1)),
+            "demix_filter": np.tile(np.eye(2, dtype=np.complex128), (n_bins, 1, 1)),
         },
     ),
-    (4, 2, 64, {}),
+    (3, 2, 64, {}),
 ]
 
 
@@ -95,6 +96,7 @@ def test_block_decomposition_ipsdta_base(
     "n_sources, n_basis, n_blocks, reset_kwargs",
     parameters_ipsdta,
 )
+@pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("source_normalization", parameters_source_normalization)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -102,6 +104,7 @@ def test_gauss_ipsdta(
     n_sources: int,
     n_basis: int,
     n_blocks: int,
+    spatial_algorithm: str,
     callbacks: Optional[Union[Callable[[GaussIPSDTA], None], List[Callable[[GaussIPSDTA], None]]]],
     source_normalization: Optional[Union[str, bool]],
     scale_restoration: Union[str, bool],
@@ -129,14 +132,22 @@ def test_gauss_ipsdta(
     ipsdta = GaussIPSDTA(
         n_basis,
         n_blocks,
+        spatial_algorithm=spatial_algorithm,
         callbacks=callbacks,
         source_normalization=source_normalization,
         scale_restoration=scale_restoration,
         rng=rng,
     )
-    spectrogram_est = ipsdta(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ipsdta.loss[-1]) is float
+    if spatial_algorithm == "FPI":
+        with pytest.raises(NotImplementedError) as e:
+            spectrogram_est = ipsdta(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+
+        assert str(e.value) == "IPSDTA with fixed-point iteration is not supported."
+    else:
+        spectrogram_est = ipsdta(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ipsdta.loss[-1]) is float
 
     print(ipsdta)
