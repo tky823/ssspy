@@ -51,15 +51,17 @@ def to_psd(
     else:
         X = (X + X.swapaxes(axis1, axis2)) / 2
 
-    eigvals = np.linalg.eigvalsh(X)
-    delta = np.min(eigvals, axis=-1)
-    delta = np.minimum(delta, 0)  # 0 is expected if possible
-    trace = np.trace(X, axis1=axis1, axis2=axis2).real
+    Lamb, P = np.linalg.eigh(X)
 
-    zeros = np.zeros(())
-    eye = np.eye(shape[-1])
+    P_Hermite = P.swapaxes(-2, -1)
 
-    eps = np.maximum(flooring_fn(zeros) * trace - delta, 0)
-    X = X + eps[..., np.newaxis, np.newaxis] * eye
+    if np.iscomplexobj(X):
+        P_Hermite = P_Hermite.conj()
+
+    Lamb = np.real(Lamb)
+    Lamb = flooring_fn(Lamb)
+    Lamb = Lamb[..., np.newaxis] * np.eye(Lamb.shape[-1])
+
+    X = P @ Lamb @ P_Hermite
 
     return X
