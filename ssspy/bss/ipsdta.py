@@ -1208,6 +1208,19 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
         return s.format(**self.__dict__)
 
+    def update_once(self) -> None:
+        r"""Update PSDTF parameters and demixing filters once."""
+        self.update_source_model()
+        self.update_spatial_model()
+
+    def update_source_model(self) -> None:
+        r"""Update PSDTF basis matrices and activations."""
+        raise NotImplementedError("update_source_model is not implemented.")
+
+    def update_spatial_model(self) -> None:
+        r"""Update demixing filters once."""
+        raise NotImplementedError("update_spatial_model is not implemented.")
+
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
 
