@@ -64,4 +64,9 @@ def to_psd(
 
     X = P @ Lamb @ P_Hermite
 
+    if np.iscomplexobj(X):
+        X = (X + X.swapaxes(axis1, axis2).conj()) / 2
+    else:
+        X = (X + X.swapaxes(axis1, axis2)) / 2
+
     return X
