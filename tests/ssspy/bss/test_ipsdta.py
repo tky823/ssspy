@@ -52,13 +52,15 @@ def test_ipsdta_base(
     callbacks: Optional[Union[Callable[[IPSDTAbase], None], List[Callable[[IPSDTAbase], None]]]],
     scale_restoration: Union[str, bool],
 ):
-    IPSDTAbase(
+    ipsdta = IPSDTAbase(
         n_basis,
         callbacks=callbacks,
         scale_restoration=scale_restoration,
         record_loss=False,
         rng=rng,
     )
+
+    print(ipsdta)
 
 
 @pytest.mark.parametrize(
@@ -82,7 +84,7 @@ def test_block_decomposition_ipsdta_base(
     ],
     scale_restoration: Union[str, bool],
 ):
-    BlockDecompositionIPSDTAbase(
+    ipsdta = BlockDecompositionIPSDTAbase(
         n_basis,
         n_blocks,
         callbacks=callbacks,
@@ -90,6 +92,8 @@ def test_block_decomposition_ipsdta_base(
         record_loss=False,
         rng=rng,
     )
+
+    print(ipsdta)
 
 
 @pytest.mark.parametrize(
