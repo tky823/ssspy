@@ -15,8 +15,8 @@ from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 max_duration = 0.5
-n_fft = 512
-hop_length = 256
+n_fft = 256
+hop_length = 128
 window = "hann"
 n_bins = n_fft // 2 + 1
 n_iter = 3
@@ -31,12 +31,12 @@ parameters_ipsdta = [
     (
         3,
         2,
-        64,
+        43,
         {
             "demix_filter": np.tile(np.eye(3, dtype=np.complex128), (n_bins, 1, 1)),
         },
     ),
-    (4, 2, 128, {}),
+    (4, 2, 64, {}),
 ]
 
 
