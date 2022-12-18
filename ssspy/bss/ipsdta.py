@@ -601,6 +601,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
                 numpy.ndarray of reconstructed PSDTF.
                 The shape is (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
             """
+            na = np.newaxis
             T, V = basis, activation
             n_dims = T.ndim
 
@@ -613,7 +614,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
                 T = T.transpose(0, 4, 1, 2, 3)
 
             R = np.sum(
-                T[:, :, np.newaxis, :, :, :] * V[:, :, :, np.newaxis, np.newaxis, np.newaxis],
+                T[:, :, na, :, :, :] * V[:, :, :, na, na, na],
                 axis=1,
             )
             R = to_psd(R, axis1=3, axis2=4)
@@ -646,6 +647,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         """
         source_normalization = self.source_normalization
         n_remains = self.n_remains
+        na = np.newaxis
         T, V = self.basis, self.activation
 
         assert source_normalization, "Set source_normalization."
@@ -655,15 +657,15 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
             trace_low = np.trace(T_low, axis1=axis1, axis2=axis2).real
             trace_high = np.trace(T_high, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace_low, axis=-1) + np.sum(trace_high, axis=-1)
-            T_low = T_low / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
-            T_high = T_high / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            T_low = T_low / trace[:, :, na, na, na]
+            T_high = T_high / trace[:, :, na, na, na]
             T = T_low, T_high
         else:
             trace = np.trace(T, axis1=axis1, axis2=axis2).real
             trace = np.sum(trace, axis=-1)
-            T = T / trace[:, :, np.newaxis, np.newaxis, np.newaxis]
+            T = T / trace[:, :, na, na, na]
 
-        V = V * trace[:, :, np.newaxis]
+        V = V * trace[:, :, na]
 
         self.basis, self.activation = T, V
 
@@ -900,7 +902,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
             Y = Y.transpose(0, 3, 1, 2)
-            YY_Hermite = Y[:, :, :, :, np.newaxis] @ Y[:, :, :, np.newaxis, :].conj()
+            YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
             RYYR = R_inverse @ YY_Hermite @ R_inverse
 
             num = np.trace(RYYR[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1)
