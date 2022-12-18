@@ -121,7 +121,6 @@ class IPSDTAbase(IterativeMethodBase):
     def __repr__(self) -> str:
         s = "IPSDTA("
         s += "n_basis={n_basis}"
-        s += ", source_normalization={source_normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -434,7 +433,6 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         s = "IPSDTA("
         s += "n_basis={n_basis}"
         s += ", n_blocks={n_blocks}"
-        s += ", source_normalization={source_normalization}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
