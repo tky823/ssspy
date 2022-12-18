@@ -835,14 +835,8 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
             Y = Y.transpose(0, 3, 1, 2)
-
             YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
-            # TODO: stable flooring operation
-            eps = self.flooring_fn(np.zeros((n_neighbors,)))
-            YY_Hermite = YY_Hermite + eps[:, na] * np.eye(n_neighbors)
-
             RYYR = R_inverse @ YY_Hermite @ R_inverse
-            RYYR = to_psd(RYYR)
 
             P = np.mean(
                 V[:, :, :, na, na, na] * R_inverse[:, na, :, :, :, :],
@@ -852,6 +846,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 V[:, :, :, na, na, na] * RYYR[:, na, :, :, :, :],
                 axis=2,
             )
+            Q = to_psd(Q, flooring_fn=self.flooring_fn)
             Q_sqrt = sqrtmh(Q)
 
             QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
@@ -910,9 +905,6 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             R_inverse = np.linalg.inv(R)
             Y = Y.transpose(0, 3, 1, 2)
             YY_Hermite = Y[:, :, :, :, np.newaxis] @ Y[:, :, :, np.newaxis, :].conj()
-
-            eps = self.flooring_fn(np.zeros((n_neighbors,)))
-            YY_Hermite = YY_Hermite + eps[:, na] * np.eye(n_neighbors)
             RYYR = R_inverse @ YY_Hermite @ R_inverse
 
             num = np.trace(RYYR[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1)
