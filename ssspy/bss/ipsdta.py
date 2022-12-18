@@ -905,10 +905,8 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             YY_Hermite = Y[:, :, :, :, na] @ Y[:, :, :, na, :].conj()
             RYYR = R_inverse @ YY_Hermite @ R_inverse
 
-            num = np.trace(RYYR[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1)
-            denom = np.trace(
-                R_inverse[:, na, :, :, :, :] @ T[:, :, na, :, :, :], axis1=-2, axis2=-1
-            )
+            num = np.trace(RYYR[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
+            denom = np.trace(R_inverse[:, na, :] @ T[:, :, na], axis1=-2, axis2=-1)
             num = np.real(num).sum(axis=-1)
             denom = np.real(denom).sum(axis=-1)
 
