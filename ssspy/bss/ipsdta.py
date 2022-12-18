@@ -1451,7 +1451,109 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
     def update_spatial_model_vcd(self) -> None:
         r"""Update demixing filters once by VCD."""
-        raise NotImplementedError("update_spatial_model_vcd is not implemented.")
+
+        def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
+            r"""
+            Args:
+                Y (np.ndarray):
+                    Separated spectrams with shape of
+                    (n_sources, n_blocks, n_neighbors, n_frames).
+                R (np.ndarray):
+                    Covariance matrix with shape of
+                    (n_sources, n_frames, n_blocks, n_neighbors, n_neighbors).
+
+            Returns:
+                Quadratic forms with shape of (n_sources, n_frames).
+            """
+            Y = Y.transpose(2, 3, 0, 1)
+            R_inverse = np.linalg.inv(R)
+
+            YRY = quadratic(Y, R_inverse)
+            YRY = np.real(YRY)
+            YRY = np.maximum(YRY, 0)
+            YRY = YRY.sum(axis=-1)
+
+            return YRY
+
+        def _update(
+            input: np.ndarray,
+            demix_filter: np.ndarray,
+            covariance: np.ndarray,
+            weight: np.ndarray = None,
+        ):
+            X, W = input, demix_filter
+            R = covariance
+            pi = weight
+
+            na = np.newaxis
+
+            XX = X[:, na, :, :, na] * X[na, :, :, na, :].conj()
+            XX = XX.transpose(2, 3, 4, 0, 1, 5)
+
+            R_inverse = np.linalg.inv(R)
+            R_inverse = R_inverse.transpose(2, 4, 3, 0, 1)
+            pi_R_inverse = pi * R_inverse
+
+            RXX = np.mean(pi_R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
+
+            W = update_by_block_decomposition_vcd(
+                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < self.flooring_fn(0)
+            )
+
+            return W
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+        n_blocks = self.n_blocks
+        n_remains = self.n_remains
+        n_neighbors = n_bins // n_blocks
+
+        nu = self.dof
+
+        X, W = self.input, self.demix_filter
+        T, V = self.basis, self.activation
+
+        R = self.reconstruct_block_decomposition_psdtf(T, V)
+
+        if n_remains > 0:
+            X_low, X_high = np.split(X, [(n_blocks - n_remains) * n_neighbors], axis=1)
+            W_low, W_high = np.split(W, [(n_blocks - n_remains) * n_neighbors], axis=0)
+            R_low, R_high = R
+
+            # Lower frequency
+            X_low = X_low.reshape(n_channels, n_blocks - n_remains, n_neighbors, n_frames)
+            W_low = W_low.reshape(n_blocks - n_remains, n_neighbors, n_sources, n_channels)
+            Y_low = W_low @ X_low.transpose(1, 2, 0, 3)
+
+            # Higher frequency
+            X_high = X_high.reshape(n_channels, n_remains, n_neighbors + 1, n_frames)
+            W_high = W_high.reshape(n_remains, n_neighbors + 1, n_sources, n_channels)
+            Y_high = W_high @ X_high.transpose(1, 2, 0, 3)
+
+            YRY_low = _quadratic(Y_low, R_low)
+            YRY_high = _quadratic(Y_high, R_high)
+
+            YRY = YRY_low + YRY_high
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            W_low = _update(X_low, demix_filter=W_low, covariance=R_low, weight=pi)
+            W_high = _update(X_high, demix_filter=W_high, covariance=R_high, weight=pi)
+
+            W_low = W_low.reshape((n_blocks - n_remains) * n_neighbors, n_sources, n_channels)
+            W_high = W_high.reshape(n_remains * (n_neighbors + 1), n_sources, n_channels)
+            W = np.concatenate([W_low, W_high], axis=0)
+        else:
+            X = X.reshape(n_channels, n_blocks, n_neighbors, n_frames)
+            W = W.reshape(n_blocks, n_neighbors, n_sources, n_channels)
+            Y = W @ X.transpose(1, 2, 0, 3)
+
+            YRY = _quadratic(Y, R)
+            pi = (nu + 2 * n_bins) / (nu + 2 * YRY)
+
+            W = _update(X, demix_filter=W, covariance=R, weight=pi)
+            W = W.reshape(n_blocks * n_neighbors, n_sources, n_channels)
+
+        self.demix_filter = W
 
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
