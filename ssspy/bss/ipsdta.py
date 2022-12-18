@@ -1215,7 +1215,26 @@ class TIPSDTA(BlockDecompositionIPSDTAbase):
 
     def update_source_model(self) -> None:
         r"""Update PSDTF basis matrices and activations."""
-        raise NotImplementedError("update_source_model is not implemented.")
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.source_algorithm))
+
+        if self.source_normalization:
+            self.normalize_block_decomposition_psdtf()
+
+    def update_source_model_mm(self):
+        r"""Update PSDTF basis matrices and activations by MM algorithm."""
+        self.update_basis_mm()
+        self.update_activation_mm()
+
+    def update_basis_mm(self) -> None:
+        r"""Update PSDTF basis matrices by MM algorithm."""
+        raise NotImplementedError("update_basis_mm is not implemented.")
+
+    def update_activation_mm(self) -> None:
+        r"""Update PSDTF activations by MM algorithm."""
+        raise NotImplementedError("update_activation_mm is not implemented.")
 
     def update_spatial_model(self) -> None:
         r"""Update demixing filters once."""
