@@ -828,7 +828,6 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             T, V = basis, activation
             Y = separated
             na = np.newaxis
-            _, _, _, n_neighbors, _ = T.shape
 
             R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
@@ -897,7 +896,6 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
             T, V = basis, activation
             Y = separated
             na = np.newaxis
-            _, _, _, n_neighbors, _ = T.shape
 
             R = self.reconstruct_block_decomposition_psdtf(T, V)
             R_inverse = np.linalg.inv(R)
