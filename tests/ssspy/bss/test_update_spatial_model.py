@@ -27,6 +27,7 @@ parameters = [(31, 20)]
 parameters_block_decomposition_vcd = [(15, 2, 20)]
 parameters_n_sources = [2, 3]
 parameters_flooring_fn = [max_flooring, add_flooring, None]
+parameters_overwrite = [True, False]
 parameters_singular_fn = [
     lambda x: np.abs(x) < max_flooring(x),
     lambda x: np.abs(x) < add_flooring(x),
@@ -172,12 +173,14 @@ def test_update_by_iss2(
 @pytest.mark.parametrize("n_blocks, n_neighbors, n_frames", parameters_block_decomposition_vcd)
 @pytest.mark.parametrize("n_sources", parameters_n_sources)
 @pytest.mark.parametrize("singular_fn", parameters_singular_fn)
+@pytest.mark.parametrize("overwrite", parameters_overwrite)
 def test_update_by_block_decomposition_vcd(
     n_blocks: int,
     n_neighbors: int,
     n_frames: int,
     n_sources: int,
     singular_fn: Optional[Callable[[np.ndarray], np.ndarray]],
+    overwrite: bool,
 ):
     na = np.newaxis
     n_channels = n_sources
@@ -199,7 +202,7 @@ def test_update_by_block_decomposition_vcd(
     RXX = np.mean(R * XX_Hermite[:, :, :, na], axis=-1)
 
     W_updated = update_by_block_decomposition_vcd(
-        W, weighted_covariance=RXX, singular_fn=singular_fn
+        W, weighted_covariance=RXX, singular_fn=singular_fn, overwrite=overwrite
     )
 
     assert W_updated.shape == W.shape
