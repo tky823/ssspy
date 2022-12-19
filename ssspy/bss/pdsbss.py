@@ -67,8 +67,6 @@ class PDSBSSbase:
             self.prox_penalty
         ), "Length of penalty_fn and prox_penalty are different."
 
-        self.n_penalties = len(self.penalty_fn)
-
         if callbacks is not None:
             if callable(callbacks):
                 callbacks = [callbacks]
@@ -157,6 +155,11 @@ class PDSBSSbase:
 
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
+
+    @property
+    def n_penalties(self):
+        r"""Return number of penalty terms."""
+        return len(self.penalty_fn)
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
