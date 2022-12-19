@@ -112,7 +112,7 @@ class PDSBSSbase:
 
     def __repr__(self) -> str:
         s = "PDSBSS("
-        s += "n_penalties={n_penalties}"
+        s += "n_penalties={n_penalties}".format(n_penalties=self.n_penalties)
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -373,7 +373,7 @@ class PDSBSS(PDSBSSbase):
         s = "PDSBSS("
         s += "mu1={mu1}, mu2={mu2}"
         s += ", alpha={alpha}"
-        s += ", n_penalties={n_penalties}"
+        s += ", n_penalties={n_penalties}".format(n_penalties=self.n_penalties)
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
