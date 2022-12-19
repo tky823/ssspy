@@ -219,20 +219,25 @@ class PDSBSSbase:
 
         return logdet
 
-    def normalize_by_spectral_norm(self, input: np.ndarray) -> np.ndarray:
+    def normalize_by_spectral_norm(self, input: np.ndarray, n_penalties: int = None) -> np.ndarray:
         r"""Spectral normalization.
 
         Args:
             input (numpy.ndarray):
                 Input spectrogram with shape of (n_channels, n_bins, n_frames).
+            n_penalties (int):
+                Number of penalty functions, which determines coefficient of normalization.
 
         Returns:
             numpy.ndarray of normalized spectrogram with shape of (n_channels, n_bins, n_frames).
         """
+        if n_penalties is None:
+            n_penalties = self.n_penalties
+
         norm = np.linalg.norm(input.transpose(1, 0, 2), ord=2, axis=(-2, -1))
         norm = np.max(norm)
 
-        return input / (np.sqrt(self.n_penalties) * norm)
+        return input / (np.sqrt(n_penalties) * norm)
 
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
