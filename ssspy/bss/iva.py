@@ -1965,11 +1965,20 @@ class PDSIVA(PDSBSS):
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
-        if contrast_fn is None:
-            contrast_fn = functools.partial(np.linalg.norm, axis=1)
+        if contrast_fn is not None and prox_penalty is None:
+            raise ValueError("Set prox_penalty.")
+        elif contrast_fn is None and prox_penalty is not None:
+            raise ValueError("Set contrast_fn.")
+        elif contrast_fn is None and prox_penalty is None:
 
-        if prox_penalty is None:
-            prox_penalty = functools.partial(prox.l21, axis2=1)
+            def _contrast_fn(y: np.ndarray) -> np.ndarray:
+                return np.linalg.norm(y, axis=1)
+
+            def _prox_penalty(x: np.ndarray, step_size: float = 1) -> np.ndarray:
+                return prox.l21(x, step_size=step_size, axis2=1)
+
+            contrast_fn = _contrast_fn
+            prox_penalty = _prox_penalty
 
         def penalty_fn(y: np.ndarray) -> float:
             r"""Sum of contrast function.
