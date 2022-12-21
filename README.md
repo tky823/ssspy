@@ -71,4 +71,4 @@ sphinx-autobuild docs docs/_build/html
 - [21] [K. Sekiguchi, A. A. Nugraha, Y. Bando, and K. Yoshii, "Fast multichannel source separation based on jointly diagonalizable spatial covariance matrices," *arXiv:1903.03237*, 2019.](https://arxiv.org/abs/1903.03237)
 
 ## LICENSE
-MIT License
+Apache License 2.0
