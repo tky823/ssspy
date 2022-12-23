@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import scipy.signal as ss
 
-from ssspy.bss.pdsbss import PDSBSS
+from ssspy.bss.pdsbss import PDSBSS, PDSBSSbase
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -31,6 +31,71 @@ parameters_pdsbss = [
 ]
 
 
+def contrast_fn(y: np.ndarray) -> np.ndarray:
+    r"""Contrast function.
+
+    Args:
+        y (np.ndarray):
+            The shape is (n_sources, n_bins, n_frames).
+
+    Returns:
+        np.ndarray of the shape is (n_sources, n_frames).
+    """
+    return 2 * np.linalg.norm(y, axis=1)
+
+
+def penalty_fn(y: np.ndarray) -> float:
+    loss = contrast_fn(y)
+    loss = np.sum(loss.mean(axis=-1))
+    return loss
+
+
+def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
+    r"""Proximal operator of penalty function.
+
+    Args:
+        y (np.ndarray):
+            The shape is (n_sources, n_bins, n_frames).
+        step_size (float):
+            Step size. Default: 1.
+
+    Returns:
+        np.ndarray of the shape is (n_sources, n_bins, n_frames).
+    """
+    norm = np.linalg.norm(y, axis=1, keepdims=True)
+    return y * np.maximum(1 - step_size / norm, 0)
+
+
+def test_pds_base():
+    class DummyPDSBSS(PDSBSSbase):
+        pass
+
+    np.random.seed(111)
+
+    waveform_src_img, _ = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=2,
+        sisec2010_tag="dev1_female3",
+        max_duration=max_duration,
+        conv=True,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
+
+    pdsbss = DummyPDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty)
+
+    with pytest.raises(NotImplementedError) as e:
+        _ = pdsbss(spectrogram_mix, n_iter=n_iter)
+
+    assert str(e.value) == "Implement '__call__' method."
+
+    print(pdsbss)
+
+
 @pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_pdsbss)
 def test_pdsbss(
     n_sources: int,
@@ -52,38 +117,6 @@ def test_pdsbss(
     _, _, spectrogram_mix = ss.stft(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
-
-    def contrast_fn(y: np.ndarray) -> np.ndarray:
-        r"""Contrast function.
-
-        Args:
-            y (np.ndarray):
-                The shape is (n_sources, n_bins, n_frames).
-
-        Returns:
-            np.ndarray of the shape is (n_sources, n_frames).
-        """
-        return 2 * np.linalg.norm(y, axis=1)
-
-    def penalty_fn(y: np.ndarray) -> float:
-        loss = contrast_fn(y)
-        loss = np.sum(loss.mean(axis=-1))
-        return loss
-
-    def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
-        r"""Proximal operator of penalty function.
-
-        Args:
-            y (np.ndarray):
-                The shape is (n_sources, n_bins, n_frames).
-            step_size (float):
-                Step size. Default: 1.
-
-        Returns:
-            np.ndarray of the shape is (n_sources, n_bins, n_frames).
-        """
-        norm = np.linalg.norm(y, axis=1, keepdims=True)
-        return y * np.maximum(1 - step_size / norm, 0)
 
     pdsbss = PDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty, callbacks=callbacks)
     spectrogram_est = pdsbss(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
