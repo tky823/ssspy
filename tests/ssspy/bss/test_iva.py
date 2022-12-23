@@ -559,6 +559,34 @@ def test_pds_iva(
     print(iva)
 
 
+@pytest.mark.parametrize("specify_contrast_fn", [True, False])
+def test_iva_insufficient_fn(specify_contrast_fn: bool):
+    def _contrast_fn(y: np.ndarray) -> np.ndarray:
+        return np.linalg.norm(y, axis=1)
+
+    def _prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
+        norm = np.linalg.norm(y, axis=1, keepdims=True)
+        return y * np.maximum(1 - step_size / norm, 0)
+
+    if specify_contrast_fn:
+        contrast_fn = _contrast_fn
+        prox_penalty = None
+    else:
+        contrast_fn = None
+        prox_penalty = _prox_penalty
+
+    with pytest.raises(ValueError) as e:
+        _ = PDSIVA(
+            contrast_fn=contrast_fn,
+            prox_penalty=prox_penalty,
+        )
+
+    if specify_contrast_fn:
+        assert str(e.value) == "Set prox_penalty."
+    else:
+        assert str(e.value) == "Set contrast_fn."
+
+
 @pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
