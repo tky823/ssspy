@@ -418,7 +418,7 @@ class PDSBSS(PDSBSSbase):
 
         Y_sum = Y.sum(axis=0)
         XY = Y_sum.transpose(1, 0, 2) @ X.transpose(1, 2, 0).conj()
-        W_tilde = prox.logdet(W - mu1 * mu2 * XY, step_size=mu1)
+        W_tilde = prox.neg_logdet(W - mu1 * mu2 * XY, step_size=mu1)
         XW = self.separate(X, demix_filter=2 * W_tilde - W)
         Y_tilde = []
 

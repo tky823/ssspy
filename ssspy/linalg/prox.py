@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ["l21", "neg_log", "logdet"]
+__all__ = ["l21", "neg_log", "neg_logdet"]
 
 
 def l1(x, step_size: float = 1) -> np.ndarray:
@@ -48,13 +48,13 @@ def neg_log(x: np.ndarray, step_size: float = 1):
     """
     assert np.all(x >= 0)
 
-    output = (x + np.sqrt(x ** 2 + 4 * step_size)) / 2
+    output = (x + np.sqrt(x**2 + 4 * step_size)) / 2
 
     return output
 
 
-def logdet(X: np.ndarray, step_size=1):
-    r"""Proximal operator of log-determinant.
+def neg_logdet(X: np.ndarray, step_size=1):
+    r"""Proximal operator of negative log-determinant.
 
     :math:`X\in\mathbb{C}^{N\times M}`
 
