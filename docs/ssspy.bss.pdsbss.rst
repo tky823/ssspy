@@ -82,3 +82,34 @@ On the basis of this algorithm, the demixing filter is updated as follows:
    \mathrm{prox}_{g}[\boldsymbol{z}]
    = \mathrm{argmin}_{\boldsymbol{y}}
    ~~g(\boldsymbol{y}) + \frac{1}{2}\|\boldsymbol{z} - \boldsymbol{y}\|_{2}^{2}.
+
+For :math:`\mathcal{I}`, we can obatain the following proximal operator:
+
+.. math::
+   \mathrm{prox}_{\mu\mathcal{I}}[\boldsymbol{W}_{i}]
+   &= \boldsymbol{U}_{i}\tilde{\boldsymbol{\Sigma}}_{i}\boldsymbol{V}_{i}^{\mathsf{H}}, \\
+   \tilde{\boldsymbol{\Sigma}}_{i}
+   &= \mathrm{diag}(\tilde{\sigma}_{i1},\ldots,\tilde{\sigma}_{iN}), \\
+   \tilde{\sigma}_{in}
+   &= \frac{\sigma_{in} + \sqrt{\sigma_{in}^{2} + 4\mu}}{2},
+
+where :math:`\boldsymbol{U}_{i}`, :math:`\boldsymbol{V}_{i}`,
+and :math:`\boldsymbol{\Sigma}_{i}=\mathrm{diag}(\sigma_{i1},\ldots,\sigma_{iN})` are singular value decomposition.
+
+.. math::
+   \boldsymbol{W}_{i}
+   = \boldsymbol{U}_{i}\boldsymbol{\Sigma}_{i}\boldsymbol{V}_{i}^{\mathsf{H}}.
+
+When :math:`\mathcal{P}` is defined as
+
+.. math::
+   \mathcal{P}(\mathcal{V}(\mathcal{Y}))
+   = C\sum_{j,n}\left(
+   \sum_{i}\left|\boldsymbol{w}_{in}^{\mathsf{H}}\boldsymbol{x}_{ij}\right|^{2}
+   \right)^{\frac{1}{2}},
+
+the updates by the proximal operator can be written as
+
+.. math::
+   y_{ijn}
+   \leftarrow\left(1 - \frac{\mu}{\sqrt{\sum_{i}|y_{ijn}|^{2}}}\right)_{+}y_{ijn}.
