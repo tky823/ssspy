@@ -2,7 +2,12 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from ..algorithm import projection_back
+from ..algorithm import (
+    MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS,
+    PROJECTION_BACK_KEYWORDS,
+    minimal_distortion_principle,
+    projection_back,
+)
 from ..linalg import prox
 
 EPS = 1e-10
@@ -251,8 +256,10 @@ class PDSBSSbase:
         if type(scale_restoration) is bool:
             scale_restoration = "projection_back"
 
-        if scale_restoration == "projection_back":
+        if scale_restoration in PROJECTION_BACK_KEYWORDS:
             self.apply_projection_back()
+        elif scale_restoration in MINIMAL_DISTORTION_PRINCIPLE_KEYWORDS:
+            self.apply_minimal_distortion_principle()
         else:
             raise ValueError("{} is not supported for scale restoration.".format(scale_restoration))
 
@@ -263,6 +270,20 @@ class PDSBSSbase:
         X, W = self.input, self.demix_filter
         W_scaled = projection_back(W, reference_id=self.reference_id)
         Y_scaled = self.separate(X, demix_filter=W_scaled)
+
+        self.output, self.demix_filter = Y_scaled, W_scaled
+
+    def apply_minimal_distortion_principle(self) -> None:
+        r"""Apply minimal distortion principle to estimated spectrograms."""
+        assert self.scale_restoration, "Set self.scale_restoration=True."
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+        Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
+        X = X.transpose(1, 0, 2)
+        Y = Y_scaled.transpose(1, 0, 2)
+        X_Hermite = X.transpose(0, 2, 1).conj()
+        W_scaled = Y @ X_Hermite @ np.linalg.inv(X @ X_Hermite)
 
         self.output, self.demix_filter = Y_scaled, W_scaled
 
