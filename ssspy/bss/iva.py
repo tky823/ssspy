@@ -9,7 +9,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
-from ..linalg import eigh
+from ..linalg import eigh, prox
 from ..transform import whiten
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
@@ -20,6 +20,7 @@ from ._update_spatial_model import (
     update_by_iss2,
 )
 from .base import IterativeMethodBase
+from .pdsbss import PDSBSS
 
 __all__ = [
     "GradIVA",
@@ -27,6 +28,7 @@ __all__ = [
     "FastIVA",
     "FasterIVA",
     "AuxIVA",
+    "PDSIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
@@ -1946,6 +1948,67 @@ class AuxIVA(AuxIVAbase):
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+
+
+class PDSIVA(PDSBSS):
+    def __init__(
+        self,
+        mu1: float = 1,
+        mu2: float = 1,
+        alpha: float = 1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
+        callbacks: Optional[
+            Union[Callable[["PDSIVA"], None], List[Callable[["PDSIVA"], None]]]
+        ] = None,
+        scale_restoration: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        if contrast_fn is not None and prox_penalty is None:
+            raise ValueError("Set prox_penalty.")
+        elif contrast_fn is None and prox_penalty is not None:
+            raise ValueError("Set contrast_fn.")
+        elif contrast_fn is None and prox_penalty is None:
+
+            def _contrast_fn(y: np.ndarray) -> np.ndarray:
+                return np.linalg.norm(y, axis=1)
+
+            def _prox_penalty(x: np.ndarray, step_size: float = 1) -> np.ndarray:
+                return prox.l21(x, step_size=step_size, axis2=1)
+
+            contrast_fn = _contrast_fn
+            prox_penalty = _prox_penalty
+
+        def penalty_fn(y: np.ndarray) -> float:
+            r"""Sum of contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                Computed loss.
+            """
+            G = contrast_fn(y)  # (n_sources, n_frames)
+            loss = np.sum(G, axis=(0, 1))
+            loss = loss.item()
+
+            return loss
+
+        super().__init__(
+            mu1=mu1,
+            mu2=mu2,
+            alpha=alpha,
+            penalty_fn=penalty_fn,
+            prox_penalty=prox_penalty,
+            callbacks=callbacks,
+            scale_restoration=scale_restoration,
+            record_loss=record_loss,
+            reference_id=reference_id,
+        )
+
+        self.contrast_fn = contrast_fn
 
 
 class GradLaplaceIVA(GradIVA):

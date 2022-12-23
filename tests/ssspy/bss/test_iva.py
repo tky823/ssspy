@@ -7,6 +7,7 @@ import pytest
 import scipy.signal as ss
 
 from ssspy.bss.iva import (
+    PDSIVA,
     AuxGaussIVA,
     AuxIVA,
     AuxIVAbase,
@@ -70,6 +71,15 @@ parameters_aux_iva = [
         {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
     ),
     (4, "dev1_female4", {"demix_filter": None}),
+]
+parameters_pds_iva = [
+    (2, "dev1_female3", {}),
+    (
+        3,
+        "dev1_female3",
+        {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
+    ),
+    (4, "dev1_female4", {}),
 ]
 
 
@@ -509,6 +519,72 @@ def test_aux_iva(
         assert iva.demix_filter is None
 
     print(iva)
+
+
+@pytest.mark.parametrize("n_sources, sisec2010_tag, reset_kwargs", parameters_pds_iva)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
+def test_pds_iva(
+    n_sources: int,
+    sisec2010_tag: str,
+    callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
+    scale_restoration: Union[str, bool],
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img, _ = download_sample_speech_data(
+        n_sources=n_sources,
+        sisec2010_tag=sisec2010_tag,
+        max_duration=max_duration,
+        conv=True,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
+
+    iva = PDSIVA(
+        contrast_fn=None,
+        prox_penalty=None,
+        callbacks=callbacks,
+        scale_restoration=scale_restoration,
+    )
+    spectrogram_est = iva(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+    assert type(iva.loss[-1]) is float
+
+    print(iva)
+
+
+@pytest.mark.parametrize("specify_contrast_fn", [True, False])
+def test_iva_insufficient_fn(specify_contrast_fn: bool):
+    def _contrast_fn(y: np.ndarray) -> np.ndarray:
+        return np.linalg.norm(y, axis=1)
+
+    def _prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
+        norm = np.linalg.norm(y, axis=1, keepdims=True)
+        return y * np.maximum(1 - step_size / norm, 0)
+
+    if specify_contrast_fn:
+        contrast_fn = _contrast_fn
+        prox_penalty = None
+    else:
+        contrast_fn = None
+        prox_penalty = _prox_penalty
+
+    with pytest.raises(ValueError) as e:
+        _ = PDSIVA(
+            contrast_fn=contrast_fn,
+            prox_penalty=prox_penalty,
+        )
+
+    if specify_contrast_fn:
+        assert str(e.value) == "Set prox_penalty."
+    else:
+        assert str(e.value) == "Set contrast_fn."
 
 
 @pytest.mark.parametrize("n_sources, reset_kwargs", parameters_grad_iva)
