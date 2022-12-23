@@ -119,7 +119,8 @@ def test_pdsbss(
     )
 
     pdsbss = PDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty, callbacks=callbacks)
-    spectrogram_est = pdsbss(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    spectrogram_mix_normalized = pdsbss.normalize_by_spectral_norm(spectrogram_mix)
+    spectrogram_est = pdsbss(spectrogram_mix_normalized, n_iter=n_iter, **reset_kwargs)
 
     assert spectrogram_mix.shape == spectrogram_est.shape
 
