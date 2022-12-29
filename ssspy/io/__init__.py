@@ -91,3 +91,94 @@ def wavread(
     vmax = 2 ** (8 * bytes_per_sample - 1)
 
     return data / vmax, sample_rate
+
+
+def wavwrite(
+    path: str,
+    waveform: np.ndarray,
+    sample_rate: int,
+    channels_first: Optional[bool] = None,
+) -> None:
+    assert path[-4:] == ".wav", "Only wav file is supported."
+
+    if waveform.ndim == 1:
+        _waveform = waveform
+        n_channels = 1
+        num_frames = _waveform.shape[0]
+    elif waveform.ndim == 2:
+        if channels_first:
+            _waveform = waveform.transpose(1, 0)
+        else:
+            _waveform = waveform
+
+        n_channels = _waveform.shape[1]
+        num_frames = _waveform.shape[0]
+
+        if n_channels < 1 or 2 < n_channels:
+            raise ValueError(f"{n_channels}channel-input is not supported.")
+    else:
+        raise ValueError(f"waveform.ndim should be less or equal to 2, but given {waveform.ndim}.")
+
+    if _waveform.dtype in ["f2", "f4", "f8", "f16"]:
+        bits_per_sample = 16
+
+        # float to int
+        _waveform = _waveform * 2 ** (bits_per_sample - 1)
+        _waveform = _waveform.astype("<i2")
+    elif _waveform.dtype == "i1":
+        bits_per_sample = 8
+    elif _waveform.dtype == "i2":
+        bits_per_sample = 16
+    else:
+        raise ValueError(f"Invalid dtype={_waveform.dtype} is detected.")
+
+    assert (
+        bits_per_sample % 8 == 0
+    ), f"bits_per_sample should be divisible by 8, but given {bits_per_sample}."
+
+    byte_rate = (bits_per_sample * sample_rate * n_channels) // 8
+    block_align = byte_rate // sample_rate
+
+    with open(path, mode="wb") as f:
+        valid_file_size = 0
+
+        data = b"RIFF"
+        f.write(data)
+        valid_file_size += 4
+
+        filesize_position = f.tell()
+        data = struct.pack("<I", 0)  # calculate file size at last
+        f.write(data)
+
+        data = b"WAVE"
+        f.write(data)
+
+        data = b"fmt "
+        f.write(data)
+
+        data = struct.pack("<I", 16)
+        f.write(data)
+
+        data = struct.pack("<H", 1)
+        f.write(data)
+
+        data = struct.pack(
+            "<HIIHH", n_channels, sample_rate, byte_rate, block_align, bits_per_sample
+        )
+        f.write(data)
+
+        data = b"data"
+        f.write(data)
+
+        data_chunk_size = num_frames * n_channels * block_align
+        data = struct.pack("<I", data_chunk_size)
+        f.write(data)
+
+        _waveform = _waveform.flatten()
+        data = _waveform.view("b").data
+        f.write(data)
+
+        total_file_size = f.tell()
+        data = struct.pack("<I", total_file_size - 8)
+        f.seek(filesize_position)
+        f.write(data)
