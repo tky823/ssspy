@@ -43,11 +43,9 @@ def wavread(
         if fmt != 1:
             raise NotImplementedError(f"Invalid header {fmt} is detected.")
 
-        n_channels = struct.unpack("<H", f.read(2))[0]
-        sample_rate = struct.unpack("<I", f.read(4))[0]
-        byte_rate = struct.unpack("<I", f.read(4))[0]
-        block_align = struct.unpack("<H", f.read(2))[0]
-        bits_per_sample = struct.unpack("<H", f.read(2))[0]
+        n_channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack(
+            "<HIIHH", f.read(2 + 4 + 4 + 2 + 2)
+        )
 
         if bits_per_sample * sample_rate * n_channels != 8 * byte_rate:
             raise ValueError("Invalid header is detected.")
