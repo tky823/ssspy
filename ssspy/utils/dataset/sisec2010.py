@@ -4,10 +4,10 @@ import urllib.request
 
 import numpy as np
 
+from ...io import wavread
+
 
 def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1_female3") -> str:
-    from scipy.io import wavfile
-
     filename = "dev1.zip"
     url = "http://www.irisa.fr/metiss/SiSEC10/underdetermined/{}".format(filename)
     zip_path = os.path.join(root, filename)
@@ -41,8 +41,8 @@ def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1
         dry_sources = {}
 
         for src_idx, source_path in enumerate(source_paths):
-            _, data = wavfile.read(source_path)  # 16 bits
-            dry_sources["src_{}".format(src_idx + 1)] = data / 2**15
+            data, _ = wavread(source_path, return_2d=False)
+            dry_sources["src_{}".format(src_idx + 1)] = data
 
         np.savez(
             npz_path,
