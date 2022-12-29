@@ -1,11 +1,12 @@
 import os
 import sys
+import tempfile
 
 import numpy as np
 import pytest
 from scipy.io import wavfile
 
-from ssspy import wavread
+from ssspy import wavread, wavwrite
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -15,6 +16,8 @@ from dummy.io import save_invalid_wavfile  # noqa: E402
 parameters_frame_offset = [0, 10]
 parameters_num_frames = [None, 100]
 parameters_channels_first = [True, False, None]
+parameters_float = [True, False]
+parameters_channels = [1, 2]
 
 
 @pytest.mark.parametrize("frame_offset", parameters_frame_offset)
@@ -116,6 +119,74 @@ def test_wavread_invalid_stereo(frame_offset: int):
         wavread(filename, frame_offset=frame_offset, num_frames=invalid_num_frames)
 
     assert str(e.value) == f"num_frames={invalid_num_frames} exceeds maximum frame {max_frame}."
+
+
+@pytest.mark.parametrize("is_float", parameters_float)
+def test_wavio_1d(is_float: np.dtype):
+    rng = np.random.default_rng(0)
+
+    filename = "valid.wav"
+    sample_rate = 16000
+    duration = 5
+    bits_per_sample = 16
+    bytes_per_sample = bits_per_sample // 8
+    num_frames = sample_rate * duration
+    vmax = 2 ** (bits_per_sample - 1)
+
+    waveform = rng.integers(-vmax, vmax, size=(num_frames,), dtype=f"<i{bytes_per_sample}")
+
+    if is_float:
+        waveform = waveform / vmax
+        waveform_in = waveform.copy()
+    else:
+        waveform_in = waveform / vmax
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        path = os.path.join(temp_dir, filename)
+        wavwrite(path, waveform, sample_rate=sample_rate)
+        waveform_out, _ = wavread(path)
+
+    assert np.all(waveform_in == waveform_out)
+
+
+@pytest.mark.parametrize("is_float", parameters_float)
+@pytest.mark.parametrize("n_channels", parameters_channels)
+@pytest.mark.parametrize("channels_first", parameters_channels_first)
+def test_wavio_2d(is_float: np.dtype, n_channels: int, channels_first: bool):
+    rng = np.random.default_rng(0)
+
+    filename = "valid.wav"
+    sample_rate = 16000
+    duration = 5
+    bits_per_sample = 16
+    bytes_per_sample = bits_per_sample // 8
+    num_frames = sample_rate * duration
+    vmax = 2 ** (bits_per_sample - 1)
+
+    if channels_first:
+        shape = (n_channels, num_frames)
+    else:
+        shape = (num_frames, n_channels)
+
+    waveform = rng.integers(
+        -vmax,
+        vmax,
+        size=shape,
+        dtype=f"<i{bytes_per_sample}",
+    )
+
+    if is_float:
+        waveform = waveform / vmax
+        waveform_in = waveform.copy()
+    else:
+        waveform_in = waveform / vmax
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        path = os.path.join(temp_dir, filename)
+        wavwrite(path, waveform, sample_rate=sample_rate, channels_first=channels_first)
+        waveform_out, _ = wavread(path, return_2d=True, channels_first=channels_first)
+
+    assert np.all(waveform_in == waveform_out)
 
 
 def test_waveread_invalid_metadata():
