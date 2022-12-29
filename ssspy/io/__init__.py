@@ -1,4 +1,5 @@
 import struct
+from io import BufferedReader, BufferedWriter
 from typing import Optional, Tuple
 
 import numpy as np
@@ -32,65 +33,24 @@ def wavread(
         if chunk_marker != b"fmt ":
             raise NotImplementedError(f"Not support {repr(chunk_marker)}.")
 
-        fmt_chunk_size = struct.unpack("<I", f.read(4))[0]
-
-        if fmt_chunk_size != 16:
-            raise NotImplementedError("Invalid header is detected.")
-
-        fmt = struct.unpack("<H", f.read(2))[0]
-
-        # ensure format is PCM
-        if fmt != 1:
-            raise NotImplementedError(f"Invalid header {fmt} is detected.")
-
-        n_channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack(
-            "<HIIHH", f.read(2 + 4 + 4 + 2 + 2)
-        )
-
-        if bits_per_sample * sample_rate * n_channels != 8 * byte_rate:
-            raise ValueError("Invalid header is detected.")
+        n_channels, sample_rate, block_align = _read_fmt_chunk(f)
 
         chunk_marker = f.read(4)
 
         if chunk_marker != b"data":
             raise NotImplementedError(f"Not support {repr(chunk_marker)}.")
 
-        data_chunk_size = struct.unpack("<I", f.read(4))[0]
-        bytes_per_sample = block_align // n_channels
-        n_full_samples = data_chunk_size // bytes_per_sample
+        data = _read_data_chunk(
+            f,
+            n_channels,
+            block_align,
+            frame_offset=frame_offset,
+            num_frames=num_frames,
+            return_2d=return_2d,
+            channels_first=channels_first,
+        )
 
-        start = f.tell() + block_align * frame_offset
-        max_frame = data_chunk_size // block_align
-
-        if num_frames is None:
-            shape = (n_full_samples - n_channels * frame_offset,)
-            end_frame = data_chunk_size // block_align
-        elif num_frames >= 0:
-            shape = (n_channels * num_frames,)
-            end_frame = frame_offset + num_frames
-        else:
-            raise ValueError(f"Invalid num_frames={num_frames} is given. Set nonnegative integer.")
-
-        if end_frame > max_frame:
-            raise ValueError(f"num_frames={num_frames} exceeds maximum frame {max_frame}.")
-
-        data = np.memmap(f, dtype=f"<i{bytes_per_sample}", mode="c", offset=start, shape=shape)
-
-        if n_channels > 1:
-            data = data.reshape(-1, n_channels)
-
-            if channels_first:
-                data = data.transpose(1, 0)
-        else:
-            if return_2d:
-                data = data.reshape(-1, n_channels)
-
-                if channels_first:
-                    data = data.transpose(1, 0)
-
-    vmax = 2 ** (8 * bytes_per_sample - 1)
-
-    return data / vmax, sample_rate
+    return data, sample_rate
 
 
 def wavwrite(
@@ -151,32 +111,116 @@ def wavwrite(
         data = b"WAVE"
         f.write(data)
 
-        data = b"fmt "
-        f.write(data)
+        _write_fmt_chunk(f, n_channels, sample_rate, byte_rate, block_align, bits_per_sample)
 
-        data = struct.pack("<I", 16)
-        f.write(data)
-
-        data = struct.pack("<H", 1)
-        f.write(data)
-
-        data = struct.pack(
-            "<HIIHH", n_channels, sample_rate, byte_rate, block_align, bits_per_sample
-        )
-        f.write(data)
-
-        data = b"data"
-        f.write(data)
-
-        data_chunk_size = _waveform.nbytes
-        data = struct.pack("<I", data_chunk_size)
-        f.write(data)
-
-        _waveform = _waveform.flatten()
-        data = _waveform.view("b").data
-        f.write(data)
+        _write_data_chunk(f, _waveform)
 
         total_file_size = f.tell()
         data = struct.pack("<I", total_file_size - 8)
         f.seek(filesize_position)
         f.write(data)
+
+
+def _read_fmt_chunk(
+    f: BufferedReader,
+) -> Tuple[int, int, int]:
+    fmt_chunk_size = struct.unpack("<I", f.read(4))[0]
+
+    if fmt_chunk_size != 16:
+        raise NotImplementedError("Invalid header is detected.")
+
+    fmt = struct.unpack("<H", f.read(2))[0]
+
+    # ensure format is PCM
+    if fmt != 1:
+        raise NotImplementedError(f"Invalid header {fmt} is detected.")
+
+    n_channels, sample_rate, byte_rate, block_align, bits_per_sample = struct.unpack(
+        "<HIIHH", f.read(2 + 4 + 4 + 2 + 2)
+    )
+
+    if bits_per_sample * sample_rate * n_channels != 8 * byte_rate:
+        raise ValueError("Invalid header is detected.")
+
+    return n_channels, sample_rate, block_align
+
+
+def _read_data_chunk(
+    f: BufferedReader,
+    n_channels: int,
+    block_align: int,
+    frame_offset: int = 0,
+    num_frames: Optional[int] = None,
+    return_2d: Optional[bool] = None,
+    channels_first: Optional[bool] = None,
+) -> np.ndarray:
+    data_chunk_size = struct.unpack("<I", f.read(4))[0]
+    bytes_per_sample = block_align // n_channels
+    n_full_samples = data_chunk_size // bytes_per_sample
+
+    start = f.tell() + block_align * frame_offset
+    max_frame = data_chunk_size // block_align
+
+    if num_frames is None:
+        shape = (n_full_samples - n_channels * frame_offset,)
+        end_frame = data_chunk_size // block_align
+    elif num_frames >= 0:
+        shape = (n_channels * num_frames,)
+        end_frame = frame_offset + num_frames
+    else:
+        raise ValueError(f"Invalid num_frames={num_frames} is given. Set nonnegative integer.")
+
+    if end_frame > max_frame:
+        raise ValueError(f"num_frames={num_frames} exceeds maximum frame {max_frame}.")
+
+    data = np.memmap(f, dtype=f"<i{bytes_per_sample}", mode="c", offset=start, shape=shape)
+
+    if n_channels > 1:
+        data = data.reshape(-1, n_channels)
+
+        if channels_first:
+            data = data.transpose(1, 0)
+    else:
+        if return_2d:
+            data = data.reshape(-1, n_channels)
+
+            if channels_first:
+                data = data.transpose(1, 0)
+
+    vmax = 2 ** (8 * bytes_per_sample - 1)
+
+    return data / vmax
+
+
+def _write_fmt_chunk(
+    f: BufferedWriter,
+    n_channels: int,
+    sample_rate: int,
+    byte_rate: int,
+    block_align: int,
+    bits_per_sample: int,
+) -> None:
+    data = b"fmt "
+    f.write(data)
+
+    data = struct.pack("<I", 16)
+    f.write(data)
+
+    data = struct.pack("<H", 1)
+    f.write(data)
+
+    data = struct.pack("<HIIHH", n_channels, sample_rate, byte_rate, block_align, bits_per_sample)
+    f.write(data)
+
+
+def _write_data_chunk(f: BufferedWriter, waveform: np.ndarray) -> None:
+    data = b"data"
+    f.write(data)
+
+    data_chunk_size = waveform.nbytes
+    data = struct.pack("<I", data_chunk_size)
+    f.write(data)
+
+    _waveform = waveform.flatten()
+    data = _waveform.view("b").data
+    f.write(data)
