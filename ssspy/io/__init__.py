@@ -5,13 +5,13 @@ import numpy as np
 
 
 def wavread(
-    filename: str,
+    path: str,
     frame_offset: int = 0,
     num_frames: Optional[int] = None,
     return_2d: Optional[bool] = None,
     channels_first: Optional[bool] = None,
 ) -> Tuple[np.ndarray, int]:
-    with open(filename, mode="rb") as f:
+    with open(path, mode="rb") as f:
         riff = f.read(4)
 
         # ensure byte order is little endian
