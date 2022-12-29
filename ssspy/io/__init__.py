@@ -104,7 +104,6 @@ def wavwrite(
     if waveform.ndim == 1:
         _waveform = waveform
         n_channels = 1
-        num_frames = _waveform.shape[0]
     elif waveform.ndim == 2:
         if channels_first:
             _waveform = waveform.transpose(1, 0)
@@ -112,7 +111,6 @@ def wavwrite(
             _waveform = waveform
 
         n_channels = _waveform.shape[1]
-        num_frames = _waveform.shape[0]
 
         if n_channels < 1 or 2 < n_channels:
             raise ValueError(f"{n_channels}channel-input is not supported.")
@@ -170,7 +168,7 @@ def wavwrite(
         data = b"data"
         f.write(data)
 
-        data_chunk_size = num_frames * n_channels * block_align
+        data_chunk_size = _waveform.nbytes
         data = struct.pack("<I", data_chunk_size)
         f.write(data)
 
