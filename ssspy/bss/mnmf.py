@@ -69,7 +69,9 @@ class MNMFbase(IterativeMethodBase):
 
         self.rng = rng
 
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -79,6 +81,9 @@ class MNMFbase(IterativeMethodBase):
             n_iter (int):
                 The number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -88,7 +93,7 @@ class MNMFbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        super().__call__(n_iter=n_iter)
+        super().__call__(n_iter=n_iter, initial_call=initial_call)
 
         self.output = self.separate(self.input)
 
