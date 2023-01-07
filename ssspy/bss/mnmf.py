@@ -3,6 +3,7 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
+from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
 from .base import IterativeMethodBase
@@ -123,6 +124,9 @@ class MNMFbase(IterativeMethodBase):
             setattr(self, key, kwargs[key])
 
         X = self.input
+        R = X[:, np.newaxis] * X[np.newaxis, :].conj()
+        R = R.transpose(2, 3, 0, 1)
+        self.instant_covariance = to_psd(R, flooring_fn=self.flooring_fn)
 
         n_sources = self.n_sources
         n_channels, n_bins, n_frames = X.shape
@@ -324,13 +328,10 @@ class GaussMNMF(MNMFbase):
         """
         n_channels = self.n_channels
 
-        X = self.input
+        R = self.instant_covariance
         T, V = self.basis, self.activation
         H, Z = self.spatial, self.latent
 
-        R = X[:, np.newaxis] * X[np.newaxis, :].conj()
-        R = R.transpose(2, 3, 0, 1)
-        R = to_psd(R, flooring_fn=self.flooring_fn)
         R_hat = self.reconstruct_mnmf(T, V, H, Z)
         R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
         RR_inv = np.linalg.solve(R_hat, R)  # Hermitian transpose of R @ np.linalg.inv(R_hat)
@@ -361,3 +362,131 @@ class GaussMNMF(MNMFbase):
         logdet = logdet_R - logdet_R_hat
 
         return logdet
+
+    def update_basis(self) -> None:
+        r"""Update NMF bases by MM algorithm."""
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        R = self.instant_covariance
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+
+        RR = np.linalg.solve(R_hat, R)
+        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
+        _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
+        RH = np.linalg.solve(_R_hat, _H)
+
+        trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
+        trace_RRRH = np.real(trace_RRRH)
+        trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+        trace_RH = np.real(trace_RH)
+
+        VRRRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RRRH[:, :, np.newaxis], axis=-1)
+        VRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RH[:, :, np.newaxis], axis=-1)
+
+        num = np.sum(Z[:, np.newaxis, :] * VRRRH, axis=0)
+        denom = np.sum(Z[:, np.newaxis, :] * VRH, axis=0)
+        T = T * np.sqrt(num / denom)
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation(self) -> None:
+        r"""Update NMF activations by MM algorithm."""
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        R = self.instant_covariance
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+
+        RR = np.linalg.solve(R_hat, R)
+        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
+        _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
+        RH = np.linalg.solve(_R_hat, _H)
+
+        trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
+        trace_RRRH = np.real(trace_RRRH)
+        trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+        trace_RH = np.real(trace_RH)
+
+        TRRRH = np.sum(T[np.newaxis, :, :, np.newaxis] * trace_RRRH[:, :, np.newaxis, :], axis=1)
+        TRH = np.sum(T[np.newaxis, :, :, np.newaxis] * trace_RH[:, :, np.newaxis, :], axis=1)
+
+        num = np.sum(Z[:, :, np.newaxis] * TRRRH, axis=0)
+        denom = np.sum(Z[:, :, np.newaxis] * TRH, axis=0)
+        V = V * np.sqrt(num / denom)
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_spatial(self) -> None:
+        r"""Update spatial properties in NMF by MM algorithm."""
+        na = np.newaxis
+
+        R = self.instant_covariance
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+        R_hat_inv = np.linalg.inv(R_hat)
+        RRR = R_hat_inv @ R @ R_hat_inv
+
+        VR = np.sum(V[na, :, :, na, na] * R_hat_inv[:, na, :, :, :], axis=2)
+        VRRR = np.sum(V[na, :, :, na, na] * RRR[:, na, :, :, :], axis=2)
+        ZT = Z[:, na, :] * T[na, :, :]
+
+        P = np.sum(ZT[:, :, :, na, na] * VR, axis=2)
+        Q = np.sum(ZT[:, :, :, na, na] * VRRR, axis=2)
+
+        Q = to_psd(Q, flooring_fn=self.flooring_fn)
+        Q_sqrt = sqrtmh(Q)
+
+        QHPHQ = Q_sqrt @ H @ P @ H @ Q_sqrt
+        QHPHQ = to_psd(QHPHQ, flooring_fn=self.flooring_fn)
+        H = H @ Q_sqrt @ invsqrtmh(QHPHQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ H
+        H = to_psd(H, flooring_fn=self.flooring_fn)
+
+        trace = np.trace(H, axis1=-2, axis2=-1)
+        H = H / np.real(trace[..., na, na])
+
+        self.spatial = H
+
+    def update_latent(self) -> None:
+        r"""Update latent variables in NMF by MM algorithm."""
+        n_sources = self.n_sources
+        n_frames = self.n_frames
+
+        R = self.instant_covariance
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+        RR = np.linalg.solve(R_hat, R)
+        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
+        _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
+        RH = np.linalg.solve(_R_hat, _H)
+        trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
+        trace_RRRH = np.real(trace_RRRH)
+        trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+        trace_RH = np.real(trace_RH)
+
+        VRRRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RRRH[:, :, np.newaxis], axis=-1)
+        VRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RH[:, :, np.newaxis], axis=-1)
+
+        num = np.sum(T * VRRRH, axis=1)
+        denom = np.sum(T * VRH, axis=1)
+
+        Z = Z * np.sqrt(num / denom)
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
