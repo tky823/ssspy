@@ -307,7 +307,7 @@ class MNMFbase(IterativeMethodBase):
         axis1 = n_dims + axis1 if axis1 < 0 else axis1
         axis2 = n_dims + axis2 if axis2 < 0 else axis2
 
-        assert axis1 == 2 and axis1 == 3
+        assert axis1 == 2 and axis2 == 3
 
         trace = np.trace(H, axis1=axis1, axis2=axis2)
         H = H / np.real(trace[..., np.newaxis, np.newaxis])
