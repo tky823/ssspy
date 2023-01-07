@@ -48,6 +48,7 @@ class MNMFbase(IterativeMethodBase):
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
         ] = None,
+        normalization: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -62,6 +63,8 @@ class MNMFbase(IterativeMethodBase):
             self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
+
+        self.normalization = normalization
 
         self.input = None
         self.reference_id = reference_id
@@ -296,6 +299,30 @@ class MNMFbase(IterativeMethodBase):
 
         return R_hat
 
+    def normalize(self, axis1=-2, axis2=-1) -> None:
+        r"""Ensure unit trace of spatial property of MNMF."""
+        H = self.spatial
+        n_dims = H.ndim
+
+        axis1 = n_dims + axis1 if axis1 < 0 else axis1
+        axis2 = n_dims + axis2 if axis2 < 0 else axis2
+
+        assert axis1 == 2 and axis1 == 3
+
+        trace = np.trace(H, axis1=axis1, axis2=axis2)
+        H = H / np.real(trace[..., np.newaxis, np.newaxis])
+
+        if self.partitioning:
+            # When self.partitioning=True,
+            # normalization may change value of cost function
+            pass
+        else:
+            T = self.basis
+            T = trace[:, :, np.newaxis] * T
+            self.basis = T
+
+        self.spatial = H
+
 
 class GaussMNMF(MNMFbase):
     def __init__(
@@ -309,6 +336,7 @@ class GaussMNMF(MNMFbase):
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
         ] = None,
+        normalization: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -319,6 +347,7 @@ class GaussMNMF(MNMFbase):
             partitioning=partitioning,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
+            normalization=normalization,
             record_loss=record_loss,
             reference_id=reference_id,
             rng=rng,
@@ -415,6 +444,9 @@ class GaussMNMF(MNMFbase):
 
         if self.partitioning:
             self.update_latent()
+
+        if self.normalization:
+            self.normalize(axis1=-2, axis2=-1)
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm."""
