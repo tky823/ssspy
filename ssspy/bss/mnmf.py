@@ -153,6 +153,20 @@ class MNMFbase(IterativeMethodBase):
         if rng is None:
             rng = np.random.default_rng()
 
+        if not hasattr(self, "basis"):
+            T = rng.random((n_bins, n_basis))
+            T = self.flooring_fn(T)
+        else:
+            # To avoid overwriting.
+            T = self.basis.copy()
+
+        if not hasattr(self, "activation"):
+            V = rng.random((n_basis, n_frames))
+            V = self.flooring_fn(V)
+        else:
+            # To avoid overwriting.
+            V = self.activation.copy()
+
         if not hasattr(self, "latent"):
             Z = rng.random((n_sources, n_basis))
             Z = Z / Z.sum(axis=0)
@@ -170,23 +184,8 @@ class MNMFbase(IterativeMethodBase):
             # To avoid overwriting.
             H = self.spatial.copy()
 
-        if not hasattr(self, "basis"):
-            T = rng.random((n_bins, n_basis))
-            T = self.flooring_fn(T)
-        else:
-            # To avoid overwriting.
-            T = self.basis.copy()
-
-        if not hasattr(self, "activation"):
-            V = rng.random((n_basis, n_frames))
-            V = self.flooring_fn(V)
-        else:
-            # To avoid overwriting.
-            V = self.activation.copy()
-
-        self.latent = Z
-        self.spatial = H
         self.basis, self.activation = T, V
+        self.latent, self.spatial = Z, H
 
     def separate(self, input: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Implement 'separate' method.")
