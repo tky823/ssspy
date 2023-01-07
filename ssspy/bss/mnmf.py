@@ -185,3 +185,71 @@ class MNMFbase(IterativeMethodBase):
 
     def separate(self, input: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Implement 'separate' method.")
+
+    def reconstruct_nmf(
+        self,
+        basis: np.ndarray,
+        activation: np.ndarray,
+        latent: np.ndarray,
+    ) -> np.ndarray:
+        r"""Reconstruct single-channel NMF.
+
+        Args:
+            basis (numpy.ndarray):
+                Basis matrix with shape of (n_bins, n_basis).
+            activation (numpy.ndarray):
+                Activation matrix with shape of (n_basis, n_frames).
+            latent (numpy.ndarray):
+                Latent variables with shape of (n_sources, n_basis).
+            axis1 (int):
+                First axis of covariance matrix. Default: ``-2``.
+            axis2 (int):
+                Second axis of covariance matrix. Default: ``-1``.
+
+        Returns:
+            numpy.ndarray of reconstructed single-channel NMF.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        T, V = basis, activation
+        Z = latent
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
+
+        return ZTV
+
+    def reconstruct_mnmf(
+        self,
+        basis: np.ndarray,
+        activation: np.ndarray,
+        spatial: np.ndarray,
+        latent: np.ndarray,
+    ) -> np.ndarray:
+        r"""Reconstruct multichannel NMF.
+
+        Args:
+            basis (numpy.ndarray):
+                Basis matrix with shape of (n_bins, n_basis).
+            activation (numpy.ndarray):
+                Activation matrix with shape of (n_basis, n_frames).
+            spatial (numpy.ndarray):
+                Spatial property with shape of (n_sources, n_bins, n_channels, n_channels).
+            latent (numpy.ndarray):
+                Latent variables with shape of (n_sources, n_basis).
+            axis1 (int):
+                First axis of covariance matrix. Default: ``-2``.
+            axis2 (int):
+                Second axis of covariance matrix. Default: ``-1``.
+
+        Returns:
+            numpy.ndarray of reconstructed multichannel NMF.
+            The shape is (n_bins, n_frames, n_channels, n_channels).
+        """
+        T, V = basis, activation
+        H, Z = spatial, latent
+
+        ZTV = self.reconstruct_nmf(T, V, Z)
+        R_hat_n = ZTV[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
+        R_hat = np.sum(R_hat_n, axis=0)
+
+        return R_hat
