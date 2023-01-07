@@ -162,7 +162,9 @@ class MNMFbase(IterativeMethodBase):
             Z = self.latent.copy()
 
         if not hasattr(self, "spatial"):
-            H = np.eye(n_channels)
+            H = np.eye(n_channels, dtype=self.input.dtype)
+            trace = np.trace(H, axis1=-2, axis2=-1)
+            H = H / np.real(trace)
             H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
         else:
             # To avoid overwriting.
