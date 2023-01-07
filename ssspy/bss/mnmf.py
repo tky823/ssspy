@@ -4,7 +4,10 @@ from typing import Callable, List, Optional, Union
 import numpy as np
 
 from ._flooring import identity, max_flooring
+from ._psd import to_psd
 from .base import IterativeMethodBase
+
+__all__ = ["GaussMNMF"]
 
 EPS = 1e-10
 
@@ -253,3 +256,104 @@ class MNMFbase(IterativeMethodBase):
         R_hat = np.sum(R_hat_n, axis=0)
 
         return R_hat
+
+
+class GaussMNMF(MNMFbase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
+        ] = None,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def separate(self, input):
+        """Separate ``input`` using multichannel Wiener filter.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        X = input
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        reference_id = self.reference_id
+
+        ZTV = self.reconstruct_nmf(T, V, Z)
+        R_hat_n = ZTV[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
+        R_hat = np.sum(R_hat_n, axis=0)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+        R_hat = np.tile(R_hat, reps=(self.n_sources, 1, 1, 1, 1))
+        G_Hermite = np.linalg.solve(R_hat, R_hat_n)
+        G = G_Hermite.transpose(0, 1, 2, 4, 3).conj()
+        G_ref = G[:, :, :, reference_id, :]
+        G_ref = G_ref.transpose(0, 3, 1, 2)
+        Y = np.sum(G_ref * X, axis=1)
+
+        return Y
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        Returns:
+            Computed loss.
+        """
+        X = self.input
+        T, V = self.basis, self.activation
+        H, Z = self.spatial, self.latent
+
+        R = X[:, np.newaxis] * X[np.newaxis, :].conj()
+        R = R.transpose(2, 3, 0, 1)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+        RR_inv = np.linalg.solve(R_hat, R)  # Hermitian transpose of R @ np.linalg.inv(R_hat)
+        trace = np.trace(RR_inv, axis1=-2, axis2=-1)
+        trace = np.real(trace)
+        logdet = self.compute_logdet(R, R_hat)
+        loss = np.mean(trace - logdet - self.n_channels, axis=-1)
+        loss = loss.sum(axis=0)
+        loss = loss.item()
+
+        return loss
+
+    def compute_logdet(self, target: np.ndarray, reconstructed: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant.
+
+        Args:
+            target:
+                Covariance matrix with shape of (\*, n_channels, n_channels).
+            reconstructed:
+                Reconstructed MNMF with shape of (\*, n_channels, n_channels).
+
+        Returns:
+            numpy.ndarray of computed log-determinant values.
+            The shape is (\*).
+        """
+        _, logdet_R = np.linalg.slogdet(target)
+        _, logdet_R_hat = np.linalg.slogdet(reconstructed)
+        logdet = logdet_R - logdet_R_hat
+
+        return logdet
