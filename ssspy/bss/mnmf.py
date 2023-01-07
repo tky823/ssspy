@@ -283,7 +283,7 @@ class GaussMNMF(MNMFbase):
             rng=rng,
         )
 
-    def separate(self, input):
+    def separate(self, input: np.ndarray) -> np.ndarray:
         """Separate ``input`` using multichannel Wiener filter.
 
         Args:
