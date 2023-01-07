@@ -412,12 +412,30 @@ class GaussMNMF(MNMFbase):
         self.update_basis()
         self.update_activation()
         self.update_spatial()
-        self.update_latent()
+
+        if self.partitioning:
+            self.update_latent()
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
+        na = np.newaxis
+
+        def _compute_traces(
+            target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
+        ) -> np.ndarray:
+            RR = np.linalg.solve(reconstructed, target)
+            R_hat = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
+            H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
+            RH = np.linalg.solve(R_hat, H)
+
+            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
+            trace_RRRH = np.real(trace_RRRH)
+            trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+            trace_RH = np.real(trace_RH)
+
+            return trace_RRRH, trace_RH
 
         R = self.instant_covariance
         T, V = self.basis, self.activation
@@ -428,23 +446,21 @@ class GaussMNMF(MNMFbase):
             R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
             R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
 
-            RR = np.linalg.solve(R_hat, R)
-            _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
-            _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(_R_hat, _H)
+            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
 
-            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
-            trace_RRRH = np.real(trace_RRRH)
-            trace_RH = np.trace(RH, axis1=-2, axis2=-1)
-            trace_RH = np.real(trace_RH)
+            VRRRH = np.sum(V[na, na, :] * trace_RRRH[:, :, na], axis=-1)
+            VRH = np.sum(V[na, na, :] * trace_RH[:, :, na], axis=-1)
 
-            VRRRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RRRH[:, :, np.newaxis], axis=-1)
-            VRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RH[:, :, np.newaxis], axis=-1)
-
-            num = np.sum(Z[:, np.newaxis, :] * VRRRH, axis=0)
-            denom = np.sum(Z[:, np.newaxis, :] * VRH, axis=0)
+            num = np.sum(Z[:, na, :] * VRRRH, axis=0)
+            denom = np.sum(Z[:, na, :] * VRH, axis=0)
         else:
-            raise NotImplementedError("self.partitioning=False is not supported.")
+            R_hat = self.reconstruct_mnmf(T, V, H)
+            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+
+            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+
+            num = np.sum(V[:, na, :, :] * trace_RRRH[:, :, na, :], axis=-1)
+            denom = np.sum(V[:, na, :, :] * trace_RH[:, :, na, :], axis=-1)
 
         T = T * np.sqrt(num / denom)
         T = self.flooring_fn(T)
@@ -455,6 +471,22 @@ class GaussMNMF(MNMFbase):
         r"""Update NMF activations by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
+        na = np.newaxis
+
+        def _compute_traces(
+            target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
+        ) -> np.ndarray:
+            RR = np.linalg.solve(reconstructed, target)
+            R_hat = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
+            H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
+            RH = np.linalg.solve(R_hat, H)
+
+            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
+            trace_RRRH = np.real(trace_RRRH)
+            trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+            trace_RH = np.real(trace_RH)
+
+            return trace_RRRH, trace_RH
 
         R = self.instant_covariance
         T, V = self.basis, self.activation
@@ -462,28 +494,24 @@ class GaussMNMF(MNMFbase):
 
         if self.partitioning:
             Z = self.latent
-            R_hat = self.reconstruct_mnmf(T, V, H, Z)
+            R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
             R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
 
-            RR = np.linalg.solve(R_hat, R)
-            _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
-            _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(_R_hat, _H)
+            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
 
-            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
-            trace_RRRH = np.real(trace_RRRH)
-            trace_RH = np.trace(RH, axis1=-2, axis2=-1)
-            trace_RH = np.real(trace_RH)
+            TRRRH = np.sum(T[na, :, :, na] * trace_RRRH[:, :, na, :], axis=1)
+            TRH = np.sum(T[na, :, :, na] * trace_RH[:, :, na, :], axis=1)
 
-            TRRRH = np.sum(
-                T[np.newaxis, :, :, np.newaxis] * trace_RRRH[:, :, np.newaxis, :], axis=1
-            )
-            TRH = np.sum(T[np.newaxis, :, :, np.newaxis] * trace_RH[:, :, np.newaxis, :], axis=1)
-
-            num = np.sum(Z[:, :, np.newaxis] * TRRRH, axis=0)
-            denom = np.sum(Z[:, :, np.newaxis] * TRH, axis=0)
+            num = np.sum(Z[:, :, na] * TRRRH, axis=0)
+            denom = np.sum(Z[:, :, na] * TRH, axis=0)
         else:
-            raise NotImplementedError("self.partitioning=False is not supported.")
+            R_hat = self.reconstruct_mnmf(T, V, H)
+            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+
+            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+
+            num = np.sum(T[:, :, :, na] * trace_RRRH[:, :, na, :], axis=1)
+            denom = np.sum(T[:, :, :, na] * trace_RH[:, :, na, :], axis=1)
 
         V = V * np.sqrt(num / denom)
         V = self.flooring_fn(V)
@@ -500,20 +528,18 @@ class GaussMNMF(MNMFbase):
 
         if self.partitioning:
             Z = self.latent
-            R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
-            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-            R_hat_inv = np.linalg.inv(R_hat)
-            RRR = R_hat_inv @ R @ R_hat_inv
-
-            VR = np.sum(V[na, :, :, na, na] * R_hat_inv[:, na, :, :, :], axis=2)
-            VRRR = np.sum(V[na, :, :, na, na] * RRR[:, na, :, :, :], axis=2)
-            ZT = Z[:, na, :] * T[na, :, :]
-
-            P = np.sum(ZT[:, :, :, na, na] * VR, axis=2)
-            Q = np.sum(ZT[:, :, :, na, na] * VRRR, axis=2)
+            Lamb = self.reconstruct_nmf(T, V, latent=Z)
         else:
-            raise NotImplementedError("self.partitioning=False is not supported.")
+            Lamb = self.reconstruct_nmf(T, V)
 
+        R_hat_n = Lamb[:, :, :, na, na] * H[:, :, na, :, :]
+        R_hat = np.sum(R_hat_n, axis=0)
+        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+        R_hat_inv = np.linalg.inv(R_hat)
+        RRR = R_hat_inv @ R @ R_hat_inv
+
+        P = np.sum(Lamb[:, :, :, na, na] * RRR, axis=2)
+        Q = np.sum(Lamb[:, :, :, na, na] * R, axis=2)
         Q = to_psd(Q, flooring_fn=self.flooring_fn)
         Q_sqrt = sqrtmh(Q)
 
@@ -536,7 +562,7 @@ class GaussMNMF(MNMFbase):
         T, V = self.basis, self.activation
         H, Z = self.spatial, self.latent
 
-        R_hat = self.reconstruct_mnmf(T, V, H, Z)
+        R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
         R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
         RR = np.linalg.solve(R_hat, R)
         _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
