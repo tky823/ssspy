@@ -363,6 +363,13 @@ class GaussMNMF(MNMFbase):
 
         return logdet
 
+    def update_once(self) -> None:
+        r"""Update MNMF parameters once."""
+        self.update_basis()
+        self.update_activation()
+        self.update_spatial()
+        self.update_latent()
+
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm."""
         n_sources = self.n_sources
