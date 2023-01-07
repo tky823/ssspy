@@ -295,18 +295,19 @@ class GaussMNMF(MNMFbase):
             numpy.ndarray of the separated signal in frequency-domain.
             The shape is (n_sources, n_bins, n_frames).
         """
+        n_sources = self.n_sources
+        reference_id = self.reference_id
+
         X = input
         T, V = self.basis, self.activation
         H, Z = self.spatial, self.latent
-
-        reference_id = self.reference_id
 
         ZTV = self.reconstruct_nmf(T, V, Z)
         R_hat_n = ZTV[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
         R_hat = np.sum(R_hat_n, axis=0)
         R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-        R_hat = np.tile(R_hat, reps=(self.n_sources, 1, 1, 1, 1))
-        G_Hermite = np.linalg.solve(R_hat, R_hat_n)
+        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
+        G_Hermite = np.linalg.solve(_R_hat, R_hat_n)
         G = G_Hermite.transpose(0, 1, 2, 4, 3).conj()
         G_ref = G[:, :, :, reference_id, :]
         G_ref = G_ref.transpose(0, 3, 1, 2)
@@ -320,6 +321,8 @@ class GaussMNMF(MNMFbase):
         Returns:
             Computed loss.
         """
+        n_channels = self.n_channels
+
         X = self.input
         T, V = self.basis, self.activation
         H, Z = self.spatial, self.latent
@@ -333,7 +336,7 @@ class GaussMNMF(MNMFbase):
         trace = np.trace(RR_inv, axis1=-2, axis2=-1)
         trace = np.real(trace)
         logdet = self.compute_logdet(R, R_hat)
-        loss = np.mean(trace - logdet - self.n_channels, axis=-1)
+        loss = np.mean(trace - logdet - n_channels, axis=-1)
         loss = loss.sum(axis=0)
         loss = loss.item()
 
