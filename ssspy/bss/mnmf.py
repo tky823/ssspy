@@ -44,6 +44,7 @@ class MNMFbase(IterativeMethodBase):
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
         ] = None,
         record_loss: bool = True,
+        reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(callbacks=callbacks, record_loss=record_loss)
@@ -57,6 +58,7 @@ class MNMFbase(IterativeMethodBase):
             self.flooring_fn = flooring_fn
 
         self.input = None
+        self.reference_id = reference_id
 
         if rng is None:
             rng = np.random.default_rng()
@@ -99,9 +101,7 @@ class MNMFbase(IterativeMethodBase):
             s += ", n_channels={n_channels}"
 
         s += ", record_loss={record_loss}"
-
-        if self.scale_restoration:
-            s += ", reference_id={reference_id}"
+        s += ", reference_id={reference_id}"
 
         s += ")"
 
@@ -160,7 +160,7 @@ class MNMFbase(IterativeMethodBase):
 
         if not hasattr(self, "spatial"):
             H = np.eye(n_channels)
-            self.spatial = np.tile(H, reps=(n_bins, n_sources, 1, 1))
+            H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
         else:
             # To avoid overwriting.
             H = self.spatial.copy()
