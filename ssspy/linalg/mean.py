@@ -18,10 +18,12 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
         &= \boldsymbol{A}(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2} \\
         &= (\boldsymbol{A}\boldsymbol{B}^{-1})^{1/2}\boldsymbol{B}.
 
-    This is a solution of the following equation.
+    This is a solution of the following equation for
+    complex Hermitian or real symmetric matrices,
+    :math:`\boldsymbol{A}`, :math:`\boldsymbol{B}`, and :math:`\boldsymbol{X}`.
 
     .. math::
-        \boldsymbol{XAX} = \boldsymbol{B}
+        \boldsymbol{X}\boldsymbol{A}^{-1}\boldsymbol{X} = \boldsymbol{B}
 
     .. note::
         :math:`(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}` is computed by
