@@ -310,7 +310,8 @@ class MNMFbase(IterativeMethodBase):
         assert axis1 == 2 and axis2 == 3
 
         trace = np.trace(H, axis1=axis1, axis2=axis2)
-        H = H / np.real(trace[..., np.newaxis, np.newaxis])
+        trace = np.real(trace)
+        H = H / trace[..., np.newaxis, np.newaxis]
 
         if self.partitioning:
             # When self.partitioning=True,
