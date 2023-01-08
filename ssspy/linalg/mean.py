@@ -7,13 +7,21 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     r"""Compute the geometric mean of complex Hermitian \
     (conjugate symmetric) or real symmetric matrices.
 
+    The geometric mean of :math:`\boldsymbol{A}` and :math:`\boldsymbol{B}`
+    is defined as follows [#bhatia2009positive]_:
+
     .. math::
         \boldsymbol{A}\#\boldsymbol{B}
         &= \boldsymbol{A}^{1/2}
         (\boldsymbol{A}^{-1/2}\boldsymbol{B}\boldsymbol{A}^{-1/2})^{1/2}
         \boldsymbol{A}^{1/2} \\
         &= \boldsymbol{A}(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2} \\
-        &= (\boldsymbol{A}\boldsymbol{B}^{-1})^{1/2}\boldsymbol{B}
+        &= (\boldsymbol{A}\boldsymbol{B}^{-1})^{1/2}\boldsymbol{B}.
+
+    This is a solution of the following equation.
+
+    .. math::
+        \boldsymbol{XAX} = \boldsymbol{B}
 
     .. note::
         :math:`(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}` is computed by
@@ -33,6 +41,10 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
     Returns:
         Geometric mean of matrices with shape of (\*, n_channels, n_channels).
+
+    .. [#bhatia2009positive] R. Bhatia,
+        "Positive definite matrices,"
+        Princeton university press, 2009.
     """  # noqa: W605
     lamb, Z = eigh(B, A)
     lamb = np.sqrt(lamb)
