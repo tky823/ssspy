@@ -36,7 +36,7 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     Args:
         A (numpy.ndarray):
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
-        B (numpy.ndarray, optional):
+        B (numpy.ndarray):
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
 
     Returns:
