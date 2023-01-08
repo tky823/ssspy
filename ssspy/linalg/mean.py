@@ -1,6 +1,6 @@
 import numpy as np
 
-from .sqrtm import invsqrtmh, sqrtmh
+from .eigh import eigh
 
 
 def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
@@ -24,9 +24,9 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     Returns:
         Geometric mean of matrices with shape of (\*, n_channels, n_channels).
     """  # noqa: W605
-    A_sqrt = sqrtmh(A)
-    A_invsqrtmh = invsqrtmh(A)
+    lamb, Z = eigh(B, A)
+    lamb = np.sqrt(lamb)
+    Lamb = lamb[..., np.newaxis] * np.eye(Z.shape[-1])
+    AB = Z @ Lamb @ np.linalg.inv(Z)
 
-    X = A_sqrt @ sqrtmh(A_invsqrtmh @ B @ A_invsqrtmh) @ A_sqrt
-
-    return X
+    return A @ AB
