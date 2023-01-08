@@ -444,6 +444,7 @@ class GaussMNMF(MNMFbase):
 
         if self.normalization:
             # ensure unit trace of spatial property
+            # before updates of latent variables in MNMF
             self.normalize(axis1=-2, axis2=-1)
 
         if self.partitioning:
