@@ -35,6 +35,9 @@ def test_gmean():
     B = create_psd()
 
     G1 = gmeanmh(A, B)
+
+    assert np.allclose(G1 @ np.linalg.inv(A) @ G1, B)
+
     G2 = gmeanmh_scipy(A, B, inverse="left")
     G3 = gmeanmh_scipy(A, B, inverse="right")
 
