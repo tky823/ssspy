@@ -580,9 +580,6 @@ class GaussMNMF(MNMFbase):
         H = H @ Q_sqrt @ invsqrtmh(QHPHQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ H
         H = to_psd(H, flooring_fn=self.flooring_fn)
 
-        trace = np.trace(H, axis1=-2, axis2=-1)
-        H = H / np.real(trace[..., na, na])
-
         self.spatial = H
 
     def update_latent(self) -> None:
