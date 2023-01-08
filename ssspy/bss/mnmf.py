@@ -442,11 +442,12 @@ class GaussMNMF(MNMFbase):
         self.update_activation()
         self.update_spatial()
 
+        if self.normalization:
+            # ensure unit trace of spatial property
+            self.normalize(axis1=-2, axis2=-1)
+
         if self.partitioning:
             self.update_latent()
-
-        if self.normalization:
-            self.normalize(axis1=-2, axis2=-1)
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm."""
