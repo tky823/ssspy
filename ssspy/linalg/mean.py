@@ -10,7 +10,7 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     .. math::
         \boldsymbol{A}\#\boldsymbol{B}
         &= \boldsymbol{A}^{1/2}
-        (\boldsymbol{A}^{-1/2}B\boldsymbol{A}^{-1/2})^{1/2}
+        (\boldsymbol{A}^{-1/2}\boldsymbol{B}\boldsymbol{A}^{-1/2})^{1/2}
         \boldsymbol{A}^{1/2} \\
         &= \boldsymbol{A}(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2} \\
         &= (\boldsymbol{A}\boldsymbol{B}^{-1})^{1/2}\boldsymbol{B}
