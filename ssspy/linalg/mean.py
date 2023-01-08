@@ -20,10 +20,15 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
     This is a solution of the following equation for
     complex Hermitian or real symmetric matrices,
-    :math:`\boldsymbol{A}`, :math:`\boldsymbol{B}`, and :math:`\boldsymbol{X}`.
+    :math:`\boldsymbol{A}`, :math:`\boldsymbol{B}`, and :math:`\boldsymbol{X}`:
 
     .. math::
-        \boldsymbol{X}\boldsymbol{A}^{-1}\boldsymbol{X} = \boldsymbol{B}
+        \boldsymbol{X}\boldsymbol{A}^{-1}\boldsymbol{X} = \boldsymbol{B}.
+
+    .. note::
+        In this toolkit, :math:`\boldsymbol{A}(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}`
+        is used to compute geometric mean in terms of computational speed.
+        See https://github.com/tky823/ssspy/issues/210.
 
     .. note::
         :math:`(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}` is computed by
