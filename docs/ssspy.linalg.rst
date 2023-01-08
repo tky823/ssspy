@@ -10,3 +10,5 @@ Algorithms
 .. autofunction:: ssspy.linalg.eigh
 
 .. autofunction:: ssspy.linalg.eigh2
+
+.. autofunction:: ssspy.linalg.gmeanmh
