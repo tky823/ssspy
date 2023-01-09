@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -76,39 +76,7 @@ def eigh(
     if B is None:
         return np.linalg.eigh(A)
 
-    L = np.linalg.cholesky(B)
-
-    if type == 1:
-        L_inv = np.linalg.inv(L)
-        L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
-
-        if np.iscomplexobj(L_inv_Hermite):
-            L_inv_Hermite = L_inv_Hermite.conj()
-
-        C = L_inv @ A @ L_inv_Hermite
-    elif type in [2, 3]:
-        L_Hermite = np.swapaxes(L, -2, -1)
-
-        if np.iscomplexobj(L_Hermite):
-            L_Hermite = L_Hermite.conj()
-
-        C = L_Hermite @ A @ L
-
-        if type == 2:
-            L_inv_Hermite = np.linalg.inv(L_Hermite)
-        else:
-            L_inv_Hermite = None
-    else:
-        raise ValueError("Invalid type={} is given.".format(type))
-
-    lamb, y = np.linalg.eigh(C)
-
-    if type in [1, 2]:
-        z = L_inv_Hermite @ y
-    elif type == 3:
-        z = L @ y
-    else:
-        raise ValueError("Invalid type={} is given.".format(type))
+    lamb, z = _eigh(A, B, type=type, inv=np.linalg.inv)
 
     return lamb, z
 
@@ -188,10 +156,24 @@ def eigh2(
     if B is None:
         return np.linalg.eigh(A)
 
+    lamb, z = _eigh(A, B, type=type, inv=inv2)
+
+    return lamb, z
+
+
+def _eigh(
+    A: np.ndarray,
+    B: np.ndarray,
+    type: int = 1,
+    inv: Callable[[np.ndarray], np.ndarray] = None,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    if inv is None:
+        inv = np.linalg.inv
+
     L = np.linalg.cholesky(B)
 
     if type == 1:
-        L_inv = inv2(L)
+        L_inv = inv(L)
         L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
 
         if np.iscomplexobj(L_inv_Hermite):
@@ -207,13 +189,13 @@ def eigh2(
         C = L_Hermite @ A @ L
 
         if type == 2:
-            L_inv_Hermite = inv2(L_Hermite)
+            L_inv_Hermite = inv(L_Hermite)
         else:
             L_inv_Hermite = None
     else:
         raise ValueError("Invalid type={} is given.".format(type))
 
-    lamb, y = eigh2(C)
+    lamb, y = np.linalg.eigh(C)
 
     if type in [1, 2]:
         z = L_inv_Hermite @ y
