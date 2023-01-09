@@ -135,9 +135,9 @@ class MNMFbase(IterativeMethodBase):
             setattr(self, key, kwargs[key])
 
         X = self.input
-        R = X[:, np.newaxis] * X[np.newaxis, :].conj()
-        R = R.transpose(2, 3, 0, 1)
-        self.instant_covariance = to_psd(R, flooring_fn=self.flooring_fn)
+        XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
+        XX = XX.transpose(2, 3, 0, 1)
+        self.instant_covariance = to_psd(XX, flooring_fn=self.flooring_fn)
 
         n_sources = self.n_sources
         n_channels, n_bins, n_frames = X.shape
@@ -294,10 +294,10 @@ class MNMFbase(IterativeMethodBase):
         else:
             Lamb = self.reconstruct_nmf(T, V, latent=latent)
 
-        R_hat_n = Lamb[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
-        R_hat = np.sum(R_hat_n, axis=0)
+        R_n = Lamb[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
+        R = np.sum(R_n, axis=0)
 
-        return R_hat
+        return R
 
     def normalize(self, axis1=-2, axis2=-1) -> None:
         r"""Ensure unit trace of spatial property of MNMF."""
@@ -378,11 +378,11 @@ class GaussMNMF(MNMFbase):
         else:
             Lamb = self.reconstruct_nmf(T, V)
 
-        R_hat_n = Lamb[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
-        R_hat = np.sum(R_hat_n, axis=0)
-        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
-        W_Hermite = np.linalg.solve(_R_hat, R_hat_n)
+        R_n = Lamb[:, :, :, np.newaxis, np.newaxis] * H[:, :, np.newaxis, :, :]
+        R = np.sum(R_n, axis=0)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R = np.tile(R, reps=(n_sources, 1, 1, 1, 1))
+        W_Hermite = np.linalg.solve(R, R_n)
         W = W_Hermite.transpose(0, 1, 2, 4, 3).conj()
         W_ref = W[:, :, :, reference_id, :]
         W_ref = W_ref.transpose(0, 3, 1, 2)
@@ -398,20 +398,20 @@ class GaussMNMF(MNMFbase):
         """
         n_channels = self.n_channels
 
-        R = self.instant_covariance
+        XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
 
         if self.partitioning:
-            R_hat = self.reconstruct_mnmf(T, V, H, latent=self.latent)
+            R = self.reconstruct_mnmf(T, V, H, latent=self.latent)
         else:
-            R_hat = self.reconstruct_mnmf(T, V, H)
+            R = self.reconstruct_mnmf(T, V, H)
 
-        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-        RR_inv = np.linalg.solve(R_hat, R)  # Hermitian transpose of R @ np.linalg.inv(R_hat)
-        trace = np.trace(RR_inv, axis1=-2, axis2=-1)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        XXR_inv = np.linalg.solve(R, XX)  # Hermitian transpose of XX @ np.linalg.inv(R)
+        trace = np.trace(XXR_inv, axis1=-2, axis2=-1)
         trace = np.real(trace)
-        logdet = self.compute_logdet(R, R_hat)
+        logdet = self.compute_logdet(XX, R)
         loss = np.mean(trace - logdet - n_channels, axis=-1)
         loss = loss.sum(axis=0)
         loss = loss.item()
@@ -431,9 +431,9 @@ class GaussMNMF(MNMFbase):
             numpy.ndarray of computed log-determinant values.
             The shape is (\*).
         """
-        _, logdet_R = np.linalg.slogdet(target)
-        _, logdet_R_hat = np.linalg.slogdet(reconstructed)
-        logdet = logdet_R - logdet_R_hat
+        _, logdet_XX = np.linalg.slogdet(target)
+        _, logdet_R = np.linalg.slogdet(reconstructed)
+        logdet = logdet_XX - logdet_R
 
         return logdet
 
@@ -460,41 +460,41 @@ class GaussMNMF(MNMFbase):
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
         ) -> np.ndarray:
-            RR = np.linalg.solve(reconstructed, target)
-            R_hat = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
+            RXX = np.linalg.solve(reconstructed, target)
+            R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
             H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(R_hat, H)
+            RH = np.linalg.solve(R, H)
 
-            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
-            trace_RRRH = np.real(trace_RRRH)
+            trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
+            trace_RXXRH = np.real(trace_RXXRH)
             trace_RH = np.trace(RH, axis1=-2, axis2=-1)
             trace_RH = np.real(trace_RH)
 
-            return trace_RRRH, trace_RH
+            return trace_RXXRH, trace_RH
 
-        R = self.instant_covariance
+        XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
 
         if self.partitioning:
             Z = self.latent
-            R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
-            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+            R = self.reconstruct_mnmf(T, V, H, latent=Z)
+            R = to_psd(R, flooring_fn=self.flooring_fn)
 
-            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+            trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
-            VRRRH = np.sum(V[na, na, :] * trace_RRRH[:, :, na], axis=-1)
+            VRXXRH = np.sum(V[na, na, :] * trace_RXXRH[:, :, na], axis=-1)
             VRH = np.sum(V[na, na, :] * trace_RH[:, :, na], axis=-1)
 
-            num = np.sum(Z[:, na, :] * VRRRH, axis=0)
+            num = np.sum(Z[:, na, :] * VRXXRH, axis=0)
             denom = np.sum(Z[:, na, :] * VRH, axis=0)
         else:
-            R_hat = self.reconstruct_mnmf(T, V, H)
-            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+            R = self.reconstruct_mnmf(T, V, H)
+            R = to_psd(R, flooring_fn=self.flooring_fn)
 
-            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+            trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
-            num = np.sum(V[:, na, :, :] * trace_RRRH[:, :, na, :], axis=-1)
+            num = np.sum(V[:, na, :, :] * trace_RXXRH[:, :, na, :], axis=-1)
             denom = np.sum(V[:, na, :, :] * trace_RH[:, :, na, :], axis=-1)
 
         T = T * np.sqrt(num / denom)
@@ -511,41 +511,41 @@ class GaussMNMF(MNMFbase):
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
         ) -> np.ndarray:
-            RR = np.linalg.solve(reconstructed, target)
-            R_hat = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
+            RXX = np.linalg.solve(reconstructed, target)
+            R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
             H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(R_hat, H)
+            RH = np.linalg.solve(R, H)
 
-            trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
-            trace_RRRH = np.real(trace_RRRH)
+            trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
+            trace_RXXRH = np.real(trace_RXXRH)
             trace_RH = np.trace(RH, axis1=-2, axis2=-1)
             trace_RH = np.real(trace_RH)
 
-            return trace_RRRH, trace_RH
+            return trace_RXXRH, trace_RH
 
-        R = self.instant_covariance
+        XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
 
         if self.partitioning:
             Z = self.latent
-            R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
-            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+            R = self.reconstruct_mnmf(T, V, H, latent=Z)
+            R = to_psd(R, flooring_fn=self.flooring_fn)
 
-            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+            trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
-            TRRRH = np.sum(T[na, :, :, na] * trace_RRRH[:, :, na, :], axis=1)
+            TRXXRH = np.sum(T[na, :, :, na] * trace_RXXRH[:, :, na, :], axis=1)
             TRH = np.sum(T[na, :, :, na] * trace_RH[:, :, na, :], axis=1)
 
-            num = np.sum(Z[:, :, na] * TRRRH, axis=0)
+            num = np.sum(Z[:, :, na] * TRXXRH, axis=0)
             denom = np.sum(Z[:, :, na] * TRH, axis=0)
         else:
-            R_hat = self.reconstruct_mnmf(T, V, H)
-            R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
+            R = self.reconstruct_mnmf(T, V, H)
+            R = to_psd(R, flooring_fn=self.flooring_fn)
 
-            trace_RRRH, trace_RH = _compute_traces(R, R_hat, spatial=H)
+            trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
-            num = np.sum(T[:, :, :, na] * trace_RRRH[:, :, na, :], axis=1)
+            num = np.sum(T[:, :, :, na] * trace_RXXRH[:, :, na, :], axis=1)
             denom = np.sum(T[:, :, :, na] * trace_RH[:, :, na, :], axis=1)
 
         V = V * np.sqrt(num / denom)
@@ -590,26 +590,36 @@ class GaussMNMF(MNMFbase):
         r"""Update latent variables in NMF by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
+        na = np.newaxis
 
-        R = self.instant_covariance
+        def _compute_traces(
+            target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
+        ) -> np.ndarray:
+            RXX = np.linalg.solve(reconstructed, target)
+            R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
+            H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
+            RH = np.linalg.solve(R, H)
+
+            trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
+            trace_RXXRH = np.real(trace_RXXRH)
+            trace_RH = np.trace(RH, axis1=-2, axis2=-1)
+            trace_RH = np.real(trace_RH)
+
+            return trace_RXXRH, trace_RH
+
+        XX = self.instant_covariance
         T, V = self.basis, self.activation
         H, Z = self.spatial, self.latent
 
-        R_hat = self.reconstruct_mnmf(T, V, H, latent=Z)
-        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-        RR = np.linalg.solve(R_hat, R)
-        _R_hat = np.tile(R_hat, reps=(n_sources, 1, 1, 1, 1))
-        _H = np.tile(H[:, :, np.newaxis, :, :], reps=(1, 1, n_frames, 1, 1))
-        RH = np.linalg.solve(_R_hat, _H)
-        trace_RRRH = np.trace(RR @ RH, axis1=-2, axis2=-1)
-        trace_RRRH = np.real(trace_RRRH)
-        trace_RH = np.trace(RH, axis1=-2, axis2=-1)
-        trace_RH = np.real(trace_RH)
+        R = self.reconstruct_mnmf(T, V, H, latent=Z)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
 
-        VRRRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RRRH[:, :, np.newaxis], axis=-1)
-        VRH = np.sum(V[np.newaxis, np.newaxis, :] * trace_RH[:, :, np.newaxis], axis=-1)
+        trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
-        num = np.sum(T * VRRRH, axis=1)
+        VRXXRH = np.sum(V[na, na, :] * trace_RXXRH[:, :, na], axis=-1)
+        VRH = np.sum(V[na, na, :] * trace_RH[:, :, na], axis=-1)
+
+        num = np.sum(T * VRXXRH, axis=1)
         denom = np.sum(T * VRH, axis=1)
 
         Z = Z * np.sqrt(num / denom)
