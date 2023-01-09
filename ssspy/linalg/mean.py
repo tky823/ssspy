@@ -3,7 +3,7 @@ import numpy as np
 from .eigh import eigh
 
 
-def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+def gmeanmh(A: np.ndarray, B: np.ndarray, type: int = 1) -> np.ndarray:
     r"""Compute the geometric mean of complex Hermitian \
     (conjugate symmetric) or real symmetric matrices.
 
@@ -26,16 +26,19 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
         \boldsymbol{X}\boldsymbol{A}^{-1}\boldsymbol{X} = \boldsymbol{B}.
 
     .. note::
-        In this toolkit, :math:`\boldsymbol{A}(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}`
-        is used to compute geometric mean in terms of computational speed.
-        See https://github.com/tky823/ssspy/issues/210.
+        In this toolkit, :math:`\boldsymbol{A}\#\boldsymbol{B}` is computed by
+        :math:`\boldsymbol{B}(\boldsymbol{B}^{-1}\boldsymbol{A})^{1/2}`
+        in terms of computational speed.
+        Note that :math:`\boldsymbol{A}\#\boldsymbol{B}` is equal to
+        :math:`\boldsymbol{B}\#\boldsymbol{A}`.
+        For comparison of computational time, see https://github.com/tky823/ssspy/issues/210.
 
     .. note::
-        :math:`(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}` is computed by
+        :math:`(\boldsymbol{B}^{-1}\boldsymbol{A})^{1/2}` is computed by
         generalized eigendecomposition.
         Let :math:`\lambda` and :math:`z` be the eigenvalue and eigenvector of
-        the generalized eigenproblem :math:`\boldsymbol{Bz}=\lambda\boldsymbol{Az}`.
-        Then, :math:`(\boldsymbol{A}^{-1}\boldsymbol{B})^{1/2}` is computed by
+        the generalized eigenproblem :math:`\boldsymbol{Az}=\lambda\boldsymbol{Bz}`.
+        Then, :math:`(\boldsymbol{B}^{-1}\boldsymbol{A})^{1/2}` is computed by
         :math:`\boldsymbol{Z}\boldsymbol{\Lambda}^{1/2}\boldsymbol{Z}^{-1}`,
         where the main diagonals of :math:`\boldsymbol{\Lambda}` are :math:`\lambda` s
         and the columns of :math:`\boldsymbol{Z}` are :math:`\boldsymbol{z}` s.
@@ -45,6 +48,13 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
         B (numpy.ndarray):
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
+        type (int):
+            This value specifies the type of geometric mean.
+            Only ``1``, ``2``, and ``3`` are supported.
+
+            - When ``type=1``, return :math:`\boldsymbol{A}\#\boldsymbol{B}`.
+            - When ``type=2``, return :math:`\boldsymbol{A}^{-1}\#\boldsymbol{B}`.
+            - When ``type=3``, return :math:`\boldsymbol{A}\#\boldsymbol{B}^{-1}`.
 
     Returns:
         Geometric mean of matrices with shape of (\*, n_channels, n_channels).
@@ -53,9 +63,21 @@ def gmeanmh(A: np.ndarray, B: np.ndarray) -> np.ndarray:
         "Positive definite matrices,"
         Princeton university press, 2009.
     """  # noqa: W605
-    lamb, Z = eigh(B, A)
+    lamb, Z = eigh(A, B, type=type)
     lamb = np.sqrt(lamb)
     Lamb = lamb[..., np.newaxis] * np.eye(Z.shape[-1])
-    AB = Z @ Lamb @ np.linalg.inv(Z)
+    ZLZ = Z @ Lamb @ np.linalg.inv(Z)
 
-    return A @ AB
+    if type == 1:
+        BA = ZLZ
+        G = B @ BA
+    elif type == 2:
+        AB = ZLZ
+        G = np.linalg.inv(A) @ AB
+    elif type == 3:
+        BA = ZLZ
+        G = np.linalg.inv(B) @ BA
+    else:
+        raise ValueError("Invalid type={} is given.".format(type))
+
+    return G
