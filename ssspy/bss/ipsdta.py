@@ -847,8 +847,11 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 V[:, :, :, na, na, na] * RYYR[:, na, :, :, :, :],
                 axis=2,
             )
-            P = to_psd(P, flooring_fn=self.flooring_fn)
             TQT = T @ Q @ T
+
+            P = to_psd(P, flooring_fn=self.flooring_fn)
+            TQT = to_psd(TQT, flooring_fn=self.flooring_fn)
+
             # geometric mean of P^(-1) and TQT
             T = gmeanmh(P, TQT, type=2)
             T = to_psd(T, flooring_fn=self.flooring_fn)

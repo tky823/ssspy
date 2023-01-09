@@ -3,7 +3,7 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from ..linalg.sqrtm import invsqrtmh, sqrtmh
+from ..linalg.mean import gmeanmh
 from ._flooring import identity, max_flooring
 from ._psd import to_psd
 from .base import IterativeMethodBase
@@ -557,7 +557,7 @@ class GaussMNMF(MNMFbase):
         r"""Update spatial properties in NMF by MM algorithm."""
         na = np.newaxis
 
-        R = self.instant_covariance
+        XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
 
@@ -567,20 +567,21 @@ class GaussMNMF(MNMFbase):
         else:
             Lamb = self.reconstruct_nmf(T, V)
 
-        R_hat_n = Lamb[:, :, :, na, na] * H[:, :, na, :, :]
-        R_hat = np.sum(R_hat_n, axis=0)
-        R_hat = to_psd(R_hat, flooring_fn=self.flooring_fn)
-        R_hat_inv = np.linalg.inv(R_hat)
-        RRR = R_hat_inv @ R @ R_hat_inv
+        R_n = Lamb[:, :, :, na, na] * H[:, :, na, :, :]
+        R = np.sum(R_n, axis=0)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R_inverse = np.linalg.inv(R)
+        RXXR = R_inverse @ XX @ R_inverse
 
-        P = np.sum(Lamb[:, :, :, na, na] * RRR, axis=2)
-        Q = np.sum(Lamb[:, :, :, na, na] * R, axis=2)
-        Q = to_psd(Q, flooring_fn=self.flooring_fn)
-        Q_sqrt = sqrtmh(Q)
+        P = np.sum(Lamb[:, :, :, na, na] * R_inverse, axis=2)
+        Q = np.sum(Lamb[:, :, :, na, na] * RXXR, axis=2)
+        HQH = H @ Q @ H
 
-        QHPHQ = Q_sqrt @ H @ P @ H @ Q_sqrt
-        QHPHQ = to_psd(QHPHQ, flooring_fn=self.flooring_fn)
-        H = H @ Q_sqrt @ invsqrtmh(QHPHQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ H
+        P = to_psd(P, flooring_fn=self.flooring_fn)
+        HQH = to_psd(HQH, flooring_fn=self.flooring_fn)
+
+        # geometric mean of P^(-1) and HQH
+        H = gmeanmh(P, HQH, type=2)
         H = to_psd(H, flooring_fn=self.flooring_fn)
 
         self.spatial = H
