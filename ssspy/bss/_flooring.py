@@ -16,10 +16,3 @@ def max_flooring(input: np.ndarray, eps: float = EPS) -> np.ndarray:
 def add_flooring(input: np.ndarray, eps: float = EPS) -> np.ndarray:
     r"""Add flooring operation."""
     return input + eps
-
-
-def add_diagonal(input: np.ndarray, eps: float = EPS) -> np.ndarray:
-    r"""Add epsilon to main diagonals of matrix."""
-    assert input.shape[-2] == input.shape[-1], "input should be square matrix."
-
-    return input + eps * np.eye(input.shape[-2], input.shape[-1])
