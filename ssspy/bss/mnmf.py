@@ -153,9 +153,17 @@ class MNMFbase(IterativeMethodBase):
         self.n_sources, self.n_channels = n_sources, n_channels
         self.n_bins, self.n_frames = n_bins, n_frames
 
+        self._init_instant_covariance()
         self._init_nmf(rng=self.rng)
 
         self.output = self.separate(X)
+
+    def _init_instant_covariance(self) -> None:
+        r"""Initialize instantaneous covariance of input."""
+        X = self.input
+        XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
+        XX = XX.transpose(2, 3, 0, 1)
+        self.instant_covariance = to_psd(XX, flooring_fn=self.flooring_fn)
 
     def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
         r"""Initialize NMF.
