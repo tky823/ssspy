@@ -9,6 +9,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
+from ..linalg.mean import gmeanmh
 from ..linalg.quadratic import quadratic
 from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ._flooring import identity, max_flooring
@@ -846,12 +847,10 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
                 V[:, :, :, na, na, na] * RYYR[:, na, :, :, :, :],
                 axis=2,
             )
-            Q = to_psd(Q, flooring_fn=self.flooring_fn)
-            Q_sqrt = sqrtmh(Q)
-
-            QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
-            QTPTQ = to_psd(QTPTQ, flooring_fn=self.flooring_fn)
-            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ T
+            P = to_psd(P, flooring_fn=self.flooring_fn)
+            TQT = T @ Q @ T
+            # geometric mean of P^(-1) and TQT
+            T = gmeanmh(P, TQT, type=2)
             T = to_psd(T, flooring_fn=self.flooring_fn)
 
             return T

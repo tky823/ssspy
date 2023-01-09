@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Union
+from typing import Callable, Optional, Tuple, Union
 
 import numpy as np
 
@@ -6,7 +6,7 @@ from .inv import inv2
 
 
 def eigh(
-    A: np.ndarray, B: Optional[np.ndarray] = None
+    A: np.ndarray, B: Optional[np.ndarray] = None, type: Optional[int] = 1
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Compute the (generalized) eigenvalues and eigenvectors of a complex Hermitian \
     (conjugate symmetric) or a real symmetric matrix.
@@ -21,6 +21,13 @@ def eigh(
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
         B (numpy.ndarray, optional):
             A complex Hermitian matrix with shape of (\*, n_channels, n_channels).
+        type (int):
+            For the generalized eigenproblem, this value specifies the type of problem.
+            Only ``1``, ``2``, and ``3`` are supported.
+
+            - When ``type=1``, solve :math:`\boldsymbol{Az}=\lambda\boldsymbol{Bz}`.
+            - When ``type=2``, solve :math:`\boldsymbol{ABz}=\lambda\boldsymbol{z}`.
+            - When ``type=3``, solve :math:`\boldsymbol{BAz}=\lambda\boldsymbol{z}`.
 
     Returns:
         A tuple of (eigenvalues, eigenvectors)
@@ -69,23 +76,13 @@ def eigh(
     if B is None:
         return np.linalg.eigh(A)
 
-    L = np.linalg.cholesky(B)
-    L_inv = np.linalg.inv(L)
-
-    L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
-
-    if np.iscomplexobj(L_inv_Hermite):
-        L_inv_Hermite = L_inv_Hermite.conj()
-
-    C = L_inv @ A @ L_inv_Hermite
-    lamb, y = np.linalg.eigh(C)
-    z = L_inv_Hermite @ y
+    lamb, z = _eigh(A, B, type=type, inv=np.linalg.inv)
 
     return lamb, z
 
 
 def eigh2(
-    A: np.ndarray, B: Optional[np.ndarray] = None
+    A: np.ndarray, B: Optional[np.ndarray] = None, type: Optional[int] = 1
 ) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
     r"""Compute the (generalized) eigenvalues and eigenvectors of a 2x2 complex Hermitian \
     (conjugate symmetric) or a real symmetric matrix.
@@ -100,6 +97,13 @@ def eigh2(
             A complex Hermitian matrix with shape of (\*, 2, 2).
         B (numpy.ndarray, optional):
             A complex Hermitian matrix with shape of (\*, 2, 2).
+        type (int):
+            For the generalized eigenproblem, this value specifies the type of problem.
+            Only ``1``, ``2``, and ``3`` are supported.
+
+            - When ``type=1``, solve :math:`\boldsymbol{Az}=\lambda\boldsymbol{Bz}`.
+            - When ``type=2``, solve :math:`\boldsymbol{ABz}=\lambda\boldsymbol{z}`.
+            - When ``type=3``, solve :math:`\boldsymbol{BAz}=\lambda\boldsymbol{z}`.
 
     Returns:
         A tuple of (eigenvalues, eigenvectors)
@@ -152,15 +156,52 @@ def eigh2(
     if B is None:
         return np.linalg.eigh(A)
 
+    lamb, z = _eigh(A, B, type=type, inv=inv2)
+
+    return lamb, z
+
+
+def _eigh(
+    A: np.ndarray,
+    B: np.ndarray,
+    type: int = 1,
+    inv: Callable[[np.ndarray], np.ndarray] = None,
+) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
+    if inv is None:
+        inv = np.linalg.inv
+
     L = np.linalg.cholesky(B)
-    L_inv = inv2(L)
-    L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
 
-    if np.iscomplexobj(L_inv_Hermite):
-        L_inv_Hermite = L_inv_Hermite.conj()
+    if type == 1:
+        L_inv = inv(L)
+        L_inv_Hermite = np.swapaxes(L_inv, -2, -1)
 
-    C = L_inv @ A @ L_inv_Hermite
-    lamb, y = eigh2(C)
-    z = L_inv_Hermite @ y
+        if np.iscomplexobj(L_inv_Hermite):
+            L_inv_Hermite = L_inv_Hermite.conj()
+
+        C = L_inv @ A @ L_inv_Hermite
+    elif type in [2, 3]:
+        L_Hermite = np.swapaxes(L, -2, -1)
+
+        if np.iscomplexobj(L_Hermite):
+            L_Hermite = L_Hermite.conj()
+
+        C = L_Hermite @ A @ L
+
+        if type == 2:
+            L_inv_Hermite = inv(L_Hermite)
+        else:
+            L_inv_Hermite = None
+    else:
+        raise ValueError("Invalid type={} is given.".format(type))
+
+    lamb, y = np.linalg.eigh(C)
+
+    if type in [1, 2]:
+        z = L_inv_Hermite @ y
+    elif type == 3:
+        z = L @ y
+    else:
+        raise ValueError("Invalid type={} is given.".format(type))
 
     return lamb, z
