@@ -1,7 +1,10 @@
 import numpy as np
+import pytest
 from scipy.linalg import sqrtm
 
 from ssspy.linalg import gmeanmh
+
+parameters_type = [1, 2, 3]
 
 
 def gmeanmh_scipy(A: np.ndarray, B: np.ndarray, inverse="left") -> np.ndarray:
@@ -21,7 +24,8 @@ def gmeanmh_scipy(A: np.ndarray, B: np.ndarray, inverse="left") -> np.ndarray:
     return G
 
 
-def test_gmean():
+@pytest.mark.parametrize("type", parameters_type)
+def test_gmean(type: int):
     rng = np.random.default_rng(0)
     size = (16, 32, 4, 1)
 
@@ -34,9 +38,21 @@ def test_gmean():
     A = create_psd()
     B = create_psd()
 
-    G1 = gmeanmh(A, B)
+    G1 = gmeanmh(A, B, type=type)
 
-    assert np.allclose(G1 @ np.linalg.inv(A) @ G1, B)
+    if type == 1:
+        assert np.allclose(G1 @ np.linalg.inv(A) @ G1, B)
+    elif type == 2:
+        assert np.allclose(G1 @ A @ G1, B)
+    elif type == 3:
+        assert np.allclose(G1 @ np.linalg.inv(A) @ G1, np.linalg.inv(B))
+    else:
+        raise ValueError("Invalid type={} is given.".format(type))
+
+    if type == 2:
+        A = np.linalg.inv(A)
+    elif type == 3:
+        B = np.linalg.inv(B)
 
     G2 = gmeanmh_scipy(A, B, inverse="left")
     G3 = gmeanmh_scipy(A, B, inverse="right")
