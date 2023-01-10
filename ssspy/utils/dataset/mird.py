@@ -4,12 +4,19 @@ import urllib.request
 
 import numpy as np
 
+reverb_durations = [0.16, 0.36, 0.61]
 
-def download(root: str = ".data/MIRD", n_sources: int = 3) -> str:
+
+def download(root: str = ".data/MIRD", n_sources: int = 3, reverb_duration: float = 0.16) -> str:
+    assert reverb_duration in reverb_durations, "reverb_duration should be chosen from {}.".format(
+        reverb_durations
+    )
+
     filename = (
         "Impulse_response_Acoustic_Lab_Bar-Ilan_University__"
-        "Reverberation_0.160s__3-3-3-8-3-3-3.zip"
+        "Reverberation_{reverb_duration:.3f}s__3-3-3-8-3-3-3.zip"
     )
+    filename = filename.format(reverb_duration=reverb_duration)
     url = (
         "https://www.iks.rwth-aachen.de/fileadmin/user_upload/downloads/"
         "forschung/tools-downloads/{filename}"
@@ -20,7 +27,7 @@ def download(root: str = ".data/MIRD", n_sources: int = 3) -> str:
     degrees = [30, 345, 0, 60, 315]
     channels = [3, 4, 2, 5, 1, 6, 0, 7]
     sample_rate = 16000
-    duration = 0.160
+    duration = reverb_duration
 
     degrees = degrees[:n_sources]
     channels = channels[:n_sources]
@@ -38,7 +45,9 @@ def download(root: str = ".data/MIRD", n_sources: int = 3) -> str:
     if not os.path.exists(zip_path):
         urllib.request.urlretrieve(url, zip_path)
 
-    if not os.path.exists(os.path.join(root, template_rir_name.format(0.16, 0))):
+    rir_path = os.path.join(root, template_rir_name.format(reverb_duration, 0))
+
+    if not os.path.exists(rir_path):
         shutil.unpack_archive(zip_path, root)
 
     npz_path = os.path.join(root, "MIRD-{}ch.npz".format(n_channels))
