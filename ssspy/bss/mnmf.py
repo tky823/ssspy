@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Union
 import numpy as np
 
 from ..linalg.mean import gmeanmh
-from ._flooring import identity, max_flooring
+from ._flooring import add_flooring, identity
 from ._psd import to_psd
 from .base import IterativeMethodBase
 
@@ -43,7 +43,7 @@ class MNMFbase(IterativeMethodBase):
         n_sources: Optional[int] = None,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
+            add_flooring, eps=EPS
         ),
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
@@ -345,7 +345,7 @@ class GaussMNMF(MNMFbase):
         n_sources: Optional[int] = None,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
+            add_flooring, eps=EPS
         ),
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
