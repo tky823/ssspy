@@ -367,6 +367,24 @@ class GaussMNMF(MNMFbase):
             rng=rng,
         )
 
+    def __repr__(self) -> str:
+        s = "GaussMNMF("
+        s += "n_basis={n_basis}"
+
+        if self.n_sources is not None:
+            s += ", n_sources={n_sources}"
+
+        if hasattr(self, "n_channels"):
+            s += ", n_channels={n_channels}"
+
+        s += ", partitioning={partitioning}"
+        s += ", record_loss={record_loss}"
+        s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def separate(self, input: np.ndarray) -> np.ndarray:
         """Separate ``input`` using multichannel Wiener filter.
 
