@@ -4,7 +4,7 @@ import urllib.request
 
 import numpy as np
 
-reverb_durations = [0.16, 0.36]
+reverb_durations = [0.16, 0.36, 0.61]
 
 
 def download(root: str = ".data/MIRD", n_sources: int = 3, reverb_duration: float = 0.16) -> str:

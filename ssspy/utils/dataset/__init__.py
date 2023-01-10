@@ -38,7 +38,7 @@ def download_sample_speech_data(
             Maximum duration. Default: ``160000``.
         reverb_duration (float):
             Duration of reverberation in MIRD.
-            Choose ``0.16`` or ``0.36``. Default: ``0.16``.
+            Choose ``0.16``, ``0.36``, ``0.61``. Default: ``0.16``.
         conv (bool):
             Convolutive mixture or not. Defalt: ``True``.
 
