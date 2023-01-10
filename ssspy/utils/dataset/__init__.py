@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -16,6 +16,7 @@ def download_sample_speech_data(
     n_sources: int = 3,
     sisec2010_tag: str = "dev1_female3",
     max_duration: float = 10,
+    reverb_duration: Optional[float] = 0.16,
     conv: bool = True,
 ) -> Tuple[np.ndarray, int]:
     r"""Download sample speech data to test sepration methods.
@@ -31,10 +32,13 @@ def download_sample_speech_data(
             Number of sources included in sample data.
         sisec2010_tag (str):
             Tag of SiSEC 2010 data.
-            Choose "dev1_female3" or "dev1_female4".
-            Default:"dev1_female3".
+            Choose ``dev1_female3`` or ``dev1_female4``.
+            Default: ``dev1_female3``.
         max_duration (float):
             Maximum duration. Default: ``160000``.
+        reverb_duration (float):
+            Duration of reverberation in MIRD.
+            Choose ``0.16`` or ``0.36``. Default: ``0.16``.
         conv (bool):
             Convolutive mixture or not. Defalt: ``True``.
 
@@ -54,7 +58,9 @@ def download_sample_speech_data(
     assert sample_rate == sisec2010_npz["sample_rate"].item(), "Invalid sampling rate is detected."
 
     if conv:
-        mird_npz_path = download_mird(root=mird_root, n_sources=n_sources)
+        mird_npz_path = download_mird(
+            root=mird_root, n_sources=n_sources, reverb_duration=reverb_duration
+        )
         mird_npz = np.load(mird_npz_path)
 
         assert sample_rate == mird_npz["sample_rate"].item(), "Invalid sampling rate is detected."
