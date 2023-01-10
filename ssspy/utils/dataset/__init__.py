@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 
@@ -16,7 +16,7 @@ def download_sample_speech_data(
     n_sources: int = 3,
     sisec2010_tag: str = "dev1_female3",
     max_duration: float = 10,
-    reverb_duration: Optional[float] = 0.16,
+    reverb_duration: float = 0.16,
     conv: bool = True,
 ) -> Tuple[np.ndarray, int]:
     r"""Download sample speech data to test sepration methods.
