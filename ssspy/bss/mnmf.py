@@ -427,8 +427,6 @@ class GaussMNMF(MNMFbase):
         Returns:
             Computed loss.
         """
-        n_channels = self.n_channels
-
         XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
@@ -443,7 +441,7 @@ class GaussMNMF(MNMFbase):
         trace = np.trace(XXR_inv, axis1=-2, axis2=-1)
         trace = np.real(trace)
         logdet = self.compute_logdet(R)
-        loss = np.mean(trace + logdet - n_channels, axis=-1)
+        loss = np.mean(trace + logdet, axis=-1)
         loss = loss.sum(axis=0)
         loss = loss.item()
 
