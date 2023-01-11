@@ -60,13 +60,7 @@ class CACGMMbase(IterativeMethodBase):
 
         self._reset(**kwargs)
 
-        self.n_iter = n_iter
-
-        super().__call__(n_iter=n_iter, initial_call=initial_call)
-
-        self.output = self.separate(self.input)
-
-        return self.output
+        raise NotImplementedError("Implement '__call__' method.")
 
     def _reset(self, **kwargs) -> None:
         r"""Reset attributes by given keyword arguments.
