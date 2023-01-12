@@ -2,6 +2,8 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
+from ..linalg.quadratic import quadratic
+from ..special import logsumexp, softmax
 from .base import IterativeMethodBase
 
 
@@ -31,10 +33,12 @@ class CACGMMbase(IterativeMethodBase):
             ]
         ] = None,
         record_loss: bool = True,
+        rng: Optional[np.random.Generator] = None,
     ) -> None:
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         self.n_sources = n_sources
+        self.rng = rng
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
@@ -92,9 +96,11 @@ class CACGMMbase(IterativeMethodBase):
         alpha = np.ones((n_sources, n_bins)) / n_sources
         eye = np.eye(n_channels, dtype=np.complex128)
         B = np.tile(eye, reps=(n_sources, n_bins, 1, 1))
+        gamma = self.rng.random((n_sources, n_bins, n_frames))
 
         self.mixing = alpha
         self.covariance = B
+        self.posterior = gamma / gamma.sum(axis=0)
 
     def separate(self, input: np.ndarray) -> np.ndarray:
         r"""Separate ``input``.
@@ -117,3 +123,17 @@ class CACGMMbase(IterativeMethodBase):
             Computed loss.
         """
         raise NotImplementedError("Implement 'compute_loss' method.")
+
+    def compute_logdet(self, covariance: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant of input.
+
+        Args:
+            covariance (numpy.ndarray):
+                Covariance matrix with shape of (n_sources, n_bins, n_channels, n_channels).
+
+        Returns:
+            numpy.ndarray of log-determinant.
+        """
+        _, logdet = np.linalg.slogdet(covariance)
+
+        return logdet
