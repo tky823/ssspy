@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Union
 import numpy as np
 
 from ..linalg.mean import gmeanmh
-from ._flooring import add_flooring, identity
+from ._flooring import identity, max_flooring
 from ._psd import to_psd
 from .base import IterativeMethodBase
 
@@ -43,7 +43,7 @@ class MNMFbase(IterativeMethodBase):
         n_sources: Optional[int] = None,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            add_flooring, eps=EPS
+            max_flooring, eps=EPS
         ),
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
@@ -345,7 +345,7 @@ class GaussMNMF(MNMFbase):
         n_sources: Optional[int] = None,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            add_flooring, eps=EPS
+            max_flooring, eps=EPS
         ),
         callbacks: Optional[
             Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
@@ -427,8 +427,6 @@ class GaussMNMF(MNMFbase):
         Returns:
             Computed loss.
         """
-        n_channels = self.n_channels
-
         XX = self.instant_covariance
         T, V = self.basis, self.activation
         H = self.spatial
@@ -442,19 +440,17 @@ class GaussMNMF(MNMFbase):
         XXR_inv = np.linalg.solve(R, XX)  # Hermitian transpose of XX @ np.linalg.inv(R)
         trace = np.trace(XXR_inv, axis1=-2, axis2=-1)
         trace = np.real(trace)
-        logdet = self.compute_logdet(XX, R)
-        loss = np.mean(trace - logdet - n_channels, axis=-1)
+        logdet = self.compute_logdet(R)
+        loss = np.mean(trace + logdet, axis=-1)
         loss = loss.sum(axis=0)
         loss = loss.item()
 
         return loss
 
-    def compute_logdet(self, target: np.ndarray, reconstructed: np.ndarray) -> np.ndarray:
+    def compute_logdet(self, reconstructed: np.ndarray) -> np.ndarray:
         r"""Compute log-determinant.
 
         Args:
-            target:
-                Covariance matrix with shape of (\*, n_channels, n_channels).
             reconstructed:
                 Reconstructed MNMF with shape of (\*, n_channels, n_channels).
 
@@ -462,9 +458,7 @@ class GaussMNMF(MNMFbase):
             numpy.ndarray of computed log-determinant values.
             The shape is (\*).
         """
-        _, logdet_XX = np.linalg.slogdet(target)
-        _, logdet_R = np.linalg.slogdet(reconstructed)
-        logdet = logdet_XX - logdet_R
+        _, logdet = np.linalg.slogdet(reconstructed)
 
         return logdet
 
