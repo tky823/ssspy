@@ -93,9 +93,20 @@ class CACGMMbase(IterativeMethodBase):
 
         self._init_parameters(rng=self.rng)
 
-    def _init_parameters(self, rng: Optional[np.random.Generator]) -> None:
+    def _init_parameters(self, rng: Optional[np.random.Generator] = None) -> None:
+        r"""Initialize parameters of cACGMM.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins, n_frames = self.n_bins, self.n_frames
+
+        if rng is None:
+            rng = np.random.default_rng()
 
         alpha = np.ones((n_sources, n_bins)) / n_sources
         eye = np.eye(n_channels, dtype=np.complex128)
