@@ -93,10 +93,16 @@ class CACGMMbase(IterativeMethodBase):
         self.n_sources, self.n_channels = n_sources, n_channels
         self.n_bins, self.n_frames = n_bins, n_frames
 
+        self._init_parameters(rng=self.rng)
+
+    def _init_parameters(self, rng: Optional[np.random.Generator]) -> None:
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins, n_frames = self.n_bins, self.n_frames
+
         alpha = np.ones((n_sources, n_bins)) / n_sources
         eye = np.eye(n_channels, dtype=np.complex128)
         B = np.tile(eye, reps=(n_sources, n_bins, 1, 1))
-        gamma = self.rng.random((n_sources, n_bins, n_frames))
+        gamma = rng.random((n_sources, n_bins, n_frames))
 
         self.mixing = alpha
         self.covariance = B
