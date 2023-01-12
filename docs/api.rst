@@ -74,3 +74,4 @@ Submodules
    ssspy.algorithm
    ssspy.transform
    ssspy.linalg
+   ssspy.special
