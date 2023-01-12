@@ -2,8 +2,6 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from ..linalg.quadratic import quadratic
-from ..special import logsumexp, softmax
 from .base import IterativeMethodBase
 
 
