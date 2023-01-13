@@ -6,7 +6,7 @@ from .base import IterativeMethodBase
 
 
 class CACGMMbase(IterativeMethodBase):
-    r"""Base class of independent low-rank matrix analysis (ILRMA).
+    r"""Base class of complex angular central Gaussian mixture model (cACGMM).
 
     Args:
         n_sources (int, optional):
