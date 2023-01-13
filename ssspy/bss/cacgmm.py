@@ -4,6 +4,7 @@ import numpy as np
 
 from ..linalg.quadratic import quadratic
 from ..special.logsumexp import logsumexp
+from ..special.softmax import softmax
 from .base import IterativeMethodBase
 
 
@@ -203,6 +204,53 @@ class CACGMM(CACGMMbase):
         super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
 
         self.reference_id = reference_id
+
+    def update_parameters(self) -> None:
+        r"""Update parameters of mixture of complex angular central Gaussian distributions.
+
+        This method corresponds to M step in EM algorithm for cACGMM.
+        """
+        alpha = self.mixing
+        Z = self.unit_input
+        B = self.covariance
+        gamma = self.posterior
+
+        Z = Z.transpose(1, 2, 0)
+        B_inverse = np.linalg.inv(B)
+        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+        ZBZ = np.real(ZBZ)
+        ZZ = Z[:, :, :, np.newaxis] * Z[:, :, np.newaxis, :].conj()
+
+        alpha = np.mean(gamma, axis=-1)
+
+        GZBZ = gamma / ZBZ
+        num = np.sum(GZBZ[:, :, :, np.newaxis, np.newaxis] * ZZ, axis=2)
+        denom = np.sum(gamma, axis=2)
+        B = self.n_channels * (num / denom[:, :, np.newaxis, np.newaxis])
+
+        self.mixing = alpha
+        self.covariance = B
+
+    def update_posterior(self) -> None:
+        r"""Update posteriors.
+
+        This method corresponds to E step in EM algorithm for cACGMM.
+        """
+        alpha = self.mixing
+        Z = self.unit_input
+        B = self.covariance
+
+        Z = Z.transpose(1, 2, 0)
+        B_inverse = np.linalg.inv(B)
+        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+        ZBZ = np.real(ZBZ)
+
+        log_prob = np.log(alpha) - self.compute_logdet(B)
+        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+
+        gamma = softmax(log_gamma, axis=0)
+
+        self.posterior = gamma
 
     def compute_loss(self) -> float:
         r"""Compute loss of cACGMM :math:`\mathcal{L}`.
