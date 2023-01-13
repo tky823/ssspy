@@ -7,7 +7,7 @@ import numpy as np
 from ..algorithm.permutation_alignment import (
     correlation_based_permutation_solver as correlation_based_permutation_solver_base,
 )
-from ._flooring import max_flooring
+from ..special.flooring import max_flooring
 
 EPS = 1e-10
 

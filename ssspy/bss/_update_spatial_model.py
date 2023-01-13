@@ -4,7 +4,7 @@ from typing import Callable, Iterable, Optional, Tuple
 import numpy as np
 
 from ..linalg import eigh2, inv2
-from ._flooring import identity, max_flooring
+from ..special.flooring import identity, max_flooring
 from ._select_pair import sequential_pair_selector
 
 EPS = 1e-10

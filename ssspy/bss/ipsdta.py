@@ -12,7 +12,7 @@ from ..algorithm import (
 from ..linalg.mean import gmeanmh
 from ..linalg.quadratic import quadratic
 from ..linalg.sqrtm import invsqrtmh, sqrtmh
-from ._flooring import identity, max_flooring
+from ..special.flooring import identity, max_flooring
 from ._psd import to_psd
 from ._update_spatial_model import update_by_block_decomposition_vcd
 from .base import IterativeMethodBase

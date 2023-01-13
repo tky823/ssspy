@@ -10,7 +10,7 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
-from ._flooring import max_flooring
+from ..special.flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase

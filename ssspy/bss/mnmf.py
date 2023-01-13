@@ -4,7 +4,7 @@ from typing import Callable, List, Optional, Union
 import numpy as np
 
 from ..linalg.mean import gmeanmh
-from ._flooring import identity, max_flooring
+from ..special.flooring import identity, max_flooring
 from ._psd import to_psd
 from .base import IterativeMethodBase
 
