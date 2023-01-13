@@ -19,6 +19,10 @@ class CACGMMbase(IterativeMethodBase):
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize parameters
+            of cACGMM. If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
     """
 
     def __init__(
