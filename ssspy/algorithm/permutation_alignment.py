@@ -17,7 +17,7 @@ def correlation_based_permutation_solver(
     ),
     overwrite: bool = True,
 ) -> np.ndarray:
-    r"""Solve permutaion of estimated spectrograms.
+    r"""Solve permutation of estimated spectrograms.
 
     Group channels at each frequency bin according to correlations
     between frequencies [#sawada2010underdetermined]_.
