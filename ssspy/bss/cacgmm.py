@@ -156,3 +156,48 @@ class CACGMMbase(IterativeMethodBase):
         _, logdet = np.linalg.slogdet(covariance)
 
         return logdet
+
+
+class CACGMM(CACGMMbase):
+    r"""Complex angular central Gaussian mixture model (cACGMM) [#ito2016complex]_.
+
+    Args:
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel to extract separated signals. Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize parameters
+            of cACGMM. If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+
+    .. [#ito2016complex] N. Ito, S. Araki, and T. Nakatani. \
+        "Complex angular central Gaussian mixture model for directional statistics \
+        in mask-based microphone array signal processing,"
+        in *Proc. EUSIPCO*, 2016, pp. 1153-1157.
+    """
+
+    def __init__(
+        self,
+        n_sources: Optional[int] = None,
+        callbacks: Optional[
+            Union[
+                Callable[["CACGMM"], None],
+                List[Callable[["CACGMM"], None]],
+            ]
+        ] = None,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
+
+        self.reference_id = reference_id
