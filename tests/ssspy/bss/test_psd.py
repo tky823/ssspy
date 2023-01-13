@@ -3,8 +3,8 @@ from typing import Tuple
 import numpy as np
 import pytest
 
-from ssspy.bss._flooring import add_flooring
 from ssspy.bss._psd import to_psd
+from ssspy.special import add_flooring
 
 rng = np.random.default_rng(42)
 
