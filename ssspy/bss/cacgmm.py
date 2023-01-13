@@ -2,6 +2,8 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
+from ..linalg.quadratic import quadratic
+from ..special.logsumexp import logsumexp
 from .base import IterativeMethodBase
 
 
@@ -201,3 +203,34 @@ class CACGMM(CACGMMbase):
         super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
 
         self.reference_id = reference_id
+
+    def compute_loss(self) -> float:
+        r"""Compute loss of cACGMM :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is defined as follows:
+
+        .. math::
+            \mathcal{L}
+            = -\frac{1}{J}\sum_{i,j}\log\left(
+            \sum_{n}\frac{\alpha_{in}}{\det\boldsymbol{B}_{in}}
+            \frac{1}{(\boldsymbol{z}_{ij}^{\mathsf{H}}\boldsymbol{B}_{in}\boldsymbol{z}_{ij})^{M}}
+            \right).
+        """
+        alpha = self.mixing
+        Z = self.unit_input
+        B = self.covariance
+
+        Z = Z.transpose(1, 2, 0)
+        B_inverse = np.linalg.inv(B)
+        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+        ZBZ = np.real(ZBZ)
+
+        log_prob = np.log(alpha) - self.compute_logdet(B)
+        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+
+        loss = -logsumexp(log_gamma, axis=0)
+        loss = np.mean(loss, axis=-1)
+        loss = loss.sum(axis=0)
+        loss = loss.item()
+
+        return loss
