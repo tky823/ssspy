@@ -11,7 +11,7 @@ EPS = 1e-10
 
 def correlation_based_permutation_solver(
     separated: np.ndarray,
-    demix_filter: np.ndarray = None,
+    demix_filter: Optional[np.ndarray] = None,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -25,7 +25,7 @@ def correlation_based_permutation_solver(
     Args:
         separated (numpy.ndarray):
             Separated spectrograms with shape of (n_sources, n_bins, n_frames).
-        demix_filter (numpy.ndarray):
+        demix_filter (numpy.ndarray, optional):
             Demixing filters with shape of (n_bins, n_sources, n_channels).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
@@ -48,19 +48,27 @@ def correlation_based_permutation_solver(
             via frequency bin-wise clustering and permutation alignment,"
             in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
     """
-    Y = separated
-
     if overwrite:
-        W = demix_filter
+        Y = separated
+
+        if demix_filter is None:
+            W = None
+        else:
+            W = demix_filter
     else:
-        W = demix_filter.copy()
+        Y = separated.copy()
+
+        if demix_filter is None:
+            W = None
+        else:
+            W = demix_filter.copy()
 
     if flooring_fn is None:
         flooring_fn = identity
     else:
         flooring_fn = flooring_fn
 
-    n_bins, _, n_sources = W.shape
+    n_sources, n_bins, _ = Y.shape
 
     permutations = list(itertools.permutations(range(n_sources)))
 
@@ -87,6 +95,10 @@ def correlation_based_permutation_solver(
                 perm_max = perm
 
         P_criteria = P_criteria + P[min_idx, perm_max, :]
-        W[min_idx, :, :] = W[min_idx, perm_max, :]
+
+        if W is not None:
+            W[min_idx, :, :] = W[min_idx, perm_max, :]
+        else:
+            Y[:, min_idx, :] = Y[perm_max, min_idx, :]
 
     return W
