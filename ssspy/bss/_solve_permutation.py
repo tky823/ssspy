@@ -101,4 +101,7 @@ def correlation_based_permutation_solver(
         else:
             Y[:, min_idx, :] = Y[perm_max, min_idx, :]
 
-    return W
+    if W is None:
+        return Y
+    else:
+        return W
