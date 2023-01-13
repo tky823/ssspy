@@ -9,9 +9,9 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
+from ..algorithm.permutation_alignment import correlation_based_permutation_solver
 from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._solve_permutation import correlation_based_permutation_solver
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
 
