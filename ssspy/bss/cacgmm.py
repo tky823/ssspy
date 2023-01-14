@@ -214,6 +214,27 @@ class CACGMM(CACGMMbase):
         self.update_posterior()
         self.update_parameters()
 
+    def update_posterior(self) -> None:
+        r"""Update posteriors.
+
+        This method corresponds to E step in EM algorithm for cACGMM.
+        """
+        alpha = self.mixing
+        Z = self.unit_input
+        B = self.covariance
+
+        Z = Z.transpose(1, 2, 0)
+        B_inverse = np.linalg.inv(B)
+        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+        ZBZ = np.real(ZBZ)
+
+        log_prob = np.log(alpha) - self.compute_logdet(B)
+        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+
+        gamma = softmax(log_gamma, axis=0)
+
+        self.posterior = gamma
+
     def update_parameters(self) -> None:
         r"""Update parameters of mixture of complex angular central Gaussian distributions.
 
@@ -239,27 +260,6 @@ class CACGMM(CACGMMbase):
 
         self.mixing = alpha
         self.covariance = B
-
-    def update_posterior(self) -> None:
-        r"""Update posteriors.
-
-        This method corresponds to E step in EM algorithm for cACGMM.
-        """
-        alpha = self.mixing
-        Z = self.unit_input
-        B = self.covariance
-
-        Z = Z.transpose(1, 2, 0)
-        B_inverse = np.linalg.inv(B)
-        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
-        ZBZ = np.real(ZBZ)
-
-        log_prob = np.log(alpha) - self.compute_logdet(B)
-        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
-
-        gamma = softmax(log_gamma, axis=0)
-
-        self.posterior = gamma
 
     def compute_loss(self) -> float:
         r"""Compute loss of cACGMM :math:`\mathcal{L}`.
