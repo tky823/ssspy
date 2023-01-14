@@ -280,6 +280,8 @@ class CACGMM(CACGMMbase):
         B_inverse = np.linalg.inv(B)
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
+        ZBZ = np.maximum(ZBZ, 0)
+        ZBZ = self.flooring_fn(ZBZ)
 
         log_alpha = np.log(alpha)
         _, logdet = np.linalg.slogdet(B)
@@ -312,6 +314,8 @@ class CACGMM(CACGMMbase):
         B_inverse = np.linalg.inv(B)
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
+        ZBZ = np.maximum(ZBZ, 0)
+        ZBZ = self.flooring_fn(ZBZ)
 
         log_prob = np.log(alpha) - self.compute_logdet(B)
         log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
@@ -334,6 +338,8 @@ class CACGMM(CACGMMbase):
         B_inverse = np.linalg.inv(B)
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
+        ZBZ = np.maximum(ZBZ, 0)
+        ZBZ = self.flooring_fn(ZBZ)
         ZZ = Z[:, :, :, np.newaxis] * Z[:, :, np.newaxis, :].conj()
 
         alpha = np.mean(gamma, axis=-1)
@@ -366,6 +372,8 @@ class CACGMM(CACGMMbase):
         B_inverse = np.linalg.inv(B)
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
+        ZBZ = np.maximum(ZBZ, 0)
+        ZBZ = self.flooring_fn(ZBZ)
 
         log_prob = np.log(alpha) - self.compute_logdet(B)
         log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
