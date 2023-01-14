@@ -55,16 +55,16 @@ def correlation_based_permutation_solver(
     """
     if overwrite:
         Y = separated
-        sortable = args
+        permutable = args
     else:
         Y = separated.copy()
 
-        sortable = []
+        permutable = []
 
         for arg in args:
-            sortable.append(arg.copy())
+            permutable.append(arg.copy())
 
-        sortable = tuple(sortable)
+        permutable = tuple(permutable)
 
     if flooring_fn is None:
         flooring_fn = identity
@@ -101,12 +101,12 @@ def correlation_based_permutation_solver(
 
         Y[:, min_idx, :] = Y[perm_max, min_idx, :]
 
-        for idx in range(len(sortable)):
-            sortable[idx][min_idx, :] = sortable[idx][min_idx, perm_max]
+        for idx in range(len(permutable)):
+            permutable[idx][min_idx, :] = permutable[idx][min_idx, perm_max]
 
-    if len(sortable) == 0:
+    if len(permutable) == 0:
         return Y
-    elif len(sortable) == 1:
-        return Y, sortable[0]
+    elif len(permutable) == 1:
+        return Y, permutable[0]
     else:
-        return Y, sortable
+        return Y, permutable
