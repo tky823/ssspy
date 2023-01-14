@@ -265,7 +265,9 @@ class CACGMM(CACGMMbase):
         X = self.input
         Y = self.separate(X)
 
-        self.output = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
+        Y = Y.transpose(1, 0, 2)
+        Y = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
+        self.output = Y.transpose(1, 0, 2)
 
         return self.output
 
