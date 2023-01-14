@@ -1,11 +1,16 @@
+import functools
 from typing import Callable, List, Optional, Union
 
 import numpy as np
 
+from ..algorithm.permutation_alignment import correlation_based_permutation_solver
 from ..linalg.quadratic import quadratic
+from ..special.flooring import max_flooring
 from ..special.logsumexp import logsumexp
 from ..special.softmax import softmax
 from .base import IterativeMethodBase
+
+EPS = 1e-10
 
 
 class CACGMMbase(IterativeMethodBase):
@@ -172,6 +177,11 @@ class CACGMM(CACGMMbase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -194,6 +204,9 @@ class CACGMM(CACGMMbase):
     def __init__(
         self,
         n_sources: Optional[int] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[
                 Callable[["CACGMM"], None],
@@ -206,7 +219,76 @@ class CACGMM(CACGMMbase):
     ) -> None:
         super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
 
+        self.flooring_fn = flooring_fn
         self.reference_id = reference_id
+
+    def __call__(
+        self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
+    ) -> np.ndarray:
+        r"""Separate a frequency-domain multichannel signal.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+            n_iter (int):
+                The number of iterations of demixing filter updates.
+                Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_channels, n_bins, n_frames).
+        """
+        self.input = input.copy()
+
+        self._reset(**kwargs)
+
+        # Call __call__ of CACGMMbase's parent, i.e. __call__ of IterativeMethodBase
+        super(CACGMMbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+
+        # posterior should be update
+        X = self.input
+        Y = self.separate(X)
+
+        self.output = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
+
+        return self.output
+
+    def separate(self, input: np.ndarray) -> np.ndarray:
+        r"""Separate ``input`` using posterior probabilities.
+
+        In this method, ``self.posterior`` is not updated.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        X = input
+        alpha = self.mixing
+        Z = self.unit_input
+        B = self.covariance
+
+        Z = Z.transpose(1, 2, 0)
+        B_inverse = np.linalg.inv(B)
+        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+        ZBZ = np.real(ZBZ)
+
+        log_alpha = np.log(alpha)
+        _, logdet = np.linalg.slogdet(B)
+        log_prob = log_alpha - logdet
+        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+
+        gamma = softmax(log_gamma, axis=0)
+
+        return gamma * X[self.reference_id]
 
     def update_once(self) -> None:
         r"""Perform E and M step once.
