@@ -165,6 +165,12 @@ class CACGMMbase(IterativeMethodBase):
         raise NotImplementedError("Implement 'separate' method.")
 
     def normalize_covariance(self) -> None:
+        r"""Normalize covariance of cACG.
+
+        .. math::
+            \boldsymbol{B}_{in}
+            \leftarrow\frac{\boldsymbol{B}_{in}}{\mathrm{tr}(\boldsymbol{B}_{in})}
+        """
         assert self.normalization, "Set normalization."
 
         B = self.covariance
