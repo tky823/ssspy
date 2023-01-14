@@ -205,6 +205,15 @@ class CACGMM(CACGMMbase):
 
         self.reference_id = reference_id
 
+    def update_once(self) -> None:
+        r"""Perform E and M step once.
+
+        In ``update_posterior``, posterior probabilities are updated, which corresponds to E step.
+        In ``update_parameters``, parameters of cACGMM are updated, which corresponds to M step.
+        """
+        self.update_posterior()
+        self.update_parameters()
+
     def update_parameters(self) -> None:
         r"""Update parameters of mixture of complex angular central Gaussian distributions.
 
