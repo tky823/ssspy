@@ -222,6 +222,9 @@ class CACGMM(CACGMMbase):
             Default: ``None``.
         normalization (bool):
             If ``True`` is given, normalization is applied to covariance in cACG.
+        solve_permutation (bool):
+            If ``solve_permutation=True``, a permutation solver is used to align
+            estimated spectrograms. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
@@ -251,6 +254,7 @@ class CACGMM(CACGMMbase):
             ]
         ] = None,
         normalization: bool = True,
+        solve_permutation: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -259,6 +263,7 @@ class CACGMM(CACGMMbase):
 
         self.flooring_fn = flooring_fn
         self.normalization = normalization
+        self.solve_permutation = solve_permutation
         self.reference_id = reference_id
 
     def __call__(
@@ -288,13 +293,16 @@ class CACGMM(CACGMMbase):
         # Call __call__ of CACGMMbase's parent, i.e. __call__ of IterativeMethodBase
         super(CACGMMbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
-        # posterior should be update
+        # posterior should be updated
         X = self.input
         Y = self.separate(X)
 
-        Y = Y.transpose(1, 0, 2)
-        Y = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
-        self.output = Y.transpose(1, 0, 2)
+        if self.solve_permutation:
+            Y = Y.transpose(1, 0, 2)
+            Y = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
+            Y = Y.transpose(1, 0, 2)
+
+        self.output = Y
 
         return self.output
 
