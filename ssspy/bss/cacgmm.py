@@ -356,7 +356,6 @@ class CACGMM(CACGMMbase):
 
         This method corresponds to M step in EM algorithm for cACGMM.
         """
-        alpha = self.mixing
         Z = self.unit_input
         B = self.covariance
         gamma = self.posterior
