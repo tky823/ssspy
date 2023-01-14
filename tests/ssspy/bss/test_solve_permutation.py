@@ -26,9 +26,7 @@ def test_correlation_based_permutation_solver(give_demixing_filter: bool):
 
     with pytest.warns(UserWarning) as record:
         if give_demixing_filter:
-            demix_filter = correlation_based_permutation_solver(
-                separated, demix_filter=demix_filter
-            )
+            separated, demix_filter = correlation_based_permutation_solver(separated, demix_filter)
             assert demix_filter.shape == (n_bins, n_sources, n_channels)
         else:
             separated = correlation_based_permutation_solver(separated)
