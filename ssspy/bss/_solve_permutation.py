@@ -14,7 +14,7 @@ EPS = 1e-10
 
 def correlation_based_permutation_solver(
     separated: np.ndarray,
-    demix_filter: Optional[np.ndarray] = None,
+    *args,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -27,5 +27,5 @@ def correlation_based_permutation_solver(
     )
 
     return correlation_based_permutation_solver_base(
-        separated, demix_filter=demix_filter, flooring_fn=flooring_fn, overwrite=overwrite
+        separated, *args, flooring_fn=flooring_fn, overwrite=overwrite
     )
