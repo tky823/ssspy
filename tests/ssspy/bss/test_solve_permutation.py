@@ -19,10 +19,6 @@ def test_correlation_based_permutation_solver(give_demixing_filter: bool):
     shape = (n_bins, n_sources, n_channels)
     demix_filter = rng.standard_normal(shape) + 1j * rng.standard_normal(shape)
     separated = demix_filter @ mixture.transpose(1, 0, 2)
-    separated = separated.transpose(1, 0, 2)
-
-    assert demix_filter.shape == (n_bins, n_sources, n_channels)
-    assert separated.shape == (n_sources, n_bins, n_frames)
 
     with pytest.warns(UserWarning) as record:
         if give_demixing_filter:
@@ -31,7 +27,7 @@ def test_correlation_based_permutation_solver(give_demixing_filter: bool):
         else:
             separated = correlation_based_permutation_solver(separated)
 
-            assert separated.shape == (n_sources, n_bins, n_frames)
+            assert separated.shape == (n_bins, n_sources, n_frames)
 
     assert len(record) == 1
     assert (
