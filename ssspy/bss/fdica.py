@@ -386,9 +386,9 @@ class GradFDICAbase(FDICAbase):
 
             Y = self.separate(X, demix_filter=W)
 
-            self.demix_filter = correlation_based_permutation_solver(
-                Y, demix_filter=W, flooring_fn=self.flooring_fn
-            )
+            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+
+            self.output, self.demix_filter = Y, W
 
         if self.scale_restoration:
             self.restore_scale()
@@ -973,9 +973,9 @@ class AuxFDICA(FDICAbase):
 
             Y = self.separate(X, demix_filter=W)
 
-            self.demix_filter = correlation_based_permutation_solver(
-                Y, demix_filter=W, flooring_fn=self.flooring_fn
-            )
+            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+
+            self.output, self.demix_filter = Y, W
 
         if self.scale_restoration:
             self.restore_scale()
