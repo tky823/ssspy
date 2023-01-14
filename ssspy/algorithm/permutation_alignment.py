@@ -24,7 +24,7 @@ def correlation_based_permutation_solver(
 
     Args:
         separated (numpy.ndarray):
-            Separated spectrograms with shape of (n_sources, n_bins, n_frames).
+            Separated spectrograms with shape of (n_bins, n_sources, n_frames).
         args (tuple of numpy.ndarray, optional):
             Positional arguments each of which is ``numpy.ndarray``.
             The shapes of each item should be (n_bins, n_sources, \*).
@@ -53,6 +53,10 @@ def correlation_based_permutation_solver(
             via frequency bin-wise clustering and permutation alignment,"
             in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
     """
+    for pos_idx, arg in enumerate(args):
+        if arg.shape[:2] != separated.shape[:2]:
+            raise ValueError("The shape of {}th argument is invalid.".format(pos_idx + 1))
+
     if overwrite:
         Y = separated
         permutable = args
@@ -71,11 +75,11 @@ def correlation_based_permutation_solver(
     else:
         flooring_fn = flooring_fn
 
-    n_sources, n_bins, _ = Y.shape
+    n_bins, n_sources, _ = Y.shape
 
     permutations = list(itertools.permutations(range(n_sources)))
 
-    P = np.abs(Y).transpose(1, 0, 2)
+    P = np.abs(Y)
     norm = np.sqrt(np.sum(P**2, axis=1, keepdims=True))
     norm = flooring_fn(norm)
     P = P / norm
@@ -98,8 +102,7 @@ def correlation_based_permutation_solver(
                 perm_max = perm
 
         P_criteria = P_criteria + P[min_idx, perm_max, :]
-
-        Y[:, min_idx, :] = Y[perm_max, min_idx, :]
+        Y[min_idx, :] = Y[min_idx, perm_max]
 
         for idx in range(len(permutable)):
             permutable[idx][min_idx, :] = permutable[idx][min_idx, perm_max]
