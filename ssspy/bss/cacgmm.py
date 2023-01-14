@@ -45,6 +45,8 @@ class CACGMMbase(IterativeMethodBase):
         record_loss: bool = True,
         rng: Optional[np.random.Generator] = None,
     ) -> None:
+        self.normalization: bool
+
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         self.n_sources = n_sources
@@ -158,6 +160,17 @@ class CACGMMbase(IterativeMethodBase):
         """
         raise NotImplementedError("Implement 'separate' method.")
 
+    def normalize_covariance(self) -> None:
+        assert self.normalization, "Set normalization."
+
+        B = self.covariance
+
+        trace = np.trace(B, axis1=-2, axis2=-1)
+        trace = np.real(trace)
+        B = B / trace[..., np.newaxis, np.newaxis]
+
+        self.covariance = B
+
     def compute_loss(self) -> float:
         r"""Compute loss :math:`\mathcal{L}`.
 
@@ -197,6 +210,8 @@ class CACGMM(CACGMMbase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
+        normalization (bool):
+            If ``True`` is given, normalization is applied to covariance in cACG.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
@@ -225,6 +240,7 @@ class CACGMM(CACGMMbase):
                 List[Callable[["CACGMM"], None]],
             ]
         ] = None,
+        normalization: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -232,6 +248,7 @@ class CACGMM(CACGMMbase):
         super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
 
         self.flooring_fn = flooring_fn
+        self.normalization = normalization
         self.reference_id = reference_id
 
     def __call__(
@@ -327,6 +344,9 @@ class CACGMM(CACGMMbase):
         """
         self.update_posterior()
         self.update_parameters()
+
+        if self.normalization:
+            self.normalize_covariance()
 
     def update_posterior(self) -> None:
         r"""Update posteriors.
