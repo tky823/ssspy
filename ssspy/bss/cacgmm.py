@@ -294,13 +294,20 @@ class CACGMM(CACGMMbase):
         super(CACGMMbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         # posterior should be updated
+        self.update_posterior()
+
         X = self.input
         Y = self.separate(X)
 
         if self.solve_permutation:
+            gamma = self.posterior
+            gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
-            Y = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
+            Y = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
+            gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
+
+            self.posterior = gamma
 
         self.output = Y
 
