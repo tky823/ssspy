@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from ._flooring import identity, max_flooring
+from ..special.flooring import identity, max_flooring
 
 EPS = 1e-10
 

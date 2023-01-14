@@ -9,9 +9,9 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
-from ._flooring import max_flooring
+from ..algorithm.permutation_alignment import correlation_based_permutation_solver
+from ..special.flooring import max_flooring
 from ._select_pair import sequential_pair_selector
-from ._solve_permutation import correlation_based_permutation_solver
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
 
@@ -382,11 +382,14 @@ class GradFDICAbase(FDICAbase):
         super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
-            Y, W = self.output, self.demix_filter
+            X, W = self.input, self.demix_filter
 
-            self.demix_filter = correlation_based_permutation_solver(
-                Y, demix_filter=W, flooring_fn=self.flooring_fn
-            )
+            Y = self.separate(X, demix_filter=W)
+            Y = Y.transpose(1, 0, 2)
+            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+            Y = Y.transpose(1, 0, 2)
+
+            self.output, self.demix_filter = Y, W
 
         if self.scale_restoration:
             self.restore_scale()
@@ -967,11 +970,14 @@ class AuxFDICA(FDICAbase):
         super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
-            Y, W = self.output, self.demix_filter
+            X, W = self.input, self.demix_filter
 
-            self.demix_filter = correlation_based_permutation_solver(
-                Y, demix_filter=W, flooring_fn=self.flooring_fn
-            )
+            Y = self.separate(X, demix_filter=W)
+            Y = Y.transpose(1, 0, 2)
+            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+            Y = Y.transpose(1, 0, 2)
+
+            self.output, self.demix_filter = Y, W
 
         if self.scale_restoration:
             self.restore_scale()

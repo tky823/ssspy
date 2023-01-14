@@ -10,8 +10,8 @@ from ..algorithm import (
     projection_back,
 )
 from ..linalg import eigh, prox
+from ..special.flooring import max_flooring
 from ..transform import whiten
-from ._flooring import max_flooring
 from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import (
     update_by_ip1,
