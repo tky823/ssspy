@@ -8,6 +8,7 @@ from ..linalg.quadratic import quadratic
 from ..special.flooring import max_flooring
 from ..special.logsumexp import logsumexp
 from ..special.softmax import softmax
+from ._psd import to_psd
 from .base import IterativeMethodBase
 
 EPS = 1e-10
@@ -394,6 +395,7 @@ class CACGMM(CACGMMbase):
         num = np.sum(GZBZ[:, :, :, np.newaxis, np.newaxis] * ZZ, axis=2)
         denom = np.sum(gamma, axis=2)
         B = self.n_channels * (num / denom[:, :, np.newaxis, np.newaxis])
+        B = to_psd(B, flooring_fn=self.flooring_fn)
 
         self.mixing = alpha
         self.covariance = B
