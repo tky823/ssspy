@@ -52,6 +52,11 @@ def correlation_based_permutation_solver(
             "Underdetermined convolutive blind source separation \
             via frequency bin-wise clustering and permutation alignment,"
             in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
+
+    .. note::
+
+        In this function, the shape of ``separated`` is expected ``(n_bins, n_sources, ...)``,
+        which is different from other functions.
     """
     for pos_idx, arg in enumerate(args):
         if arg.shape[:2] != separated.shape[:2]:
