@@ -110,19 +110,22 @@ class CACGMMbase(IterativeMethodBase):
                 Default: ``None``.
         """
         n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins, n_frames = self.n_bins, self.n_frames
+        n_bins = self.n_bins
 
         if rng is None:
             rng = np.random.default_rng()
 
-        alpha = np.ones((n_sources, n_bins)) / n_sources
+        alpha = rng.random((n_sources, n_bins))
+        alpha = alpha / alpha.sum(axis=0)
         eye = np.eye(n_channels, dtype=np.complex128)
         B = np.tile(eye, reps=(n_sources, n_bins, 1, 1))
-        gamma = rng.random((n_sources, n_bins, n_frames))
 
         self.mixing = alpha
         self.covariance = B
-        self.posterior = gamma / gamma.sum(axis=0)
+
+        # The shape of posterior is (n_sources, n_bins, n_frames).
+        # This is always required to satisfy posterior.sum(axis=0) = 1
+        self.posterior = None
 
     def separate(self, input: np.ndarray) -> np.ndarray:
         r"""Separate ``input``.
