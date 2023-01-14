@@ -11,7 +11,7 @@ EPS = 1e-10
 
 def correlation_based_permutation_solver(
     separated: np.ndarray,
-    demix_filter: Optional[np.ndarray] = None,
+    *args,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -25,22 +25,27 @@ def correlation_based_permutation_solver(
     Args:
         separated (numpy.ndarray):
             Separated spectrograms with shape of (n_sources, n_bins, n_frames).
-        demix_filter (numpy.ndarray, optional):
-            Demixing filters with shape of (n_bins, n_sources, n_channels).
+        args (tuple of numpy.ndarray, optional):
+            Positional arguments each of which is ``numpy.ndarray``.
+            The shapes of each item should be (n_bins, n_sources, \*).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
             and return (n_channels, n_bins, n_frames).
-            If you explicitly set ``flooring_fn=None``, \
+            If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-15)``.
         overwrite (bool):
-            Overwrite ``demix_filter`` if ``overwrite=True``. \
+            Overwrite ``demix_filter`` if ``overwrite=True``.
             Default: ``True``.
 
     Returns:
-        numpy.ndarray:
-            Permutated demixing filters with shape of (n_bins, n_sources, n_channels).
+        - If ``args`` is not given, ``numpy.ndarray`` of permutated separated spectrograms
+            with shape of (n_sources, n_bins, n_frames) are returned.
+        - If one positional argument is given, ``numpy.ndarray``s of permutated separated
+            spectrograms and the permutated positional argument are returned.
+        - If more than two positional arguments are given, ``numpy.ndarray``s of
+            permutated separated spectrograms and the permutated positional arguments are returned.
 
         .. [#sawada2010underdetermined]
             H. Sawada, S. Araki, and S. Makino,
@@ -50,18 +55,16 @@ def correlation_based_permutation_solver(
     """
     if overwrite:
         Y = separated
-
-        if demix_filter is None:
-            W = None
-        else:
-            W = demix_filter
+        sortable = args
     else:
         Y = separated.copy()
 
-        if demix_filter is None:
-            W = None
-        else:
-            W = demix_filter.copy()
+        sortable = []
+
+        for arg in args:
+            sortable.append(arg.copy())
+
+        sortable = tuple(sortable)
 
     if flooring_fn is None:
         flooring_fn = identity
@@ -96,12 +99,14 @@ def correlation_based_permutation_solver(
 
         P_criteria = P_criteria + P[min_idx, perm_max, :]
 
-        if W is not None:
-            W[min_idx, :, :] = W[min_idx, perm_max, :]
-        else:
-            Y[:, min_idx, :] = Y[perm_max, min_idx, :]
+        Y[:, min_idx, :] = Y[perm_max, min_idx, :]
 
-    if W is None:
+        for idx in range(len(sortable)):
+            sortable[idx][min_idx, :] = sortable[idx][min_idx, perm_max]
+
+    if len(sortable) == 0:
         return Y
+    elif len(sortable) == 1:
+        return Y, sortable[0]
     else:
-        return W
+        return Y, sortable
