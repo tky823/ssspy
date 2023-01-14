@@ -419,7 +419,7 @@ class CACGMM(CACGMMbase):
             \mathcal{L}
             = -\frac{1}{J}\sum_{i,j}\log\left(
             \sum_{n}\frac{\alpha_{in}}{\det\boldsymbol{B}_{in}}
-            \frac{1}{(\boldsymbol{z}_{ij}^{\mathsf{H}}\boldsymbol{B}_{in}\boldsymbol{z}_{ij})^{M}}
+            \frac{1}{(\boldsymbol{z}_{ij}^{\mathsf{H}}\boldsymbol{B}_{in}^{-1}\boldsymbol{z}_{ij})^{M}}
             \right).
         """
         alpha = self.mixing
