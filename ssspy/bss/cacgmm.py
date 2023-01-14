@@ -297,7 +297,7 @@ class CACGMM(CACGMMbase):
         self.update_posterior()
 
         X = self.input
-        Y = self.separate(X)
+        Y = self.separate(X, posterior=self.posterior)
 
         if self.solve_permutation:
             gamma = self.posterior
@@ -327,7 +327,7 @@ class CACGMM(CACGMMbase):
 
         return s.format(**self.__dict__)
 
-    def separate(self, input: np.ndarray) -> np.ndarray:
+    def separate(self, input: np.ndarray, posterior: Optional[np.ndarray] = None) -> np.ndarray:
         r"""Separate ``input`` using posterior probabilities.
 
         In this method, ``self.posterior`` is not updated.
@@ -336,29 +336,36 @@ class CACGMM(CACGMMbase):
             input (numpy.ndarray):
                 The mixture signal in frequency-domain.
                 The shape is (n_channels, n_bins, n_frames).
+            posterior (numpy.ndarray, optional):
+                Posterior probability. If not specified, ``posterior`` is computed by current
+                parameters.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
             The shape is (n_sources, n_bins, n_frames).
         """
         X = input
-        alpha = self.mixing
-        Z = self.unit_input
-        B = self.covariance
 
-        Z = Z.transpose(1, 2, 0)
-        B_inverse = np.linalg.inv(B)
-        ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
-        ZBZ = np.real(ZBZ)
-        ZBZ = np.maximum(ZBZ, 0)
-        ZBZ = self.flooring_fn(ZBZ)
+        if posterior is None:
+            alpha = self.mixing
+            Z = self.unit_input
+            B = self.covariance
 
-        log_alpha = np.log(alpha)
-        _, logdet = np.linalg.slogdet(B)
-        log_prob = log_alpha - logdet
-        log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+            Z = Z.transpose(1, 2, 0)
+            B_inverse = np.linalg.inv(B)
+            ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
+            ZBZ = np.real(ZBZ)
+            ZBZ = np.maximum(ZBZ, 0)
+            ZBZ = self.flooring_fn(ZBZ)
 
-        gamma = softmax(log_gamma, axis=0)
+            log_alpha = np.log(alpha)
+            _, logdet = np.linalg.slogdet(B)
+            log_prob = log_alpha - logdet
+            log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
+
+            gamma = softmax(log_gamma, axis=0)
+        else:
+            gamma = posterior
 
         return gamma * X[self.reference_id]
 
