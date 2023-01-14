@@ -76,6 +76,18 @@ class CACGMMbase(IterativeMethodBase):
 
         raise NotImplementedError("Implement '__call__' method.")
 
+    def __repr__(self) -> str:
+        s = "CACGMM("
+
+        if self.n_sources is None:
+            s += "n_sources={n_sources}, "
+
+        s += "record_loss={record_loss}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
     def _reset(self, **kwargs) -> None:
         r"""Reset attributes by given keyword arguments.
 
@@ -256,6 +268,19 @@ class CACGMM(CACGMMbase):
         self.output = correlation_based_permutation_solver(Y, flooring_fn=self.flooring_fn)
 
         return self.output
+
+    def __repr__(self) -> str:
+        s = "CACGMM("
+
+        if self.n_sources is None:
+            s += "n_sources={n_sources}, "
+
+        s += "record_loss={record_loss}"
+        s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
 
     def separate(self, input: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using posterior probabilities.
