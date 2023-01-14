@@ -137,8 +137,11 @@ class CACGMMbase(IterativeMethodBase):
 
         alpha = rng.random((n_sources, n_bins))
         alpha = alpha / alpha.sum(axis=0)
+
         eye = np.eye(n_channels, dtype=np.complex128)
-        B = np.tile(eye, reps=(n_sources, n_bins, 1, 1))
+        B_diag = self.rng.random((n_sources, n_bins, n_channels))
+        B_diag = B_diag / B_diag.sum(axis=-1, keepdims=True)
+        B = B_diag[:, :, :, np.newaxis] * eye
 
         self.mixing = alpha
         self.covariance = B
