@@ -296,6 +296,7 @@ class CACGMM(CACGMMbase):
             s += "n_sources={n_sources}, "
 
         s += "record_loss={record_loss}"
+        s += ", normalization={normalization}"
         s += ", reference_id={reference_id}"
 
         s += ")"
