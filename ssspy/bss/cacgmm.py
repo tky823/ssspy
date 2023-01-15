@@ -303,7 +303,7 @@ class CACGMM(CACGMMbase):
             gamma = self.posterior
             gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
-            Y = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
+            Y, gamma = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
             gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
 
