@@ -235,6 +235,9 @@ class CACGMM(CACGMMbase):
             of cACGMM. If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
 
+    .. note::
+        The estimated spectrograms are aligned by similarity of their power.
+
     .. [#ito2016complex] N. Ito, S. Araki, and T. Nakatani. \
         "Complex angular central Gaussian mixture model for directional statistics \
         in mask-based microphone array signal processing,"
