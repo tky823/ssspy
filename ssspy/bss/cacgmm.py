@@ -215,17 +215,28 @@ class CACGMMBase(IterativeMethodBase):
         assert self.permutation_alignment, "Set self.permutation_alignment=True."
 
         X = self.input
+        alpha = self.mixing
+        B = self.covariance
         gamma = self.posterior
 
         Y = self.separate(X, posterior=self.posterior)
 
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
         gamma = gamma.transpose(1, 0, 2)
         Y = Y.transpose(1, 0, 2)
-        Y, gamma = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
+        Y, (alpha, B, gamma) = correlation_based_permutation_solver(
+            Y, alpha, B, gamma, flooring_fn=self.flooring_fn
+        )
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
         gamma = gamma.transpose(1, 0, 2)
         Y = Y.transpose(1, 0, 2)
 
+        self.mixing = alpha
+        self.covariance = B
         self.posterior = gamma
+        self.output = Y
 
 
 class CACGMM(CACGMMBase):
