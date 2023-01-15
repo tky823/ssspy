@@ -60,4 +60,9 @@ def test_CACGMM(
     assert spectrogram_est.shape == (n_sources,) + spectrogram_mix.shape[-2:]
     assert type(cacgmm.loss[-1]) is float
 
+    # when posterior is not given
+    _spectrogram_est = cacgmm.separate(spectrogram_mix)
+
+    assert np.allclose(_spectrogram_est, spectrogram_est)
+
     print(cacgmm)
