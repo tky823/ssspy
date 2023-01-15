@@ -47,6 +47,7 @@ class CACGMMBase(IterativeMethodBase):
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         self.normalization: bool
+        self.permutation_alignment: bool
 
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
@@ -207,6 +208,25 @@ class CACGMMBase(IterativeMethodBase):
 
         return logdet
 
+    def solve_permutation(self) -> None:
+        r"""Align posteriors and separated spectrograms"""
+        # TODO: clustering priors instead of spectrogram.
+
+        assert self.permutation_alignment, "Set self.permutation_alignment=True."
+
+        X = self.input
+        gamma = self.posterior
+
+        Y = self.separate(X, posterior=self.posterior)
+
+        gamma = gamma.transpose(1, 0, 2)
+        Y = Y.transpose(1, 0, 2)
+        Y, gamma = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
+        gamma = gamma.transpose(1, 0, 2)
+        Y = Y.transpose(1, 0, 2)
+
+        self.posterior = gamma
+
 
 class CACGMM(CACGMMBase):
     r"""Complex angular central Gaussian mixture model (cACGMM) [#ito2016complex]_.
@@ -303,32 +323,11 @@ class CACGMM(CACGMMBase):
         # posterior should be updated
         self.update_posterior()
 
-        X = self.input
-        Y = self.separate(X, posterior=self.posterior)
-
         if self.permutation_alignment:
-            # TODO: clustering priors instead of spectrogram.
-            alpha = self.mixing
-            B = self.covariance
-            gamma = self.posterior
+            self.solve_permutation()
 
-            alpha = alpha.transpose(1, 0)
-            B = B.transpose(1, 0, 2, 3)
-            gamma = gamma.transpose(1, 0, 2)
-            Y = Y.transpose(1, 0, 2)
-            Y, (alpha, B, gamma) = correlation_based_permutation_solver(
-                Y, alpha, B, gamma, flooring_fn=self.flooring_fn
-            )
-            alpha = alpha.transpose(1, 0)
-            B = B.transpose(1, 0, 2, 3)
-            gamma = gamma.transpose(1, 0, 2)
-            Y = Y.transpose(1, 0, 2)
-
-            self.mixing = alpha
-            self.covariance = B
-            self.posterior = gamma
-
-        self.output = Y
+        X = self.input
+        self.output = self.separate(X, posterior=self.posterior)
 
         return self.output
 
