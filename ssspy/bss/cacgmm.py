@@ -86,7 +86,7 @@ class CACGMMbase(IterativeMethodBase):
     def __repr__(self) -> str:
         s = "CACGMM("
 
-        if self.n_sources is None:
+        if self.n_sources is not None:
             s += "n_sources={n_sources}, "
 
         s += "record_loss={record_loss}"
@@ -335,7 +335,7 @@ class CACGMM(CACGMMbase):
     def __repr__(self) -> str:
         s = "CACGMM("
 
-        if self.n_sources is None:
+        if self.n_sources is not None:
             s += "n_sources={n_sources}, "
 
         s += "record_loss={record_loss}"
