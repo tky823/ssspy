@@ -300,6 +300,7 @@ class CACGMM(CACGMMbase):
         Y = self.separate(X, posterior=self.posterior)
 
         if self.solve_permutation:
+            # TODO: clustering priors instead of spectrogram.
             gamma = self.posterior
             gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
