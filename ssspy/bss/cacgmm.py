@@ -308,13 +308,24 @@ class CACGMM(CACGMMbase):
 
         if self.solve_permutation:
             # TODO: clustering priors instead of spectrogram.
+            alpha = self.mixing
+            B = self.covariance
             gamma = self.posterior
+
+            alpha = alpha.transpose(1, 0)
+            B = B.transpose(1, 0, 2, 3)
             gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
-            Y, gamma = correlation_based_permutation_solver(Y, gamma, flooring_fn=self.flooring_fn)
+            Y, (alpha, B, gamma) = correlation_based_permutation_solver(
+                Y, alpha, B, gamma, flooring_fn=self.flooring_fn
+            )
+            alpha = alpha.transpose(1, 0)
+            B = B.transpose(1, 0, 2, 3)
             gamma = gamma.transpose(1, 0, 2)
             Y = Y.transpose(1, 0, 2)
 
+            self.mixing = alpha
+            self.covariance = B
             self.posterior = gamma
 
         self.output = Y
