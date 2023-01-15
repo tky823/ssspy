@@ -235,6 +235,20 @@ class FDICABase(IterativeMethodBase):
 
         return logdet
 
+    def solve_permutation(self) -> None:
+        r"""Align demixing filters and separated spectrograms"""
+
+        assert self.permutation_alignment, "Set self.permutation_alignment=True."
+
+        X, W = self.input, self.demix_filter
+
+        Y = self.separate(X, demix_filter=W)
+        Y = Y.transpose(1, 0, 2)
+        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+        Y = Y.transpose(1, 0, 2)
+
+        self.output, self.demix_filter = Y, W
+
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
@@ -382,14 +396,7 @@ class GradFDICABase(FDICABase):
         super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.permutation_alignment:
-            X, W = self.input, self.demix_filter
-
-            Y = self.separate(X, demix_filter=W)
-            Y = Y.transpose(1, 0, 2)
-            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
-            Y = Y.transpose(1, 0, 2)
-
-            self.output, self.demix_filter = Y, W
+            self.solve_permutation()
 
         if self.scale_restoration:
             self.restore_scale()
@@ -970,14 +977,7 @@ class AuxFDICA(FDICABase):
         super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.permutation_alignment:
-            X, W = self.input, self.demix_filter
-
-            Y = self.separate(X, demix_filter=W)
-            Y = Y.transpose(1, 0, 2)
-            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
-            Y = Y.transpose(1, 0, 2)
-
-            self.output, self.demix_filter = Y, W
+            self.solve_permutation()
 
         if self.scale_restoration:
             self.restore_scale()
