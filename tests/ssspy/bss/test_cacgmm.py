@@ -15,6 +15,7 @@ from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 max_duration = 0.5
+window = "hann"
 n_fft = 512
 hop_length = 256
 n_bins = n_fft // 2 + 1
@@ -50,7 +51,7 @@ def test_CACGMM(
     waveform_mix = waveform_mix[:n_channels]
 
     _, _, spectrogram_mix = ss.stft(
-        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+        waveform_mix, window=window, nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
     cacgmm = CACGMM(n_sources=n_sources, callbacks=callbacks, rng=rng)
