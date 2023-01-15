@@ -322,6 +322,7 @@ class CACGMM(CACGMMbase):
 
         s += "record_loss={record_loss}"
         s += ", normalization={normalization}"
+        s += ", solve_permutation={solve_permutation}"
         s += ", reference_id={reference_id}"
 
         s += ")"
