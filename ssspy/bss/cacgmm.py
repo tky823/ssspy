@@ -226,8 +226,8 @@ class CACGMM(CACGMMBase):
             Default: ``None``.
         normalization (bool):
             If ``True`` is given, normalization is applied to covariance in cACG.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
@@ -261,7 +261,7 @@ class CACGMM(CACGMMBase):
             ]
         ] = None,
         normalization: bool = True,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -270,7 +270,7 @@ class CACGMM(CACGMMBase):
 
         self.flooring_fn = flooring_fn
         self.normalization = normalization
-        self.solve_permutation = solve_permutation
+        self.permutation_alignment = permutation_alignment
         self.reference_id = reference_id
 
     def __call__(
@@ -306,7 +306,7 @@ class CACGMM(CACGMMBase):
         X = self.input
         Y = self.separate(X, posterior=self.posterior)
 
-        if self.solve_permutation:
+        if self.permutation_alignment:
             # TODO: clustering priors instead of spectrogram.
             alpha = self.mixing
             B = self.covariance
@@ -340,7 +340,7 @@ class CACGMM(CACGMMBase):
 
         s += "record_loss={record_loss}"
         s += ", normalization={normalization}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", reference_id={reference_id}"
 
         s += ")"
