@@ -51,6 +51,10 @@ class CACGMMbase(IterativeMethodBase):
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         self.n_sources = n_sources
+
+        if rng is None:
+            rng = np.random.default_rng()
+
         self.rng = rng
 
     def __call__(
