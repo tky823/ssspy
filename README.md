@@ -47,6 +47,7 @@ sphinx-autobuild docs docs/_build/html
 | Independent Positive Semidefinite Tensor Analysis (IPSDTA) [17, 18] | Gauss-IPSDTA (VCD): [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/IPSDTA/GaussIPSDTA-VCD.ipynb) <br> *t*-IPSDTA (VCD): [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/IPSDTA/TIPSDTA-VCD.ipynb) |
 | Multichannel Nonnegative Matrix Factorization (MNMF) [19-22] | Gauss-MNMF: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/MNMF/GaussMNMF.ipynb) <br> *t*-MNMF: soon <br> Fast Gauss-MNMF: soon |
 | Blind Source Separation via Primal-Dual Splitting Algorithm (PDS-BSS) [23] | PDS-BSS: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/PDSBSS/PDSBSS.ipynb) <br> PDS-BSS-multiPenalty: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/PDSBSS/PDSBSS_multi-penalty.ipynb) |
+| Complex Angular Central Gaussian Mixture Model (cACGMM) [24] | cACGMM: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/CACGMM/CACGMM.ipynb) |
 
 - [1] [P. Comon, "Independent component analysis, a new concept?" Signal Processing, vol. 36, no. 3, pp. 287-314, 1994.](https://www.sciencedirect.com/science/article/pii/0165168494900299)
 - [2] [S. Amari, A. Cichocki, and H. H. Yang, "A new learning algorithm forblind signal separation," in *Proc. NIPS*, 1996, pp. 757-763.](https://proceedings.neurips.cc/paper/1995/hash/e19347e1c3ca0c0b97de5fb3b690855a-Abstract.html)
@@ -71,6 +72,7 @@ sphinx-autobuild docs docs/_build/html
 - [21] [K. Yoshii, K. Itoyama, and M. Goto, "Student's T nonnegative matrix factorization and positive semidefinite tensor factorization for single-channel audio source separation," in *Proc. ICASSP*, 2016, pp. 51-55.](https://ieeexplore.ieee.org/document/7471635)
 - [22] [K. Sekiguchi, A. A. Nugraha, Y. Bando, and K. Yoshii, "Fast multichannel source separation based on jointly diagonalizable spatial covariance matrices," *arXiv:1903.03237*, 2019.](https://arxiv.org/abs/1903.03237)
 - [23] [K. Yatabe and D. Kitamura, "Determined blind source separation via proximal splitting algorithm," in *Proc. ICASSP*, 2018, pp. 776-780.](https://ieeexplore.ieee.org/document/8462338)
+- [24] [N. Ito, S. Araki, and T. Nakatani. "Complex angular central Gaussian mixture model for directional statistics in mask-based microphone array signal processing," in *Proc. EUSIPCO*, 2016, pp. 1153-1157.](https://ieeexplore.ieee.org/document/7760429)
 
 ## LICENSE
 Apache License 2.0
