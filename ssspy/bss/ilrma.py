@@ -788,8 +788,11 @@ class GaussILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables."""
+        r"""Update NMF bases, activations, and latent variables.
 
+        - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
+        - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+        """
         if self.source_algorithm == "MM":
             self.update_source_model_mm()
         elif self.source_algorithm == "ME":
