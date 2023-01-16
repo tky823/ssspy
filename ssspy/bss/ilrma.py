@@ -790,13 +790,25 @@ class GaussILRMA(ILRMAbase):
     def update_source_model(self) -> None:
         r"""Update NMF bases, activations, and latent variables."""
 
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+
         if self.partitioning:
-            self.update_latent()
+            self.update_latent_mm()
 
-        self.update_basis()
-        self.update_activation()
+        self.update_basis_mm()
+        self.update_activation_mm()
 
-    def update_latent(self) -> None:
+    def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF.
 
         Update :math:`t_{ikn}` as follows:
@@ -840,7 +852,7 @@ class GaussILRMA(ILRMAbase):
 
         self.latent = Z
 
-    def update_basis(self) -> None:
+    def update_basis_mm(self) -> None:
         r"""Update NMF bases.
 
         Update :math:`t_{ikn}` as follows:
@@ -905,7 +917,7 @@ class GaussILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self) -> None:
+    def update_activation_mm(self) -> None:
         r"""Update NMF activations.
 
         Update :math:`t_{ikn}` as follows:
