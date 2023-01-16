@@ -823,7 +823,7 @@ class GaussILRMA(ILRMAbase):
         self.update_activation_me()
 
     def update_latent_mm(self) -> None:
-        r"""Update latent variables in NMF.
+        r"""Update latent variables in NMF by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -867,7 +867,7 @@ class GaussILRMA(ILRMAbase):
         self.latent = Z
 
     def update_basis_mm(self) -> None:
-        r"""Update NMF bases.
+        r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -932,7 +932,7 @@ class GaussILRMA(ILRMAbase):
         self.basis = T
 
     def update_activation_mm(self) -> None:
-        r"""Update NMF activations.
+        r"""Update NMF activations by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -995,7 +995,7 @@ class GaussILRMA(ILRMAbase):
         self.activation = V
 
     def update_latent_me(self) -> None:
-        r"""Update latent variables in NMF.
+        r"""Update latent variables in NMF by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1038,7 +1038,7 @@ class GaussILRMA(ILRMAbase):
         self.latent = Z
 
     def update_basis_me(self) -> None:
-        r"""Update NMF bases.
+        r"""Update NMF bases by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1102,7 +1102,7 @@ class GaussILRMA(ILRMAbase):
         self.basis = T
 
     def update_activation_me(self) -> None:
-        r"""Update NMF activations.
+        r"""Update NMF activations by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
