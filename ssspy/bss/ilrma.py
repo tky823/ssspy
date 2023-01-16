@@ -18,6 +18,7 @@ from .base import IterativeMethodBase
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
 
 spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+source_algorithms = ["MM", "ME"]
 EPS = 1e-10
 
 
@@ -545,6 +546,9 @@ class GaussILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Choose ``MM`` or ``ME``. Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -667,6 +671,7 @@ class GaussILRMA(ILRMAbase):
         self,
         n_basis: int,
         spatial_algorithm: str = "IP",
+        source_algorithm: str = "MM",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -693,10 +698,12 @@ class GaussILRMA(ILRMAbase):
             rng=rng,
         )
 
-        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
-        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
+        assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
 
         self.spatial_algorithm = spatial_algorithm
+        self.source_algorithm = source_algorithm
         self.domain = domain
         self.normalization = normalization
 
