@@ -792,6 +792,8 @@ class GaussILRMA(ILRMAbase):
 
         if self.source_algorithm == "MM":
             self.update_source_model_mm()
+        elif self.source_algorithm == "ME":
+            self.update_source_model_me()
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -807,6 +809,18 @@ class GaussILRMA(ILRMAbase):
 
         self.update_basis_mm()
         self.update_activation_mm()
+
+    def update_source_model_me(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.partitioning:
+            self.update_latent_me()
+
+        self.update_basis_me()
+        self.update_activation_me()
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF.
@@ -976,6 +990,175 @@ class GaussILRMA(ILRMAbase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_latent_me(self) -> None:
+        r"""Update latent variables in NMF.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+        ZTV2 = ZTV**2
+        TV_ZTV2 = TV[np.newaxis, :, :, :] / ZTV2[:, :, np.newaxis, :]
+        num = np.sum(TV_ZTV2 * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+        TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+        denom = np.sum(TV_ZTV, axis=(1, 3))
+
+        Z = (num / denom) * Z
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
+
+    def update_basis_me(self) -> None:
+        r"""Update NMF bases.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]t_{ik},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{2}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
+            t_{ikn}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2 = ZTV**2
+            ZV_ZTV2 = ZV[:, np.newaxis, :, :] / ZTV2[:, :, np.newaxis, :]
+            num = np.sum(ZV_ZTV2 * Y2[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2 = TV**2
+            V_TV2 = V[:, np.newaxis, :, :] / TV2[:, :, np.newaxis, :]
+            num = np.sum(V_TV2 * Y2[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+        T = (num / denom) * T
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation_me(self) -> None:
+        r"""Update NMF activations.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]v_{kj},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{2}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]v_{kjn}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2 = ZTV**2
+            ZT_ZTV2 = ZT[:, :, :, np.newaxis] / ZTV2[:, :, np.newaxis, :]
+            num = np.sum(ZT_ZTV2 * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2 = TV**2
+            T_TV2 = T[:, :, :, np.newaxis] / TV2[:, :, np.newaxis, :]
+            num = np.sum(T_TV2 * Y2[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+        V = (num / denom) * V
         V = self.flooring_fn(V)
 
         self.activation = V
