@@ -702,6 +702,9 @@ class GaussILRMA(ILRMAbase):
         assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
         assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
 
+        if source_algorithm == "ME":
+            assert domain == 2, "domain parameter should be 2 when you specify ME algorithm."
+
         self.spatial_algorithm = spatial_algorithm
         self.source_algorithm = source_algorithm
         self.domain = domain
