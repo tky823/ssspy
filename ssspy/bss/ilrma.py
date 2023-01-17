@@ -1845,7 +1845,22 @@ class TILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables."""
+        r"""Update NMF bases, activations, and latent variables.
+
+        - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
+        - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+        """
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
         if self.partitioning:
             self.update_latent()
 
