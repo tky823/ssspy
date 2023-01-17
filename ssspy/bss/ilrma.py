@@ -2993,14 +2993,26 @@ class GGDILRMA(ILRMAbase):
 
     def update_source_model(self) -> None:
         r"""Update NMF bases, activations, and latent variables."""
+
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
         if self.partitioning:
-            self.update_latent()
+            self.update_latent_mm()
 
-        self.update_basis()
-        self.update_activation()
+        self.update_basis_mm()
+        self.update_activation_mm()
 
-    def update_latent(self) -> None:
-        r"""Update latent variables in NMF.
+    def update_latent_mm(self) -> None:
+        r"""Update latent variables in NMF by MM algorithm.
 
         Update :math:`z_{nk}` as follows:
 
@@ -3046,8 +3058,8 @@ class GGDILRMA(ILRMAbase):
 
         self.latent = Z
 
-    def update_basis(self) -> None:
-        r"""Update NMF bases.
+    def update_basis_mm(self) -> None:
+        r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -3114,8 +3126,8 @@ class GGDILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self) -> None:
-        r"""Update NMF activations.
+    def update_activation_mm(self) -> None:
+        r"""Update NMF activations by MM algorithm.
 
         Update :math:`v_{kjn}` as follows:
 
