@@ -2084,10 +2084,10 @@ class TILRMA(ILRMAbase):
 
         .. math::
             z_{nk}
-            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            &\leftarrow\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
             {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
             |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
-            \right]z_{nk} \\
+            z_{nk} \\
             z_{nk}
             &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}, \\
             \tilde{r}_{ijn}
@@ -2133,12 +2133,12 @@ class TILRMA(ILRMAbase):
 
         .. math::
             t_{ik}
-            &\leftarrow\left[
+            &\leftarrow
             \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
             {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
             |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
             \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
-            \right]t_{ik}, \\
+            t_{ik}, \\
             \tilde{r}_{ijn}
             &= \frac{\nu}{\nu+2}\sum_{k}z_{nk}t_{ik}v_{kj}+\frac{2}{\nu+2}|y_{ijn}|^{2},
 
@@ -2146,10 +2146,10 @@ class TILRMA(ILRMAbase):
 
         .. math::
             t_{ikn}
-            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            &\leftarrow\frac{\displaystyle\sum_{j}
             \dfrac{v_{kjn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
-            \right]t_{ikn}, \\
+            t_{ikn}, \\
             \tilde{r}_{ijn}
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
@@ -2206,10 +2206,10 @@ class TILRMA(ILRMAbase):
 
         .. math::
             v_{kj}
-            &\leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            &\leftarrow\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
             {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
             |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
-            \right]v_{kj}, \\
+            v_{kj}, \\
             \tilde{r}_{ijn}
             &= \frac{\nu}{\nu+2}\sum_{k}z_{nk}t_{ik}v_{kj}+\frac{2}{\nu+2}|y_{ijn}|^{2},
 
@@ -2217,10 +2217,10 @@ class TILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            &\leftarrow\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
-            \right]v_{kjn}, \\
+            v_{kjn}, \\
             \tilde{r}_{ijn}
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
