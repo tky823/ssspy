@@ -457,24 +457,29 @@ def test_ggd_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = GGDILRMA(
-        n_basis,
-        beta=beta,
-        spatial_algorithm=spatial_algorithm,
-        source_algorithm=source_algorithm,
-        domain=domain,
-        partitioning=False,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    with pytest.raises(ValueError) as e:
+        ilrma = GGDILRMA(
+            n_basis,
+            beta=beta,
+            spatial_algorithm=spatial_algorithm,
+            source_algorithm=source_algorithm,
+            domain=domain,
+            partitioning=False,
+            callbacks=callbacks,
+            normalization=normalization,
+            scale_restoration=scale_restoration,
+            rng=np.random.default_rng(42),
+        )
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME":
+        assert str(e.value) == "Not support {}.".format(source_algorithm)
+    else:
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
 
-    print(ilrma)
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
