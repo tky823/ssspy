@@ -457,7 +457,7 @@ def test_ggd_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(AssertionError) as e:
         ilrma = GGDILRMA(
             n_basis,
             beta=beta,
