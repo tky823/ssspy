@@ -18,6 +18,7 @@ from .base import IterativeMethodBase
 __all__ = ["GaussILRMA", "TILRMA", "GGDILRMA"]
 
 spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+source_algorithms = ["MM", "ME"]
 EPS = 1e-10
 
 
@@ -545,6 +546,9 @@ class GaussILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Choose ``MM`` or ``ME``. Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -667,6 +671,7 @@ class GaussILRMA(ILRMAbase):
         self,
         n_basis: int,
         spatial_algorithm: str = "IP",
+        source_algorithm: str = "MM",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -693,10 +698,15 @@ class GaussILRMA(ILRMAbase):
             rng=rng,
         )
 
-        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
-        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
+        assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
+
+        if source_algorithm == "ME":
+            assert domain == 2, "domain parameter should be 2 when you specify ME algorithm."
 
         self.spatial_algorithm = spatial_algorithm
+        self.source_algorithm = source_algorithm
         self.domain = domain
         self.normalization = normalization
 
@@ -747,6 +757,7 @@ class GaussILRMA(ILRMAbase):
         s = "GaussILRMA("
         s += "n_basis={n_basis}"
         s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", source_algorithm={source_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -781,18 +792,47 @@ class GaussILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables."""
+        r"""Update NMF bases, activations, and latent variables.
+
+        - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
+        - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+        """
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        elif self.source_algorithm == "ME":
+            self.update_source_model_me()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
 
         if self.partitioning:
-            self.update_latent()
+            self.update_latent_mm()
 
-        self.update_basis()
-        self.update_activation()
+        self.update_basis_mm()
+        self.update_activation_mm()
 
-    def update_latent(self) -> None:
-        r"""Update latent variables in NMF.
+    def update_source_model_me(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by ME algorithm."""
 
-        Update :math:`t_{ikn}` as follows:
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.partitioning:
+            self.update_latent_me()
+
+        self.update_basis_me()
+        self.update_activation_me()
+
+    def update_latent_mm(self) -> None:
+        r"""Update latent variables in NMF by MM algorithm.
+
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -833,8 +873,8 @@ class GaussILRMA(ILRMAbase):
 
         self.latent = Z
 
-    def update_basis(self) -> None:
-        r"""Update NMF bases.
+    def update_basis_mm(self) -> None:
+        r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -898,10 +938,10 @@ class GaussILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self) -> None:
-        r"""Update NMF activations.
+    def update_activation_mm(self) -> None:
+        r"""Update NMF activations by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`v_{kjn}` as follows:
 
         .. math::
             v_{kj}
@@ -914,7 +954,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \leftarrow \left[\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{p+2}{p}}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]^{\frac{p}{p+2}}v_{kjn}.
@@ -957,6 +997,175 @@ class GaussILRMA(ILRMAbase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_latent_me(self) -> None:
+        r"""Update latent variables in NMF by ME algorithm.
+
+        Update :math:`z_{nk}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\left[\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+        ZTV2 = ZTV**2
+        TV_ZTV2 = TV[np.newaxis, :, :, :] / ZTV2[:, :, np.newaxis, :]
+        num = np.sum(TV_ZTV2 * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+        TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+        denom = np.sum(TV_ZTV, axis=(1, 3))
+
+        Z = (num / denom) * Z
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
+
+    def update_basis_me(self) -> None:
+        r"""Update NMF bases by ME algorithm.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]t_{ik},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{2}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
+            t_{ikn}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2 = ZTV**2
+            ZV_ZTV2 = ZV[:, np.newaxis, :, :] / ZTV2[:, :, np.newaxis, :]
+            num = np.sum(ZV_ZTV2 * Y2[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2 = TV**2
+            V_TV2 = V[:, np.newaxis, :, :] / TV2[:, :, np.newaxis, :]
+            num = np.sum(V_TV2 * Y2[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+        T = (num / denom) * T
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation_me(self) -> None:
+        r"""Update NMF activations by ME algorithm.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            v_{kj}
+            \leftarrow\left[\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {(\sum_{k'}z_{nk'}t_{ik'}v_{k'j})^{2}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            \right]v_{kj},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            \leftarrow \left[\frac{\displaystyle\sum_{i}
+            \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{2}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            \right]v_{kjn}.
+        """
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            ZTV2 = ZTV**2
+            ZT_ZTV2 = ZT[:, :, :, np.newaxis] / ZTV2[:, :, np.newaxis, :]
+            num = np.sum(ZT_ZTV2 * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            TV2 = TV**2
+            T_TV2 = T[:, :, :, np.newaxis] / TV2[:, :, np.newaxis, :]
+            num = np.sum(T_TV2 * Y2[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+        V = (num / denom) * V
         V = self.flooring_fn(V)
 
         self.activation = V
@@ -1393,6 +1602,9 @@ class TILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Choose ``MM`` or ``ME``. Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -1515,6 +1727,7 @@ class TILRMA(ILRMAbase):
         n_basis: int,
         dof: float,
         spatial_algorithm: str = "IP",
+        source_algorithm: str = "MM",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -1542,10 +1755,15 @@ class TILRMA(ILRMAbase):
         )
 
         assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
-        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+        assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
+        assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
+
+        if source_algorithm == "ME":
+            assert domain == 2, "domain parameter should be 2 when you specify ME algorithm."
 
         self.dof = dof
         self.spatial_algorithm = spatial_algorithm
+        self.source_algorithm = source_algorithm
         self.domain = domain
         self.normalization = normalization
 
@@ -1597,6 +1815,7 @@ class TILRMA(ILRMAbase):
         s += "n_basis={n_basis}"
         s += ", dof={dof}"
         s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", source_algorithm={source_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -1631,17 +1850,42 @@ class TILRMA(ILRMAbase):
             self.normalize()
 
     def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables."""
+        r"""Update NMF bases, activations, and latent variables.
+
+        - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
+        - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+        """
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        elif self.source_algorithm == "ME":
+            self.update_source_model_me()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
         if self.partitioning:
-            self.update_latent()
+            self.update_latent_mm()
 
-        self.update_basis()
-        self.update_activation()
+        self.update_basis_mm()
+        self.update_activation_mm()
 
-    def update_latent(self) -> None:
-        r"""Update latent variables in NMF.
+    def update_source_model_me(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+        if self.partitioning:
+            self.update_latent_me()
 
-        Update :math:`t_{ikn}` as follows:
+        self.update_basis_me()
+        self.update_activation_me()
+
+    def update_latent_mm(self) -> None:
+        r"""Update latent variables in NMF by MM algorithm.
+
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -1688,8 +1932,8 @@ class TILRMA(ILRMAbase):
 
         self.latent = Z
 
-    def update_basis(self) -> None:
-        r"""Update NMF bases.
+    def update_basis_mm(self) -> None:
+        r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1764,10 +2008,10 @@ class TILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self) -> None:
-        r"""Update NMF activations.
+    def update_activation_mm(self) -> None:
+        r"""Update NMF activations by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`v_{kjn}` as follows:
 
         .. math::
             v_{kj}
@@ -1783,7 +2027,7 @@ class TILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            &\leftarrow \left[\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]^{\frac{p}{p+2}}v_{kjn}, \\
@@ -1834,6 +2078,199 @@ class TILRMA(ILRMAbase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_latent_me(self) -> None:
+        r"""Update latent variables in NMF by ME algorithm.
+
+        Update :math:`z_{nk}` as follows:
+
+        .. math::
+            z_{nk}
+            &\leftarrow\frac{\displaystyle\sum_{i,j}\frac{t_{ik}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,j}\dfrac{t_{ik}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            z_{nk} \\
+            z_{nk}
+            &\leftarrow\frac{z_{nk}}{\sum_{n'}z_{n'k}}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\sum_{k}z_{nk}t_{ik}v_{kj}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
+        nu = self.dof
+
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        Z = self.latent
+        T, V = self.basis, self.activation
+
+        TV = T[:, :, np.newaxis] * V[np.newaxis, :, :]
+        ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+        R_tilde = nu_nu2 * ZTV + (1 - nu_nu2) * Y2
+        RZTV = R_tilde * ZTV
+        TV_RZTV = TV[np.newaxis, :, :, :] / RZTV[:, :, np.newaxis, :]
+        num = np.sum(TV_RZTV * Y2[:, :, np.newaxis, :], axis=(1, 3))
+
+        TV_ZTV = TV[np.newaxis, :, :, :] / ZTV[:, :, np.newaxis, :]
+        denom = np.sum(TV_ZTV, axis=(1, 3))
+
+        Z = (num / denom) * Z
+        Z = Z / Z.sum(axis=0)
+
+        self.latent = Z
+
+    def update_basis_me(self) -> None:
+        r"""Update NMF bases by ME algorithm.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ik}
+            &\leftarrow
+            \frac{\displaystyle\sum_{j,n}\frac{z_{nk}v_{kj}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{j,n}
+            \dfrac{z_{nk}v_{kj}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            t_{ik}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\sum_{k}z_{nk}t_{ik}v_{kj}+\frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            t_{ikn}
+            &\leftarrow\frac{\displaystyle\sum_{j}
+            \dfrac{v_{kjn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            t_{ikn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
+        nu = self.dof
+
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZV = Z[:, :, np.newaxis] * V[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            R_tilde = nu_nu2 * ZTV + (1 - nu_nu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZV_RZTV = ZV[:, np.newaxis, :, :] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZV_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 3))
+
+            ZV_ZTV = ZV[:, np.newaxis, :, :] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZV_ZTV, axis=(0, 3))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            R_tilde = nu_nu2 * TV + (1 - nu_nu2) * Y2
+            RTV = R_tilde * TV
+            V_RTV = V[:, np.newaxis, :, :] / RTV[:, :, np.newaxis, :]
+            num = np.sum(V_RTV * Y2[:, :, np.newaxis, :], axis=3)
+
+            V_TV = V[:, np.newaxis, :, :] / TV[:, :, np.newaxis, :]
+            denom = np.sum(V_TV, axis=3)
+
+        T = (num / denom) * T
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation_me(self) -> None:
+        r"""Update NMF activations by ME algorithm.
+
+        Update :math:`v_{kjn}` as follows:
+
+        .. math::
+            v_{kj}
+            &\leftarrow\frac{\displaystyle\sum_{i,n}\frac{z_{nk}t_{ik}}
+            {\tilde{r}_{ijn}\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}
+            |y_{ijn}|^{2}}{\displaystyle\sum_{i,n}\dfrac{z_{nk}t_{ik}}{\sum_{k'}z_{nk'}t_{ik'}v_{k'j}}}
+            v_{kj}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\sum_{k}z_{nk}t_{ik}v_{kj}+\frac{2}{\nu+2}|y_{ijn}|^{2},
+
+        if ``partitioning=True``. Otherwise
+
+        .. math::
+            v_{kjn}
+            &\leftarrow\frac{\displaystyle\sum_{i}
+            \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
+            {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
+            v_{kjn}, \\
+            \tilde{r}_{ijn}
+            &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
+        """
+        nu = self.dof
+
+        if self.domain != 2:
+            raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
+
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+        else:
+            Y = self.output
+
+        Y2 = np.abs(Y) ** 2
+        nu_nu2 = nu / (nu + 2)
+
+        if self.partitioning:
+            Z = self.latent
+            T, V = self.basis, self.activation
+
+            ZT = Z[:, np.newaxis, :] * T[np.newaxis, :, :]
+            ZTV = self.reconstruct_nmf(T, V, latent=Z)
+
+            R_tilde = nu_nu2 * ZTV + (1 - nu_nu2) * Y2
+            RZTV = R_tilde * ZTV
+            ZT_RZTV = ZT[:, :, :, np.newaxis] / RZTV[:, :, np.newaxis, :]
+            num = np.sum(ZT_RZTV * Y2[:, :, np.newaxis, :], axis=(0, 1))
+
+            ZT_ZTV = ZT[:, :, :, np.newaxis] / ZTV[:, :, np.newaxis, :]
+            denom = np.sum(ZT_ZTV, axis=(0, 1))
+        else:
+            T, V = self.basis, self.activation
+
+            TV = self.reconstruct_nmf(T, V)
+
+            R_tilde = nu_nu2 * TV + (1 - nu_nu2) * Y2
+            RTV = R_tilde * TV
+            T_RTV = T[:, :, :, np.newaxis] / RTV[:, :, np.newaxis, :]
+            num = np.sum(T_RTV * Y2[:, :, np.newaxis, :], axis=1)
+
+            T_TV = T[:, :, :, np.newaxis] / TV[:, :, np.newaxis, :]
+            denom = np.sum(T_TV, axis=1)
+
+        V = (num / denom) * V
         V = self.flooring_fn(V)
 
         self.activation = V
@@ -2312,6 +2749,9 @@ class GGDILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Only ``MM`` is supported: Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -2434,6 +2874,7 @@ class GGDILRMA(ILRMAbase):
         n_basis: int,
         beta: float,
         spatial_algorithm: str = "IP",
+        source_algorithm: str = "MM",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -2462,10 +2903,12 @@ class GGDILRMA(ILRMAbase):
 
         assert 0 < beta < 2, "Shape parameter {} shoule be chosen from (0, 2).".format(beta)
         assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
-        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+        assert source_algorithm == "MM", "Not support {}.".format(source_algorithm)
+        assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
 
         self.beta = beta
         self.spatial_algorithm = spatial_algorithm
+        self.source_algorithm = source_algorithm
         self.domain = domain
         self.normalization = normalization
 
@@ -2517,6 +2960,7 @@ class GGDILRMA(ILRMAbase):
         s += "n_basis={n_basis}"
         s += ", beta={beta}"
         s += ", spatial_algorithm={spatial_algorithm}"
+        s += ", source_algorithm={source_algorithm}"
         s += ", domain={domain}"
         s += ", partitioning={partitioning}"
         s += ", normalization={normalization}"
@@ -2552,16 +2996,28 @@ class GGDILRMA(ILRMAbase):
 
     def update_source_model(self) -> None:
         r"""Update NMF bases, activations, and latent variables."""
+
+        if self.source_algorithm == "MM":
+            self.update_source_model_mm()
+        else:
+            raise ValueError(
+                "{}-algorithm-based source model updates are not supported.".format(
+                    self.source_algorithm
+                )
+            )
+
+    def update_source_model_mm(self) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
         if self.partitioning:
-            self.update_latent()
+            self.update_latent_mm()
 
-        self.update_basis()
-        self.update_activation()
+        self.update_basis_mm()
+        self.update_activation_mm()
 
-    def update_latent(self) -> None:
-        r"""Update latent variables in NMF.
+    def update_latent_mm(self) -> None:
+        r"""Update latent variables in NMF by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -2605,8 +3061,8 @@ class GGDILRMA(ILRMAbase):
 
         self.latent = Z
 
-    def update_basis(self) -> None:
-        r"""Update NMF bases.
+    def update_basis_mm(self) -> None:
+        r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -2673,8 +3129,8 @@ class GGDILRMA(ILRMAbase):
 
         self.basis = T
 
-    def update_activation(self) -> None:
-        r"""Update NMF activations.
+    def update_activation_mm(self) -> None:
+        r"""Update NMF activations by MM algorithm.
 
         Update :math:`v_{kjn}` as follows:
 

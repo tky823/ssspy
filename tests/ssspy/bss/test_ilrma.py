@@ -24,6 +24,7 @@ rng = np.random.default_rng(42)
 parameters_dof = [100]
 parameters_beta = [0.5, 1.5]
 parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+parameters_source_algorithm = ["MM", "ME"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_scale_restoration = [True, False, "projection_back", "minimal_distortion_principle"]
 parameters_ilrma_base = [2]
@@ -88,6 +89,7 @@ def test_ilrma_base(
     parameters_ilrma_latent,
 )
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -95,6 +97,7 @@ def test_gauss_ilrma_latent(
     n_sources: int,
     n_basis: int,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -123,25 +126,33 @@ def test_gauss_ilrma_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = GaussILRMA(
-        n_basis,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=True,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": True,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME" and domain != 2:
+        with pytest.raises(AssertionError) as e:
+            ilrma = GaussILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "domain parameter should be 2 when you specify ME algorithm."
+    else:
+        ilrma = GaussILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
 
 
 @pytest.mark.parametrize(
@@ -149,6 +160,7 @@ def test_gauss_ilrma_latent(
     parameters_ilrma_wo_latent,
 )
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -156,6 +168,7 @@ def test_gauss_ilrma_wo_latent(
     n_sources: int,
     n_basis: int,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -184,25 +197,33 @@ def test_gauss_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = GaussILRMA(
-        n_basis,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=False,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": False,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME" and domain != 2:
+        with pytest.raises(AssertionError) as e:
+            ilrma = GaussILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "domain parameter should be 2 when you specify ME algorithm."
+    else:
+        ilrma = GaussILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
 
 
 @pytest.mark.parametrize(
@@ -211,6 +232,7 @@ def test_gauss_ilrma_wo_latent(
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -219,6 +241,7 @@ def test_t_ilrma_latent(
     n_basis: int,
     dof: float,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -247,26 +270,34 @@ def test_t_ilrma_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = TILRMA(
-        n_basis,
-        dof=dof,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=True,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "dof": dof,
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": True,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME" and domain != 2:
+        with pytest.raises(AssertionError) as e:
+            ilrma = TILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "domain parameter should be 2 when you specify ME algorithm."
+    else:
+        ilrma = TILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
 
 
 @pytest.mark.parametrize(
@@ -275,6 +306,7 @@ def test_t_ilrma_latent(
 )
 @pytest.mark.parametrize("dof", parameters_dof)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -283,6 +315,7 @@ def test_t_ilrma_wo_latent(
     n_basis: int,
     dof: float,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -311,26 +344,34 @@ def test_t_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = TILRMA(
-        n_basis,
-        dof=dof,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=False,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "dof": dof,
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": False,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME" and domain != 2:
+        with pytest.raises(AssertionError) as e:
+            ilrma = TILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "domain parameter should be 2 when you specify ME algorithm."
+    else:
+        ilrma = TILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
 
 
 @pytest.mark.parametrize(
@@ -339,6 +380,7 @@ def test_t_ilrma_wo_latent(
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -347,6 +389,7 @@ def test_ggd_ilrma_latent(
     n_basis: int,
     beta: float,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -375,26 +418,34 @@ def test_ggd_ilrma_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = GGDILRMA(
-        n_basis,
-        beta=beta,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=True,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "beta": beta,
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": True,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME":
+        with pytest.raises(AssertionError) as e:
+            ilrma = GGDILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "Not support {}.".format(source_algorithm)
+    else:
+        ilrma = GGDILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
 
 
 @pytest.mark.parametrize(
@@ -403,6 +454,7 @@ def test_ggd_ilrma_latent(
 )
 @pytest.mark.parametrize("beta", parameters_beta)
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
+@pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("normalization", parameters_normalization_wo_latent)
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
@@ -411,6 +463,7 @@ def test_ggd_ilrma_wo_latent(
     n_basis: int,
     beta: float,
     spatial_algorithm: str,
+    source_algorithm: str,
     domain: float,
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     normalization: Optional[Union[str, bool]],
@@ -439,23 +492,31 @@ def test_ggd_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    ilrma = GGDILRMA(
-        n_basis,
-        beta=beta,
-        spatial_algorithm=spatial_algorithm,
-        domain=domain,
-        partitioning=False,
-        callbacks=callbacks,
-        normalization=normalization,
-        scale_restoration=scale_restoration,
-        rng=np.random.default_rng(42),
-    )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
+    kwargs = {
+        "beta": beta,
+        "spatial_algorithm": spatial_algorithm,
+        "source_algorithm": source_algorithm,
+        "domain": domain,
+        "partitioning": False,
+        "callbacks": callbacks,
+        "normalization": normalization,
+        "scale_restoration": scale_restoration,
+        "rng": np.random.default_rng(42),
+    }
 
-    assert spectrogram_mix.shape == spectrogram_est.shape
-    assert type(ilrma.loss[-1]) is float
+    if source_algorithm == "ME":
+        with pytest.raises(AssertionError) as e:
+            ilrma = GGDILRMA(n_basis, **kwargs)
 
-    if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
-        assert ilrma.demix_filter is None
+        assert str(e.value) == "Not support {}.".format(source_algorithm)
+    else:
+        ilrma = GGDILRMA(n_basis, **kwargs)
+        spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
-    print(ilrma)
+        assert spectrogram_mix.shape == spectrogram_est.shape
+        assert type(ilrma.loss[-1]) is float
+
+        if spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+            assert ilrma.demix_filter is None
+
+        print(ilrma)
