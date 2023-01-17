@@ -66,7 +66,9 @@ Algorithms
    :special-members: __call__
    :members:
       update_once,
-      update_source_model, update_latent, update_basis, update_activation,
+      update_source_model, update_source_model_mm, update_source_model_me,
+      update_latent_mm, update_basis_mm, update_activation_mm,
+      update_latent_me, update_basis_me, update_activation_me,
       update_spatial_model, update_spatial_model_ip1, update_spatial_model_ip2, update_spatial_model_iss1, update_spatial_model_iss2,
       compute_loss, apply_projection_back
 
