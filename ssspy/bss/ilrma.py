@@ -1601,6 +1601,9 @@ class TILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Choose ``MM`` or ``ME``. Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -2744,6 +2747,9 @@ class GGDILRMA(ILRMAbase):
             Algorithm for demixing filter updates.
             Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
             Default: ``IP``.
+        source_algorithm (str):
+            Algorithm for source model updates.
+            Only ``MM`` is supported: Default: ``MM``.
         domain (float):
             Domain parameter. Default: ``2``.
         partitioning (bool):
@@ -2866,6 +2872,7 @@ class GGDILRMA(ILRMAbase):
         n_basis: int,
         beta: float,
         spatial_algorithm: str = "IP",
+        source_algorithm: str = "MM",
         domain: float = 2,
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
@@ -2894,10 +2901,12 @@ class GGDILRMA(ILRMAbase):
 
         assert 0 < beta < 2, "Shape parameter {} shoule be chosen from (0, 2).".format(beta)
         assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
-        assert 1 <= domain <= 2, "domain parameter should be chosen from [1, 2]."
+        assert source_algorithm == "MM", "Not support {}.".format(source_algorithm)
+        assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
 
         self.beta = beta
         self.spatial_algorithm = spatial_algorithm
+        self.source_algorithm = source_algorithm
         self.domain = domain
         self.normalization = normalization
 
