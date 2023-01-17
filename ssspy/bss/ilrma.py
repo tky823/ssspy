@@ -940,7 +940,7 @@ class GaussILRMA(ILRMAbase):
     def update_activation_mm(self) -> None:
         r"""Update NMF activations by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`v_{kjn}` as follows:
 
         .. math::
             v_{kj}
@@ -2006,7 +2006,7 @@ class TILRMA(ILRMAbase):
     def update_activation_mm(self) -> None:
         r"""Update NMF activations by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`v_{kjn}` as follows:
 
         .. math::
             v_{kj}
