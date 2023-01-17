@@ -831,7 +831,7 @@ class GaussILRMA(ILRMAbase):
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -953,7 +953,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \leftarrow \left[\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{\frac{p+2}{p}}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]^{\frac{p}{p+2}}v_{kjn}.
@@ -1003,7 +1003,7 @@ class GaussILRMA(ILRMAbase):
     def update_latent_me(self) -> None:
         r"""Update latent variables in NMF by ME algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -1123,7 +1123,7 @@ class GaussILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            \leftarrow \left[\frac{\displaystyle\sum_{j}
+            \leftarrow \left[\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{(\sum_{k'}t_{ik'n}v_{k'jn})^{2}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]v_{kjn}.
@@ -1880,7 +1880,7 @@ class TILRMA(ILRMAbase):
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
@@ -2022,7 +2022,7 @@ class TILRMA(ILRMAbase):
 
         .. math::
             v_{kjn}
-            &\leftarrow \left[\frac{\displaystyle\sum_{j}
+            &\leftarrow \left[\frac{\displaystyle\sum_{i}
             \dfrac{t_{ikn}}{\tilde{r}_{ijn}\sum_{k'}t_{ik'n}v_{k'jn}}|y_{ijn}|^{2}}
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]^{\frac{p}{p+2}}v_{kjn}, \\
@@ -2993,7 +2993,7 @@ class GGDILRMA(ILRMAbase):
     def update_latent(self) -> None:
         r"""Update latent variables in NMF.
 
-        Update :math:`t_{ikn}` as follows:
+        Update :math:`z_{nk}` as follows:
 
         .. math::
             z_{nk}
