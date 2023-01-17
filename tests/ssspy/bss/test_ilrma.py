@@ -390,7 +390,23 @@ def test_ggd_ilrma_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    with pytest.raises(AssertionError) as e:
+    if source_algorithm == "ME":
+        with pytest.raises(AssertionError) as e:
+            ilrma = GGDILRMA(
+                n_basis,
+                beta=beta,
+                spatial_algorithm=spatial_algorithm,
+                source_algorithm=source_algorithm,
+                domain=domain,
+                partitioning=True,
+                callbacks=callbacks,
+                normalization=normalization,
+                scale_restoration=scale_restoration,
+                rng=np.random.default_rng(42),
+            )
+
+        assert str(e.value) == "Not support {}.".format(source_algorithm)
+    else:
         ilrma = GGDILRMA(
             n_basis,
             beta=beta,
@@ -404,9 +420,6 @@ def test_ggd_ilrma_latent(
             rng=np.random.default_rng(42),
         )
 
-    if source_algorithm == "ME":
-        assert str(e.value) == "Not support {}.".format(source_algorithm)
-    else:
         spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
         assert spectrogram_mix.shape == spectrogram_est.shape
@@ -462,7 +475,23 @@ def test_ggd_ilrma_wo_latent(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    with pytest.raises(AssertionError) as e:
+    if source_algorithm == "ME":
+        with pytest.raises(AssertionError) as e:
+            ilrma = GGDILRMA(
+                n_basis,
+                beta=beta,
+                spatial_algorithm=spatial_algorithm,
+                source_algorithm=source_algorithm,
+                domain=domain,
+                partitioning=False,
+                callbacks=callbacks,
+                normalization=normalization,
+                scale_restoration=scale_restoration,
+                rng=np.random.default_rng(42),
+            )
+
+        assert str(e.value) == "Not support {}.".format(source_algorithm)
+    else:
         ilrma = GGDILRMA(
             n_basis,
             beta=beta,
@@ -476,9 +505,6 @@ def test_ggd_ilrma_wo_latent(
             rng=np.random.default_rng(42),
         )
 
-    if source_algorithm == "ME":
-        assert str(e.value) == "Not support {}.".format(source_algorithm)
-    else:
         spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 
         assert spectrogram_mix.shape == spectrogram_est.shape
