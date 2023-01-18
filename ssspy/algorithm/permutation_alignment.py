@@ -124,6 +124,7 @@ def score_based_permutation_solver(
     sequence: np.ndarray,
     *args,
     global_iter: int = 1,
+    local_iter: int = 1,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -139,6 +140,8 @@ def score_based_permutation_solver(
             The shapes of each item should be (n_bins, n_sources, \*).
         global_iter (int):
             Number of iterations in global optimization.
+        local_iter (int):
+            Number of iterations in local optimization.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to receive (n_channels, n_bins, n_frames)
@@ -168,7 +171,7 @@ def score_based_permutation_solver(
 
         permutable = tuple(permutable)
 
-    n_sources = sequence.shape[1]
+    n_bins, n_sources = sequence.shape[:2]
     na = np.newaxis
     eye = np.eye(n_sources)
     permutations = np.array(list(itertools.permutations(range(n_sources))))
@@ -193,11 +196,51 @@ def score_based_permutation_solver(
         perm_max = np.argmax(scores, axis=1)
         perm_max = permutations[perm_max]
         sequence_normalized = _parallel_sort(sequence_normalized, perm_max)
-
         sequence = _parallel_sort(sequence, perm_max)
 
         for idx in range(len(permutable)):
             permutable[idx][:] = _parallel_sort(permutable[idx], perm_max)
+
+    # local optimization
+    for _ in range(local_iter):
+        for bin_idx in range(n_bins):
+            min_idx = max(0, bin_idx - 3)
+            max_idx = min(n_bins - 1, bin_idx + 3)
+            covariant_indices = set(range(min_idx, bin_idx)) | set(range(bin_idx + 1, max_idx + 1))
+
+            min_idx = max(0, bin_idx // 2 - 1)
+            max_idx = min(n_bins - 1, bin_idx // 2 + 1)
+            covariant_indices |= set(range(min_idx, max_idx + 1))
+
+            min_idx = max(0, 2 * bin_idx - 1)
+            max_idx = min(n_bins - 1, 2 * bin_idx + 1)
+            covariant_indices |= set(range(min_idx, max_idx + 1))
+
+            # deterministic
+            covariant_indices = sorted(list(covariant_indices))
+            covariant_sequence = sequence_normalized[covariant_indices]
+
+            scores = []
+
+            for perm in permutations:
+                num = np.mean(
+                    sequence_normalized[bin_idx, perm, na] * covariant_sequence[:, na],
+                    axis=-1,
+                )
+                denom = flooring_fn(centroid_std)
+                corr = num / denom
+                score = np.sum(eye * corr - (1 - eye) * corr, axis=(1, 2))
+                score = score.sum(axis=0)
+                scores.append(score)
+
+            scores = np.stack(scores, axis=0)
+            perm_max = np.argmax(scores, axis=0)
+            perm_max = permutations[perm_max]
+            sequence_normalized[bin_idx] = sequence_normalized[bin_idx, perm_max]
+            sequence[bin_idx] = sequence[bin_idx, perm_max]
+
+            for idx in range(len(permutable)):
+                permutable[idx][bin_idx] = permutable[idx][bin_idx, perm_max]
 
     if len(permutable) == 0:
         return sequence
