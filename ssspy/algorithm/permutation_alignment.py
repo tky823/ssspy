@@ -150,6 +150,8 @@ def score_based_permutation_solver(
             Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
     """  # noqa: W605
+    assert sequence.ndim == 3, "Dimension of sequence is expected to be 3."
+
     for pos_idx, arg in enumerate(args):
         if arg.shape[:2] != sequence.shape[:2]:
             raise ValueError("The shape of {}th argument is invalid.".format(pos_idx + 1))
