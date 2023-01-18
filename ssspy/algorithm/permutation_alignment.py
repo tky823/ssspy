@@ -10,7 +10,7 @@ EPS = 1e-10
 
 
 def correlation_based_permutation_solver(
-    separated: np.ndarray,
+    sequence: np.ndarray,
     *args,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
@@ -23,8 +23,8 @@ def correlation_based_permutation_solver(
     between frequencies [#sawada2010underdetermined]_.
 
     Args:
-        separated (numpy.ndarray):
-            Separated spectrograms with shape of (n_bins, n_sources, n_frames).
+        sequence (numpy.ndarray):
+            Array-like sequence of shape (n_bins, n_sources, n_frames).
         args (tuple of numpy.ndarray, optional):
             Positional arguments each of which is ``numpy.ndarray``.
             The shapes of each item should be (n_bins, n_sources, \*).
@@ -36,7 +36,7 @@ def correlation_based_permutation_solver(
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-15)``.
         overwrite (bool):
-            Overwrite ``demix_filter`` if ``overwrite=True``.
+            Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
 
     Returns:
@@ -59,14 +59,14 @@ def correlation_based_permutation_solver(
         which is different from other functions.
     """
     for pos_idx, arg in enumerate(args):
-        if arg.shape[:2] != separated.shape[:2]:
+        if arg.shape[:2] != sequence.shape[:2]:
             raise ValueError("The shape of {}th argument is invalid.".format(pos_idx + 1))
 
     if overwrite:
-        Y = separated
+        Y = sequence
         permutable = args
     else:
-        Y = separated.copy()
+        Y = sequence.copy()
 
         permutable = []
 
