@@ -380,7 +380,9 @@ class CACGMM(CACGMMBase):
         self.permutation_alignment = permutation_alignment
         self.reference_id = reference_id
 
-        if type(permutation_alignment) is str and permutation_alignment in [
+        if type(permutation_alignment) is bool and permutation_alignment:
+            valid_keys = {"global_iter", "local_iter"}
+        elif type(permutation_alignment) is str and permutation_alignment in [
             "prior_score",
             "spectrogram_score",
         ]:
