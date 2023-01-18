@@ -123,7 +123,7 @@ def correlation_based_permutation_solver(
 def score_based_permutation_solver(
     sequence: np.ndarray,
     *args,
-    n_iter: int = 1,
+    global_iter: int = 1,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -137,7 +137,7 @@ def score_based_permutation_solver(
         args (tuple of numpy.ndarray, optional):
             Positional arguments each of which is ``numpy.ndarray``.
             The shapes of each item should be (n_bins, n_sources, \*).
-        n_iter (int):
+        global_iter (int):
             Number of iterations in global optimization.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
@@ -173,29 +173,26 @@ def score_based_permutation_solver(
     eye = np.eye(n_sources)
     permutations = np.array(list(itertools.permutations(range(n_sources))))
 
-    for _ in range(n_iter):
-        centroid = sequence.mean(axis=0)
+    sequence_mean = sequence.mean(axis=-1, keepdims=True)
+    sequence_std = sequence.std(axis=-1, keepdims=True)
+    sequence_normalized = (sequence - sequence_mean) / sequence_std
 
-        sequence_normalized = sequence - sequence.mean(axis=-1, keepdims=True)
-        centroid_normalized = centroid - centroid.mean(axis=-1, keepdims=True)
-
-        sequence_std = sequence_normalized.std(axis=-1)
-        centroid_std = centroid_normalized.std(axis=-1)
-
+    for _ in range(global_iter):
+        centroid = sequence_normalized.mean(axis=0)
+        centroid_std = centroid.std(axis=-1, keepdims=True)
         scores = []
 
         for perm in permutations:
-            num = np.mean(sequence_normalized[:, perm, na] * centroid_normalized[na, :], axis=-1)
-            denom = sequence_std[:, perm, na] * centroid_std[na, perm]
-            corr = num / flooring_fn(denom)
-
+            num = np.mean(sequence_normalized[:, perm, na] * centroid[na, :], axis=-1)
+            denom = flooring_fn(centroid_std)
+            corr = num / denom
             score = np.sum(eye * corr - (1 - eye) * corr, axis=(1, 2))
             scores.append(score)
 
         scores = np.stack(scores, axis=1)
         perm_max = np.argmax(scores, axis=1)
         perm_max = permutations[perm_max]
-        sequence = _parallel_sort(sequence, perm_max)
+        sequence_normalized = _parallel_sort(sequence_normalized, perm_max)
 
         for idx in range(len(permutable)):
             permutable[idx][:] = _parallel_sort(permutable[idx], perm_max)
