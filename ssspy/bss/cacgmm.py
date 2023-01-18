@@ -371,6 +371,7 @@ class CACGMM(CACGMMBase):
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
+        **kwargs,
     ) -> None:
         super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
 
@@ -378,6 +379,21 @@ class CACGMM(CACGMMBase):
         self.normalization = normalization
         self.permutation_alignment = permutation_alignment
         self.reference_id = reference_id
+
+        if type(permutation_alignment) is str and permutation_alignment in [
+            "prior_score",
+            "spectrogram_score",
+        ]:
+            valid_keys = {"global_iter", "local_iter"}
+        else:
+            valid_keys = set()
+
+        invalid_keys = set(kwargs) - valid_keys
+
+        assert invalid_keys == set(), "Invalid keywords {} are given.".format(invalid_keys)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
