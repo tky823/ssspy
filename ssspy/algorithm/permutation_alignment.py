@@ -118,3 +118,97 @@ def correlation_based_permutation_solver(
         return Y, permutable[0]
     else:
         return Y, permutable
+
+
+def score_based_permutation_solver(
+    sequence: np.ndarray,
+    *args,
+    n_iter: int = 1,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+    overwrite: bool = True,
+) -> np.ndarray:
+    """Align permutations between frequencies based on score value.
+
+    Args:
+        sequence (numpy.ndarray):
+            Array-like sequence of shape (n_bins, n_sources, n_frames).
+        args (tuple of numpy.ndarray, optional):
+            Positional arguments each of which is ``numpy.ndarray``.
+            The shapes of each item should be (n_bins, n_sources, \*).
+        n_iter (int):
+            Number of iterations in global optimization.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames).
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-15)``.
+        overwrite (bool):
+            Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
+            Default: ``True``.
+    """  # noqa: W605
+    for pos_idx, arg in enumerate(args):
+        if arg.shape[:2] != sequence.shape[:2]:
+            raise ValueError("The shape of {}th argument is invalid.".format(pos_idx + 1))
+
+    if overwrite:
+        permutable = args
+    else:
+        sequence = sequence.copy()
+
+        permutable = []
+
+        for arg in args:
+            permutable.append(arg.copy())
+
+        permutable = tuple(permutable)
+
+    n_sources = sequence.shape[1]
+    na = np.newaxis
+    eye = np.eye(n_sources)
+    permutations = np.array(list(itertools.permutations(range(n_sources))))
+
+    for _ in range(n_iter):
+        centroid = sequence.mean(axis=0)
+
+        sequence_normalized = sequence - sequence.mean(axis=-1, keepdims=True)
+        centroid_normalized = centroid - centroid.mean(axis=-1, keepdims=True)
+
+        sequence_std = sequence_normalized.std(axis=-1)
+        centroid_std = centroid_normalized.std(axis=-1)
+
+        scores = []
+
+        for perm in permutations:
+            num = np.mean(sequence_normalized[:, perm, na] * centroid_normalized[na, :], axis=-1)
+            denom = sequence_std[:, perm, na] * centroid_std[na, perm]
+            corr = num / flooring_fn(denom)
+
+            score = np.sum(eye * corr - (1 - eye) * corr, axis=(1, 2))
+            scores.append(score)
+
+        scores = np.stack(scores, axis=1)
+        perm_max = np.argmax(scores, axis=1)
+        perm_max = permutations[perm_max]
+        sequence = _parallel_sort(sequence, perm_max)
+
+        for idx in range(len(permutable)):
+            permutable[idx][:] = _parallel_sort(permutable[idx], perm_max)
+
+    if len(permutable) == 0:
+        return sequence
+    elif len(permutable) == 1:
+        return sequence, permutable[0]
+    else:
+        return sequence, permutable
+
+
+def _parallel_sort(X: np.ndarray, indices: np.ndarray) -> np.ndarray:
+    shape = X.shape
+    idx = np.repeat(indices, repeats=np.prod(shape[2:]), axis=-1).reshape(shape)
+    X = np.take_along_axis(X, idx, axis=1)
+
+    return X
