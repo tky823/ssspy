@@ -3,7 +3,10 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from ..algorithm.permutation_alignment import correlation_based_permutation_solver
+from ..algorithm.permutation_alignment import (
+    correlation_based_permutation_solver,
+    score_based_permutation_solver,
+)
 from ..linalg.quadratic import quadratic
 from ..special.flooring import max_flooring
 from ..special.logsumexp import logsumexp
@@ -210,10 +213,67 @@ class CACGMMBase(IterativeMethodBase):
 
     def solve_permutation(self) -> None:
         r"""Align posteriors and separated spectrograms"""
-        # TODO: clustering priors instead of spectrogram.
 
-        assert self.permutation_alignment, "Set self.permutation_alignment=True."
+        permutation_alignment = self.permutation_alignment
 
+        assert permutation_alignment, "Set permutation_alignment=True."
+
+        if type(permutation_alignment) is bool:
+            # when permutation_alignment is True
+            permutation_alignment = "prior_score"
+
+        if permutation_alignment in ["prior_score", "amplitude_score"]:
+            self.solve_permutation_by_score()
+        elif permutation_alignment in ["prior_correlation", "amplitude_correlation"]:
+            self.solve_permutation_by_correlation()
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+    def solve_permutation_by_score(self) -> None:
+        r"""Align posteriors and separated spectrograms by score value."""
+        X = self.input
+        alpha = self.mixing
+        B = self.covariance
+        gamma = self.posterior
+
+        if hasattr(self, "global_iter"):
+            global_iter = self.global_iter
+        else:
+            global_iter = 1
+
+        if hasattr(self, "local_iter"):
+            local_iter = self.local_iter
+        else:
+            local_iter = 1
+
+        Y = self.separate(X, posterior=self.posterior)
+
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+        gamma, (alpha, B) = score_based_permutation_solver(
+            gamma,
+            alpha,
+            B,
+            global_iter=global_iter,
+            local_iter=local_iter,
+            flooring_fn=self.flooring_fn,
+        )
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+
+        Y = self.separate(X, posterior=gamma)
+
+        self.mixing = alpha
+        self.covariance = B
+        self.posterior = gamma
+        self.output = Y
+
+    def solve_permutation_by_correlation(self) -> None:
+        r"""Align posteriors and separated spectrograms by correlation."""
         X = self.input
         alpha = self.mixing
         B = self.covariance
