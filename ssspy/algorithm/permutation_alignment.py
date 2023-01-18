@@ -171,6 +171,11 @@ def score_based_permutation_solver(
 
         permutable = tuple(permutable)
 
+    if flooring_fn is None:
+        flooring_fn = identity
+    else:
+        flooring_fn = flooring_fn
+
     n_bins, n_sources = sequence.shape[:2]
     na = np.newaxis
     eye = np.eye(n_sources)
