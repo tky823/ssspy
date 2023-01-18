@@ -222,17 +222,29 @@ class CACGMMBase(IterativeMethodBase):
             # when permutation_alignment is True
             permutation_alignment = "prior_score"
 
-        if permutation_alignment in ["prior_score", "amplitude_score"]:
-            self.solve_permutation_by_score()
-        elif permutation_alignment in ["prior_correlation", "amplitude_correlation"]:
-            self.solve_permutation_by_correlation()
+        if permutation_alignment in ["prior_score", "prior_correlation"]:
+            target = "prior"
+        elif permutation_alignment in ["spectrogram_score", "spectrogram_correlation"]:
+            target = "spectrogram"
         else:
             raise NotImplementedError(
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_score(self) -> None:
+        if permutation_alignment in ["prior_score", "spectrogram_score"]:
+            self.solve_permutation_by_score(target=target)
+        elif permutation_alignment in ["prior_correlation", "spectrogram_correlation"]:
+            self.solve_permutation_by_correlation(target=target)
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+    def solve_permutation_by_score(self, target: str = "prior") -> None:
         r"""Align posteriors and separated spectrograms by score value."""
+
+        assert target == "prior", "Only prior is supported as target."
+
         X = self.input
         alpha = self.mixing
         B = self.covariance
@@ -272,8 +284,11 @@ class CACGMMBase(IterativeMethodBase):
         self.posterior = gamma
         self.output = Y
 
-    def solve_permutation_by_correlation(self) -> None:
+    def solve_permutation_by_correlation(self, target: str = "spectrogram") -> None:
         r"""Align posteriors and separated spectrograms by correlation."""
+
+        assert target == "spectrogram", "Only spectrogram is supported as target."
+
         X = self.input
         alpha = self.mixing
         B = self.covariance
