@@ -194,6 +194,8 @@ def score_based_permutation_solver(
         perm_max = permutations[perm_max]
         sequence_normalized = _parallel_sort(sequence_normalized, perm_max)
 
+        sequence = _parallel_sort(sequence, perm_max)
+
         for idx in range(len(permutable)):
             permutable[idx][:] = _parallel_sort(permutable[idx], perm_max)
 
