@@ -338,7 +338,55 @@ class MNMFBase(IterativeMethodBase):
         self.spatial = H
 
 
-class GaussMNMF(MNMFBase):
+class FastMNMFbase(MNMFbase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["FastMNMFbase"], None], List[Callable[["FastMNMFbase"], None]]]
+        ] = None,
+        normalization: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def _reset(self, **kwargs) -> None:
+        super()._reset(**kwargs)
+
+        n_channels = self.n_channels
+        n_bins = self.n_bins
+
+        if not hasattr(self, "diagonalizer"):
+            Q = np.eye(n_channels, n_channels, dtype=np.complex128)
+            Q = np.tile(Q, reps=(n_bins, 1, 1))
+        else:
+            if self.diagonalizer is None:
+                Q = None
+            else:
+                # To avoid overwriting ``diagonalizer`` given by keyword arguments.
+                Q = self.diagonalizer.copy()
+
+        self.diagonalizer = Q
+
+
+class GaussMNMF(MNMFbase):
     def __init__(
         self,
         n_basis: int,
