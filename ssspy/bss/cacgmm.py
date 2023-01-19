@@ -243,7 +243,9 @@ class CACGMMBase(IterativeMethodBase):
     def solve_permutation_by_score(self, target: str = "posterior") -> None:
         r"""Align posteriors and separated spectrograms by score value."""
 
-        assert target == "posterior", "Only posterior is supported as target."
+        assert target in ["posterior", "spectrogram"], "Invalid target {} is specified.".format(
+            target
+        )
 
         X = self.input
         alpha = self.mixing
@@ -260,19 +262,37 @@ class CACGMMBase(IterativeMethodBase):
         else:
             local_iter = 1
 
-        Y = self.separate(X, posterior=self.posterior)
+        Y = self.separate(X, posterior=gamma)
 
         alpha = alpha.transpose(1, 0)
         B = B.transpose(1, 0, 2, 3)
         gamma = gamma.transpose(1, 0, 2)
-        gamma, (alpha, B) = score_based_permutation_solver(
-            gamma,
-            alpha,
-            B,
-            global_iter=global_iter,
-            local_iter=local_iter,
-            flooring_fn=self.flooring_fn,
-        )
+
+        if target == "posterior":
+            gamma, (alpha, B) = score_based_permutation_solver(
+                gamma,
+                alpha,
+                B,
+                global_iter=global_iter,
+                local_iter=local_iter,
+                flooring_fn=self.flooring_fn,
+            )
+        elif target == "spectrogram":
+            Y = Y.transpose(1, 0, 2)
+            amplitude = np.abs(Y)
+
+            _, (alpha, B, gamma) = score_based_permutation_solver(
+                amplitude,
+                alpha,
+                B,
+                gamma,
+                global_iter=global_iter,
+                local_iter=local_iter,
+                flooring_fn=self.flooring_fn,
+            )
+        else:
+            raise ValueError("Invalid target {} is specified.".format(target))
+
         alpha = alpha.transpose(1, 0)
         B = B.transpose(1, 0, 2, 3)
         gamma = gamma.transpose(1, 0, 2)
