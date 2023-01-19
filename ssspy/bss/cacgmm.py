@@ -220,10 +220,10 @@ class CACGMMBase(IterativeMethodBase):
 
         if type(permutation_alignment) is bool:
             # when permutation_alignment is True
-            permutation_alignment = "prior_score"
+            permutation_alignment = "posterior_score"
 
-        if permutation_alignment in ["prior_score", "prior_correlation"]:
-            target = "prior"
+        if permutation_alignment in ["posterior_score", "posterior_correlation"]:
+            target = "posterior"
         elif permutation_alignment in ["spectrogram_score", "spectrogram_correlation"]:
             target = "spectrogram"
         else:
@@ -231,19 +231,19 @@ class CACGMMBase(IterativeMethodBase):
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-        if permutation_alignment in ["prior_score", "spectrogram_score"]:
+        if permutation_alignment in ["posterior_score", "spectrogram_score"]:
             self.solve_permutation_by_score(target=target)
-        elif permutation_alignment in ["prior_correlation", "spectrogram_correlation"]:
+        elif permutation_alignment in ["posterior_correlation", "spectrogram_correlation"]:
             self.solve_permutation_by_correlation(target=target)
         else:
             raise NotImplementedError(
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_score(self, target: str = "prior") -> None:
+    def solve_permutation_by_score(self, target: str = "posterior") -> None:
         r"""Align posteriors and separated spectrograms by score value."""
 
-        assert target == "prior", "Only prior is supported as target."
+        assert target == "posterior", "Only posterior is supported as target."
 
         X = self.input
         alpha = self.mixing
@@ -383,7 +383,7 @@ class CACGMM(CACGMMBase):
         if type(permutation_alignment) is bool and permutation_alignment:
             valid_keys = {"global_iter", "local_iter"}
         elif type(permutation_alignment) is str and permutation_alignment in [
-            "prior_score",
+            "posterior_score",
             "spectrogram_score",
         ]:
             valid_keys = {"global_iter", "local_iter"}
