@@ -3,7 +3,6 @@ from typing import Callable, Iterable, Optional, Tuple
 import numpy as np
 import pytest
 
-from ssspy.bss._select_pair import combination_pair_selector, sequential_pair_selector
 from ssspy.bss._update_spatial_model import (
     update_by_block_decomposition_vcd,
     update_by_ip1,
@@ -13,6 +12,7 @@ from ssspy.bss._update_spatial_model import (
     update_by_iss2,
 )
 from ssspy.special import add_flooring, max_flooring
+from ssspy.utils import combination_pair_selector, sequential_pair_selector
 
 
 def negative_pair_selector(n_sources):
