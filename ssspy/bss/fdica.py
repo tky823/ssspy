@@ -11,7 +11,7 @@ from ..algorithm import (
 )
 from ..algorithm.permutation_alignment import correlation_based_permutation_solver
 from ..special.flooring import max_flooring
-from ._select_pair import sequential_pair_selector
+from ..utils.pair_selector import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
 
@@ -877,7 +877,7 @@ class AuxFDICA(FDICABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> def contrast_fn(y):
             ...     return 2 * np.abs(y)
@@ -1508,7 +1508,7 @@ class AuxLaplaceFDICA(AuxFDICA):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = \

@@ -11,7 +11,7 @@ from ..algorithm import (
     projection_back,
 )
 from ..special.flooring import max_flooring
-from ._select_pair import sequential_pair_selector
+from ..utils.pair_selector import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase
 
@@ -607,7 +607,7 @@ class GaussILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -645,7 +645,7 @@ class GaussILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -1662,7 +1662,7 @@ class TILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -1702,7 +1702,7 @@ class TILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2807,7 +2807,7 @@ class GGDILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2847,7 +2847,7 @@ class GGDILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \

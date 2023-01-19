@@ -12,7 +12,7 @@ from ..algorithm import (
 from ..linalg import eigh, prox
 from ..special.flooring import max_flooring
 from ..transform import whiten
-from ._select_pair import sequential_pair_selector
+from ..utils.pair_selector import sequential_pair_selector
 from ._update_spatial_model import (
     update_by_ip1,
     update_by_ip2_one_pair,
@@ -1436,7 +1436,7 @@ class AuxIVA(AuxIVABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> def contrast_fn(y):
             ...     return 2 * np.linalg.norm(y, axis=1)
@@ -1486,7 +1486,7 @@ class AuxIVA(AuxIVABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> def contrast_fn(y):
             ...     return 2 * np.linalg.norm(y, axis=1)
@@ -2699,7 +2699,7 @@ class AuxLaplaceIVA(AuxIVA):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2731,7 +2731,7 @@ class AuxLaplaceIVA(AuxIVA):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2854,7 +2854,7 @@ class AuxGaussIVA(AuxIVA):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2886,7 +2886,7 @@ class AuxGaussIVA(AuxIVA):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.pair_selector import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
