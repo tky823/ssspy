@@ -1546,10 +1546,8 @@ class AuxIVA(AuxIVABase):
         self.spatial_algorithm = spatial_algorithm
 
         if pair_selector is None:
-            if spatial_algorithm == "IP2":
+            if spatial_algorithm in ["IP2", "ISS2"]:
                 self.pair_selector = sequential_pair_selector
-            elif spatial_algorithm == "ISS2":
-                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
