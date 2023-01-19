@@ -8,7 +8,7 @@ from ..algorithm.permutation_alignment import (
     score_based_permutation_solver,
 )
 from ..linalg.quadratic import quadratic
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
 from ..special.logsumexp import logsumexp
 from ..special.softmax import softmax
 from ._psd import to_psd
@@ -25,6 +25,11 @@ class CACGMMBase(IterativeMethodBase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -40,6 +45,9 @@ class CACGMMBase(IterativeMethodBase):
     def __init__(
         self,
         n_sources: Optional[int] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[
                 Callable[["CACGMMBase"], None],
@@ -55,6 +63,11 @@ class CACGMMBase(IterativeMethodBase):
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         self.n_sources = n_sources
+
+        if flooring_fn is None:
+            self.flooring_fn = identity
+        else:
+            self.flooring_fn = flooring_fn
 
         if rng is None:
             rng = np.random.default_rng()
@@ -393,9 +406,14 @@ class CACGMM(CACGMMBase):
         rng: Optional[np.random.Generator] = None,
         **kwargs,
     ) -> None:
-        super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
+        super().__init__(
+            n_sources=n_sources,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            record_loss=record_loss,
+            rng=rng,
+        )
 
-        self.flooring_fn = flooring_fn
         self.normalization = normalization
         self.permutation_alignment = permutation_alignment
         self.reference_id = reference_id
