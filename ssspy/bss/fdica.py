@@ -238,7 +238,23 @@ class FDICABase(IterativeMethodBase):
     def solve_permutation(self) -> None:
         r"""Align demixing filters and separated spectrograms"""
 
-        assert self.permutation_alignment, "Set self.permutation_alignment=True."
+        permutation_alignment = self.permutation_alignment
+
+        assert permutation_alignment, "Set permutation_alignment=True."
+
+        if type(permutation_alignment) is bool:
+            # when permutation_alignment is True
+            permutation_alignment = "spectrogram_correlation"
+
+        if permutation_alignment == "spectrogram_correlation":
+            self.solve_permutation_by_correlation()
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+    def solve_permutation_by_correlation(self) -> None:
+        r"""Align posteriors and separated spectrograms by correlation."""
 
         X, W = self.input, self.demix_filter
 
