@@ -254,7 +254,13 @@ class CACGMMBase(IterativeMethodBase):
             )
 
     def solve_permutation_by_score(self, target: str = "posterior") -> None:
-        r"""Align posteriors and separated spectrograms by score value."""
+        r"""Align posteriors and separated spectrograms by score value.
+
+        Args:
+            target (str):
+                Target to compute score values. Choose ``posterior`` or ``spectrogram``.
+                Default: ``posterior``.
+        """
 
         assert target in ["posterior", "spectrogram"], "Invalid target {} is specified.".format(
             target
@@ -318,7 +324,13 @@ class CACGMMBase(IterativeMethodBase):
         self.output = Y
 
     def solve_permutation_by_correlation(self, target: str = "spectrogram") -> None:
-        r"""Align posteriors and separated spectrograms by correlation."""
+        r"""Align posteriors and separated spectrograms by correlation.
+
+        Args:
+            target (str):
+                Target to compute correlations. Choose ``posterior`` or ``spectrogram``.
+                Default: ``spectrogram``.
+        """
 
         assert target == "spectrogram", "Only spectrogram is supported as target."
 
