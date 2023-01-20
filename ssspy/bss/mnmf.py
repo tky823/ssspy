@@ -175,7 +175,7 @@ class MNMFBase(IterativeMethodBase):
                 Default: ``None``.
         """
         n_basis = self.n_basis
-        n_sources, n_channels = self.n_sources, self.n_channels
+        n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if rng is None:
@@ -223,17 +223,6 @@ class MNMFBase(IterativeMethodBase):
 
             self.basis, self.activation = T, V
 
-        if not hasattr(self, "spatial"):
-            H = np.eye(n_channels, dtype=self.input.dtype)
-            trace = np.trace(H, axis1=-2, axis2=-1)
-            H = H / np.real(trace)
-            H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
-        else:
-            # To avoid overwriting.
-            H = self.spatial.copy()
-
-        self.spatial = H
-
     def separate(self, input: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Implement 'separate' method.")
 
@@ -271,6 +260,62 @@ class MNMFBase(IterativeMethodBase):
             Lamb = np.sum(Z[:, np.newaxis, :, np.newaxis] * TV[np.newaxis, :, :, :], axis=2)
 
         return Lamb
+
+
+class MNMF(MNMFbase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[Union[Callable[["MNMF"], None], List[Callable[["MNMF"], None]]]] = None,
+        normalization: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
+        r"""Initialize NMF.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        if rng is None:
+            rng = np.random.default_rng()
+
+        super()._init_nmf(rng=rng)
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        if not hasattr(self, "spatial"):
+            H = np.eye(n_channels, dtype=self.input.dtype)
+            trace = np.trace(H, axis1=-2, axis2=-1)
+            H = H / np.real(trace)
+            H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
+        else:
+            # To avoid overwriting.
+            H = self.spatial.copy()
+
+        self.spatial = H
 
     def reconstruct_mnmf(
         self,
@@ -386,7 +431,7 @@ class FastMNMFbase(MNMFbase):
         self.diagonalizer = Q
 
 
-class GaussMNMF(MNMFbase):
+class GaussMNMF(MNMF):
     def __init__(
         self,
         n_basis: int,
@@ -396,7 +441,7 @@ class GaussMNMF(MNMFbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["MNMFBase"], None], List[Callable[["MNMFBase"], None]]]
+            Union[Callable[["GaussMNMF"], None], List[Callable[["GaussMNMF"], None]]]
         ] = None,
         normalization: bool = True,
         record_loss: bool = True,
