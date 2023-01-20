@@ -736,3 +736,74 @@ class GaussMNMF(MNMF):
         Z = Z / Z.sum(axis=0)
 
         self.latent = Z
+
+
+class FastGaussMNMF(FastMNMFbase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["FastGaussMNMF"], None], List[Callable[["FastGaussMNMF"], None]]]
+        ] = None,
+        normalization: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of MNMF.
+        """
+        assert self.input is not None, "Specify data!"
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+        X = self.input
+
+        n_sources = self.n_sources
+        n_channels, n_bins, n_frames = X.shape
+
+        if n_sources is None:
+            n_sources = n_channels
+
+        self.n_sources, self.n_channels = n_sources, n_channels
+        self.n_bins, self.n_frames = n_bins, n_frames
+
+        self._init_instant_covariance()
+        self._init_nmf(rng=self.rng)
+        self._init_diagonalizer()
+
+        self.output = self.separate(X)
+
+    def _init_diagonalizer(self) -> None:
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        if not hasattr(self, "diagonalizer"):
+            Q = np.ones((n_bins, n_sources, n_channels))
+        else:
+            # To avoid overwriting.
+            Q = self.diagonalizer.copy()
+
+        self.diagonalizer = Q
