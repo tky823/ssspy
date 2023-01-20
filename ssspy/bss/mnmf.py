@@ -808,3 +808,21 @@ class FastGaussMNMF(FastMNMFbase):
             reference_id=reference_id,
             rng=rng,
         )
+
+    def __repr__(self) -> str:
+        s = "FastGaussMNMF("
+        s += "n_basis={n_basis}"
+
+        if self.n_sources is not None:
+            s += ", n_sources={n_sources}"
+
+        if hasattr(self, "n_channels"):
+            s += ", n_channels={n_channels}"
+
+        s += ", partitioning={partitioning}"
+        s += ", record_loss={record_loss}"
+        s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
