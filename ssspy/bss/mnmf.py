@@ -797,6 +797,7 @@ class FastGaussMNMF(FastMNMFbase):
         self.output = self.separate(X)
 
     def _init_diagonalizer(self) -> None:
+        """Initialize diagonalizer."""
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
