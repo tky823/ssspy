@@ -135,14 +135,6 @@ class MNMFBase(IterativeMethodBase):
             setattr(self, key, kwargs[key])
 
         X = self.input
-        XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
-        XX = XX.transpose(2, 3, 0, 1)
-        diag = np.diagonal(XX, axis1=-2, axis2=-1)
-        diag = np.real(diag)
-        diag = np.maximum(diag, 0)
-        diag = self.flooring_fn(diag)
-        eye = np.eye(diag.shape[-1])
-        self.instant_covariance = (1 - eye) * XX + eye * diag[..., np.newaxis]
 
         n_sources = self.n_sources
         n_channels, n_bins, n_frames = X.shape
