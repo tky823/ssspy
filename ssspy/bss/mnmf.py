@@ -405,20 +405,44 @@ class FastMNMFbase(MNMFbase):
         )
 
     def _reset(self, **kwargs) -> None:
-        super()._reset(**kwargs)
+        r"""Reset attributes by given keyword arguments.
 
-        n_channels = self.n_channels
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of MNMF.
+        """
+        assert self.input is not None, "Specify data!"
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+        X = self.input
+
+        n_sources = self.n_sources
+        n_channels, n_bins, n_frames = X.shape
+
+        if n_sources is None:
+            n_sources = n_channels
+
+        self.n_sources, self.n_channels = n_sources, n_channels
+        self.n_bins, self.n_frames = n_bins, n_frames
+
+        self._init_instant_covariance()
+        self._init_nmf(rng=self.rng)
+        self._init_diagonalizer()
+
+        self.output = self.separate(X)
+
+    def _init_diagonalizer(self) -> None:
+        """Initialize diagonalizer."""
+        n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
         if not hasattr(self, "diagonalizer"):
-            Q = np.eye(n_channels, n_channels, dtype=np.complex128)
-            Q = np.tile(Q, reps=(n_bins, 1, 1))
+            Q = np.ones((n_bins, n_sources, n_channels))
         else:
-            if self.diagonalizer is None:
-                Q = None
-            else:
-                # To avoid overwriting ``diagonalizer`` given by keyword arguments.
-                Q = self.diagonalizer.copy()
+            # To avoid overwriting.
+            Q = self.diagonalizer.copy()
 
         self.diagonalizer = Q
 
@@ -766,45 +790,3 @@ class FastGaussMNMF(FastMNMFbase):
             reference_id=reference_id,
             rng=rng,
         )
-
-    def _reset(self, **kwargs) -> None:
-        r"""Reset attributes by given keyword arguments.
-
-        Args:
-            kwargs:
-                Keyword arguments to set as attributes of MNMF.
-        """
-        assert self.input is not None, "Specify data!"
-
-        for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
-
-        X = self.input
-
-        n_sources = self.n_sources
-        n_channels, n_bins, n_frames = X.shape
-
-        if n_sources is None:
-            n_sources = n_channels
-
-        self.n_sources, self.n_channels = n_sources, n_channels
-        self.n_bins, self.n_frames = n_bins, n_frames
-
-        self._init_instant_covariance()
-        self._init_nmf(rng=self.rng)
-        self._init_diagonalizer()
-
-        self.output = self.separate(X)
-
-    def _init_diagonalizer(self) -> None:
-        """Initialize diagonalizer."""
-        n_sources, n_channels = self.n_sources, self.n_channels
-        n_bins = self.n_bins
-
-        if not hasattr(self, "diagonalizer"):
-            Q = np.ones((n_bins, n_sources, n_channels))
-        else:
-            # To avoid overwriting.
-            Q = self.diagonalizer.copy()
-
-        self.diagonalizer = Q
