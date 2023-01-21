@@ -902,12 +902,11 @@ class FastGaussMNMF(FastMNMFBase):
             \right)
             - \log\det\boldsymbol{R}_{ij}
             \right\} \\
-            &:=-\frac{1}{J}\sum_{i,j,m}\left\{
-            \sum_{m}|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}
-            \left(\lambda_{ijn}d_{inm}\right)^{-1}
-            - \log\sum_{n}\lambda_{ijn}d_{inm}
-            \right\}
-            + \sum_{i}2\log\det\boldsymbol{Q}_{i}.
+            &:=\frac{1}{J}\sum_{i,j,m}\left\{
+            \frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}}
+            {\sum_{n}\lambda_{ijn}d_{inm}}
+            + \log\sum_{n}\lambda_{ijn}d_{inm}\right\}
+            - \sum_{i}2\log\det\boldsymbol{Q}_{i}.
 
         Returns:
             Computed loss.
@@ -927,7 +926,7 @@ class FastGaussMNMF(FastMNMFBase):
         QX = Q @ X.transpose(1, 0, 2)
         QX = np.abs(QX) ** 2
         logdetQ = self.compute_logdet(Q)
-        loss = np.sum(np.log(LambD) - QX / LambD, axis=1)
+        loss = np.sum(QX / LambD + np.log(LambD), axis=1)
         loss = np.mean(loss, axis=-1) - 2 * logdetQ
         loss = loss.sum(axis=0)
         loss = loss.item()
