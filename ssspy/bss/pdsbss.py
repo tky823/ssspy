@@ -14,7 +14,7 @@ EPS = 1e-10
 
 
 class PDSBSSBase:
-    r"""Base class of based on blind source separation \
+    r"""Base class of blind source separation \
     via proximal splitting algorithm [#yatabe2018determined]_.
 
     Args:
