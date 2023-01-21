@@ -447,22 +447,39 @@ class FastMNMFbase(MNMFbase):
 
         self._init_instant_covariance()
         self._init_nmf(rng=self.rng)
-        self._init_diagonalizer()
+        self._init_diagonalizer(rng=self.rng)
 
         self.output = self.separate(X)
 
-    def _init_diagonalizer(self) -> None:
-        """Initialize diagonalizer."""
+    def _init_diagonalizer(self, rng: Optional[np.random.Generator] = None) -> None:
+        """Initialize diagonalizer.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
+        if rng is None:
+            rng = np.random.default_rng()
+
         if not hasattr(self, "diagonalizer"):
-            Q = np.ones((n_bins, n_sources, n_channels))
+            Q = np.eye(n_channels, dtype=np.complex128)
+            Q = np.tile(Q, reps=(n_bins, 1, 1))
         else:
             # To avoid overwriting.
             Q = self.diagonalizer.copy()
 
-        self.diagonalizer = Q
+        if not hasattr(self, "diagonal"):
+            D = rng.random((n_bins, n_sources, n_channels))
+            D = self.flooring_fn(D)
+        else:
+            D = self.diagonal
+
+        self.diagonalizer, self.diagonal = Q, D
 
 
 class GaussMNMF(MNMF):
