@@ -449,11 +449,36 @@ class FastMNMFBase(MNMFBase):
         self._init_instant_covariance()
         self._init_nmf(rng=self.rng)
         self._init_diagonalizer(rng=self.rng)
+        self._init_spatial(rng=self.rng)
 
         self.output = self.separate(X)
 
     def _init_diagonalizer(self, rng: Optional[np.random.Generator] = None) -> None:
         """Initialize diagonalizer.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        n_channels = self.n_channels
+        n_bins = self.n_bins
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        if not hasattr(self, "diagonalizer"):
+            Q = np.eye(n_channels, dtype=np.complex128)
+            Q = np.tile(Q, reps=(n_bins, 1, 1))
+        else:
+            # To avoid overwriting.
+            Q = self.diagonalizer.copy()
+
+        self.diagonalizer = Q
+
+    def _init_spatial(self, rng: Optional[np.random.Generator] = None) -> None:
+        """Initialize diagonal elements of spatial covariance matrices.
 
         Args:
             rng (numpy.random.Generator, optional):
@@ -467,20 +492,13 @@ class FastMNMFBase(MNMFBase):
         if rng is None:
             rng = np.random.default_rng()
 
-        if not hasattr(self, "diagonalizer"):
-            Q = np.eye(n_channels, dtype=np.complex128)
-            Q = np.tile(Q, reps=(n_bins, 1, 1))
-        else:
-            # To avoid overwriting.
-            Q = self.diagonalizer.copy()
-
-        if not hasattr(self, "diagonal"):
+        if not hasattr(self, "spatial"):
             D = rng.random((n_bins, n_sources, n_channels))
             D = self.flooring_fn(D)
         else:
-            D = self.diagonal
+            D = self.spatial
 
-        self.diagonalizer, self.diagonal = Q, D
+        self.spatial = D
 
 
 class GaussMNMF(MNMF):
@@ -863,7 +881,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         X = input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -914,7 +932,7 @@ class FastGaussMNMF(FastMNMFBase):
         """
         X = self.input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
         na = np.newaxis
 
         if self.partitioning:
@@ -950,11 +968,13 @@ class FastGaussMNMF(FastMNMFBase):
         return logdet
 
     def update_once(self) -> None:
-        r"""Update MNMF parameters and diagonalizers once."""
+        r"""Update MNMF parameters, diagonalizers, and diagonal elements of \
+        spatial covariance matrices once.
+        """
         self.update_basis()
         self.update_activation()
         self.update_diagonalizer()
-        self.update_diagonal()
+        self.update_spatial()
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm.
@@ -975,7 +995,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         X = self.input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -1019,7 +1039,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         X = self.input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -1056,7 +1076,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         X = self.input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -1075,15 +1095,15 @@ class FastGaussMNMF(FastMNMFBase):
 
         self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
 
-    def update_diagonal(self) -> None:
-        """Update diagonal elements by MM algorithm."""
+    def update_spatial(self) -> None:
+        """Update diagonal elements of spatial covariance matrix by MM algorithm."""
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
 
         X = self.input
         T, V = self.basis, self.activation
-        Q, D = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.spatial
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -1105,4 +1125,4 @@ class FastGaussMNMF(FastMNMFBase):
 
         D = np.sqrt(num / denom) * D
 
-        self.diagonal = D
+        self.spatial = D
