@@ -45,7 +45,7 @@ The negative log-likelihood of observed signals (divided by :math:`J`) is comput
 
 Algorithms
 ~~~~~~~~~~
-.. autoclass:: ssspy.bss.ilrma.ILRMAbase
+.. autoclass:: ssspy.bss.ilrma.ILRMABase
    :special-members: __call__
    :members:
       _init_nmf, separate, reconstruct_nmf, update_once,
