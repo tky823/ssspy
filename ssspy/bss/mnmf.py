@@ -938,7 +938,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         Args:
             reconstructed:
-                Reconstructed MNMF with shape of (\*, n_channels, n_channels).
+                Diagonalizer with shape of (\*, n_channels, n_channels).
 
         Returns:
             numpy.ndarray of computed log-determinant values.
