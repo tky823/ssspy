@@ -22,7 +22,7 @@ source_algorithms = ["MM", "ME"]
 EPS = 1e-10
 
 
-class ILRMAbase(IterativeMethodBase):
+class ILRMABase(IterativeMethodBase):
     r"""Base class of independent low-rank matrix analysis (ILRMA).
 
     Args:
@@ -64,7 +64,7 @@ class ILRMAbase(IterativeMethodBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["ILRMAbase"], None], List[Callable[["ILRMAbase"], None]]]
+            Union[Callable[["ILRMABase"], None], List[Callable[["ILRMABase"], None]]]
         ] = None,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
@@ -517,7 +517,7 @@ class ILRMAbase(IterativeMethodBase):
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class GaussILRMA(ILRMAbase):
+class GaussILRMA(ILRMABase):
     r"""Independent low-rank matrix analysis (ILRMA) [#kitamura2016determined]_ \
     on Gaussian distribution.
 
@@ -742,8 +742,8 @@ class GaussILRMA(ILRMAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
+        super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1569,7 +1569,7 @@ class GaussILRMA(ILRMAbase):
             self.output = Y_scaled
 
 
-class TILRMA(ILRMAbase):
+class TILRMA(ILRMABase):
     r"""Independent low-rank matrix analysis (ILRMA) on Student's *t* distribution.
 
     We assume :math:`y_{ijn}` follows a Student's *t* distribution.
@@ -1799,8 +1799,8 @@ class TILRMA(ILRMAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
+        super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -2716,7 +2716,7 @@ class TILRMA(ILRMAbase):
             self.output = Y_scaled
 
 
-class GGDILRMA(ILRMAbase):
+class GGDILRMA(ILRMABase):
     r"""Independent low-rank matrix analysis (ILRMA) on a generalized Gaussian distribution.
 
     We assume :math:`y_{ijn}` follows a generalized Gaussian distribution.
@@ -2944,8 +2944,8 @@ class GGDILRMA(ILRMAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of ILRMAbase's parent, i.e. __call__ of IterativeMethod
-        super(ILRMAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
+        super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()

@@ -28,7 +28,7 @@ spatial_algorithms = ["IP", "IP1", "IP2"]
 EPS = 1e-10
 
 
-class FDICAbase(IterativeMethodBase):
+class FDICABase(IterativeMethodBase):
     r"""Base class of frequency-domain independent component analysis (FDICA).
 
     Args:
@@ -68,7 +68,7 @@ class FDICAbase(IterativeMethodBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["FDICAbase"], None], List[Callable[["FDICAbase"], None]]]
+            Union[Callable[["FDICABase"], None], List[Callable[["FDICABase"], None]]]
         ] = None,
         solve_permutation: bool = True,
         scale_restoration: Union[bool, str] = True,
@@ -281,7 +281,7 @@ class FDICAbase(IterativeMethodBase):
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class GradFDICAbase(FDICAbase):
+class GradFDICABase(FDICABase):
     r"""Base class of frequency-domain independent component analysis (FDICA) \
     using the gradient descent.
 
@@ -330,7 +330,7 @@ class GradFDICAbase(FDICAbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["GradFDICAbase"], None], List[Callable[["GradFDICAbase"], None]]]
+            Union[Callable[["GradFDICABase"], None], List[Callable[["GradFDICABase"], None]]]
         ] = None,
         solve_permutation: bool = True,
         scale_restoration: Union[bool, str] = True,
@@ -378,8 +378,8 @@ class GradFDICAbase(FDICAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
-        super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of FDICABase's parent, i.e. __call__ of IterativeMethodBase
+        super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
             X, W = self.input, self.demix_filter
@@ -417,7 +417,7 @@ class GradFDICAbase(FDICAbase):
         raise NotImplementedError("Implement 'update_once' method.")
 
 
-class GradFDICA(GradFDICAbase):
+class GradFDICA(GradFDICABase):
     r"""Frequency-domain independent component analysis (FDICA) \
     using the gradient descent.
 
@@ -612,7 +612,7 @@ class GradFDICA(GradFDICAbase):
         self.output = Y
 
 
-class NaturalGradFDICA(GradFDICAbase):
+class NaturalGradFDICA(GradFDICABase):
     r"""Frequency-domain independent component analysis (FDICA) \
     using the natural gradient descent.
 
@@ -805,7 +805,7 @@ class NaturalGradFDICA(GradFDICAbase):
         self.output = Y
 
 
-class AuxFDICA(FDICAbase):
+class AuxFDICA(FDICABase):
     r"""Auxiliary-function-based frequency-domain independent component analysis \
     (AuxFDICA) [#ono2010auxiliary]_.
 
@@ -966,8 +966,8 @@ class AuxFDICA(FDICAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of FDICAbase's parent, i.e. __call__ of IterativeMethod
-        super(FDICAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of FDICABase's parent, i.e. __call__ of IterativeMethodBase
+        super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.solve_permutation:
             X, W = self.input, self.demix_filter

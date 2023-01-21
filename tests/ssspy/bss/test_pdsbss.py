@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import scipy.signal as ss
 
-from ssspy.bss.pdsbss import PDSBSS, PDSBSSbase
+from ssspy.bss.pdsbss import PDSBSS, PDSBSSBase
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -67,7 +67,7 @@ def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
 
 
 def test_pds_base():
-    class DummyPDSBSS(PDSBSSbase):
+    class DummyPDSBSS(PDSBSSBase):
         pass
 
     np.random.seed(111)

@@ -62,16 +62,16 @@ The derivative of :math:`G(\vec{\boldsymbol{y}}_{jn})` is called a score functio
 
 Algorithms
 ~~~~~~~~~~
-.. autoclass:: ssspy.bss.iva.IVAbase
+.. autoclass:: ssspy.bss.iva.IVABase
    :special-members: __call__
    :members: separate, update_once, compute_loss, compute_logdet, restore_scale, apply_projection_back
 
-.. autoclass:: ssspy.bss.iva.GradIVAbase
+.. autoclass:: ssspy.bss.iva.GradIVABase
 
-.. autoclass:: ssspy.bss.iva.FastIVAbase
+.. autoclass:: ssspy.bss.iva.FastIVABase
    :members: separate, compute_loss, apply_projection_back
 
-.. autoclass:: ssspy.bss.iva.AuxIVAbase
+.. autoclass:: ssspy.bss.iva.AuxIVABase
    :special-members: __call__
    :members: separate, compute_loss, apply_projection_back
 

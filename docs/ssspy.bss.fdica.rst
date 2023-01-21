@@ -59,11 +59,11 @@ The derivative of :math:`G(y_{ijn})` is called a score function.
 Algorithms
 ~~~~~~~~~~
 
-.. autoclass:: ssspy.bss.fdica.FDICAbase
+.. autoclass:: ssspy.bss.fdica.FDICABase
    :special-members: __call__
    :members: separate, compute_loss, compute_logdet, restore_scale, apply_projection_back
 
-.. autoclass:: ssspy.bss.fdica.GradFDICAbase
+.. autoclass:: ssspy.bss.fdica.GradFDICABase
    :special-members: __call__
 
 .. autoclass:: ssspy.bss.fdica.GradFDICA

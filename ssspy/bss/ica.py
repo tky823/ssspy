@@ -8,7 +8,7 @@ from .base import IterativeMethodBase
 __all__ = ["GradICA", "NaturalGradICA", "FastICA", "GradLaplaceICA", "NaturalGradLaplaceICA"]
 
 
-class GradICAbase(IterativeMethodBase):
+class GradICABase(IterativeMethodBase):
     r"""Base class of independent component analysis (ICA) using the gradient descent.
 
     Args:
@@ -36,7 +36,7 @@ class GradICAbase(IterativeMethodBase):
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
-            Union[Callable[["GradICAbase"], None], List[Callable[["GradICAbase"], None]]]
+            Union[Callable[["GradICABase"], None], List[Callable[["GradICABase"], None]]]
         ] = None,
         record_loss: bool = True,
     ) -> None:
@@ -193,7 +193,7 @@ class GradICAbase(IterativeMethodBase):
         return logdet
 
 
-class FastICAbase(IterativeMethodBase):
+class FastICABase(IterativeMethodBase):
     r"""Base class of fast independent component analysis (FastICA).
 
     Args:
@@ -222,7 +222,7 @@ class FastICAbase(IterativeMethodBase):
         score_fn: Callable[[np.ndarray], np.ndarray] = None,
         d_score_fn: Callable[[np.ndarray], np.ndarray] = None,
         callbacks: Optional[
-            Union[Callable[["FastICAbase"], None], List[Callable[["FastICAbase"], None]]]
+            Union[Callable[["FastICABase"], None], List[Callable[["FastICABase"], None]]]
         ] = None,
         record_loss: bool = True,
     ) -> None:
@@ -403,7 +403,7 @@ class FastICAbase(IterativeMethodBase):
         return loss
 
 
-class GradICA(GradICAbase):
+class GradICA(GradICABase):
     r"""Independent component analysis (ICA) using the gradient descent.
 
     Args:
@@ -554,7 +554,7 @@ class GradICA(GradICAbase):
         self.output = Y
 
 
-class NaturalGradICA(GradICAbase):
+class NaturalGradICA(GradICABase):
     r"""Independent component analysis (ICA) using the natural gradient descent [#amari1995new]_.
 
     Args:
@@ -707,7 +707,7 @@ class NaturalGradICA(GradICAbase):
         self.output = Y
 
 
-class FastICA(FastICAbase):
+class FastICA(FastICABase):
     r"""Fast independent component analysis (FastICA) [#hyvarinen1999fast]_.
 
     In FastICA, a whitening (sphering) is applied to input signal.

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import scipy.signal as ss
 
-from ssspy.bss.ipsdta import TIPSDTA, BlockDecompositionIPSDTAbase, GaussIPSDTA, IPSDTAbase
+from ssspy.bss.ipsdta import TIPSDTA, BlockDecompositionIPSDTABase, GaussIPSDTA, IPSDTABase
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -50,10 +50,10 @@ parameters_ipsdta = [
 @pytest.mark.parametrize("scale_restoration", parameters_scale_restoration)
 def test_ipsdta_base(
     n_basis: int,
-    callbacks: Optional[Union[Callable[[IPSDTAbase], None], List[Callable[[IPSDTAbase], None]]]],
+    callbacks: Optional[Union[Callable[[IPSDTABase], None], List[Callable[[IPSDTABase], None]]]],
     scale_restoration: Union[str, bool],
 ):
-    ipsdta = IPSDTAbase(
+    ipsdta = IPSDTABase(
         n_basis,
         callbacks=callbacks,
         scale_restoration=scale_restoration,
@@ -79,13 +79,13 @@ def test_block_decomposition_ipsdta_base(
     n_blocks: int,
     callbacks: Optional[
         Union[
-            Callable[[BlockDecompositionIPSDTAbase], None],
-            List[Callable[[BlockDecompositionIPSDTAbase], None]],
+            Callable[[BlockDecompositionIPSDTABase], None],
+            List[Callable[[BlockDecompositionIPSDTABase], None]],
         ]
     ],
     scale_restoration: Union[str, bool],
 ):
-    ipsdta = BlockDecompositionIPSDTAbase(
+    ipsdta = BlockDecompositionIPSDTABase(
         n_basis,
         n_blocks,
         callbacks=callbacks,

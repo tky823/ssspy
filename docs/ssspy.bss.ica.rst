@@ -61,11 +61,11 @@ The derivative of :math:`G(y_{tn})` is called a score function.
 Algorithms
 ~~~~~~~~~~
 
-.. autoclass:: ssspy.bss.ica.GradICAbase
+.. autoclass:: ssspy.bss.ica.GradICABase
    :special-members: __call__
    :members: separate, compute_loss, compute_logdet
 
-.. autoclass:: ssspy.bss.ica.FastICAbase
+.. autoclass:: ssspy.bss.ica.FastICABase
    :special-members: __call__
    :members: separate, compute_loss
 

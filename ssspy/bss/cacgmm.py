@@ -14,7 +14,7 @@ from .base import IterativeMethodBase
 EPS = 1e-10
 
 
-class CACGMMbase(IterativeMethodBase):
+class CACGMMBase(IterativeMethodBase):
     r"""Base class of complex angular central Gaussian mixture model (cACGMM).
 
     Args:
@@ -39,8 +39,8 @@ class CACGMMbase(IterativeMethodBase):
         n_sources: Optional[int] = None,
         callbacks: Optional[
             Union[
-                Callable[["CACGMMbase"], None],
-                List[Callable[["CACGMMbase"], None]],
+                Callable[["CACGMMBase"], None],
+                List[Callable[["CACGMMBase"], None]],
             ]
         ] = None,
         record_loss: bool = True,
@@ -208,7 +208,7 @@ class CACGMMbase(IterativeMethodBase):
         return logdet
 
 
-class CACGMM(CACGMMbase):
+class CACGMM(CACGMMBase):
     r"""Complex angular central Gaussian mixture model (cACGMM) [#ito2016complex]_.
 
     Args:
@@ -297,8 +297,8 @@ class CACGMM(CACGMMbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of CACGMMbase's parent, i.e. __call__ of IterativeMethodBase
-        super(CACGMMbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of CACGMMBase's parent, i.e. __call__ of IterativeMethodBase
+        super(CACGMMBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         # posterior should be updated
         self.update_posterior()

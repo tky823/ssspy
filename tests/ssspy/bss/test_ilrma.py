@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import scipy.signal as ss
 
-from ssspy.bss.ilrma import GGDILRMA, TILRMA, GaussILRMA, ILRMAbase
+from ssspy.bss.ilrma import GGDILRMA, TILRMA, GaussILRMA, ILRMABase
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -73,7 +73,7 @@ def test_ilrma_base(
     callbacks: Optional[Union[Callable[[GaussILRMA], None], List[Callable[[GaussILRMA], None]]]],
     scale_restoration: Union[str, bool],
 ):
-    ilrma = ILRMAbase(
+    ilrma = ILRMABase(
         n_basis,
         partitioning=True,
         callbacks=callbacks,
