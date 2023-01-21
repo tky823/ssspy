@@ -375,7 +375,7 @@ class MNMF(MNMFBase):
         self.spatial = H
 
 
-class FastMNMFbase(MNMFBase):
+class FastMNMFBase(MNMFBase):
     def __init__(
         self,
         n_basis: int,
@@ -385,7 +385,7 @@ class FastMNMFbase(MNMFBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["FastMNMFbase"], None], List[Callable[["FastMNMFbase"], None]]]
+            Union[Callable[["FastMNMFBase"], None], List[Callable[["FastMNMFBase"], None]]]
         ] = None,
         normalization: bool = True,
         record_loss: bool = True,
@@ -797,7 +797,7 @@ class GaussMNMF(MNMF):
         self.latent = Z
 
 
-class FastGaussMNMF(FastMNMFbase):
+class FastGaussMNMF(FastMNMFBase):
     def __init__(
         self,
         n_basis: int,
