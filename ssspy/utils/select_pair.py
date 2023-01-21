@@ -1,8 +1,5 @@
-import warnings
+import itertools
 from typing import Iterable, Optional, Tuple
-
-from ..utils.select_pair import combination_pair_selector as combination_pair_selector_base
-from ..utils.select_pair import sequential_pair_selector as sequential_pair_selector_base
 
 
 def sequential_pair_selector(
@@ -35,9 +32,16 @@ def sequential_pair_selector(
             2 3
             3 0
     """
-    warnings.warn("Use ssspy.utils.select_pair.sequential_pair_selector instead.", UserWarning)
+    if stop is None:
+        stop = n_sources
 
-    yield from sequential_pair_selector_base(n_sources, stop=stop, step=step, sort=sort)
+    for m in range(0, stop, step):
+        m, n = m % n_sources, (m + 1) % n_sources
+
+        if sort:
+            m, n = (n, m) if m > n else (m, n)
+
+        yield m, n
 
 
 def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tuple[int, int]]:
@@ -65,6 +69,8 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
             1 3
             2 3
     """
-    warnings.warn("Use ssspy.utils.select_pair.combination_pair_selector instead.", UserWarning)
+    for m, n in itertools.combinations(range(n_sources), 2):
+        if sort:
+            m, n = (n, m) if m > n else (m, n)
 
-    yield from combination_pair_selector_base(n_sources, sort=sort)
+        yield m, n

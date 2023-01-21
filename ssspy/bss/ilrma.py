@@ -11,7 +11,7 @@ from ..algorithm import (
     projection_back,
 )
 from ..special.flooring import max_flooring
-from ._select_pair import sequential_pair_selector
+from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase
 
@@ -607,7 +607,7 @@ class GaussILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -645,7 +645,7 @@ class GaussILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -711,10 +711,8 @@ class GaussILRMA(ILRMABase):
         self.normalization = normalization
 
         if pair_selector is None:
-            if spatial_algorithm == "IP2":
+            if spatial_algorithm in ["IP2", "ISS2"]:
                 self.pair_selector = sequential_pair_selector
-            elif spatial_algorithm == "ISS2":
-                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
@@ -1664,7 +1662,7 @@ class TILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -1704,7 +1702,7 @@ class TILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -1768,10 +1766,8 @@ class TILRMA(ILRMABase):
         self.normalization = normalization
 
         if pair_selector is None:
-            if spatial_algorithm == "IP2":
+            if spatial_algorithm in ["IP2", "ISS2"]:
                 self.pair_selector = sequential_pair_selector
-            elif spatial_algorithm == "ISS2":
-                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 
@@ -2811,7 +2807,7 @@ class GGDILRMA(ILRMABase):
 
         .. code-block:: python
 
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2851,7 +2847,7 @@ class GGDILRMA(ILRMABase):
         .. code-block:: python
 
             >>> import functools
-            >>> from ssspy.bss._select_pair import sequential_pair_selector
+            >>> from ssspy.utils.select_pair import sequential_pair_selector
 
             >>> n_channels, n_bins, n_frames = 2, 2049, 128
             >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
@@ -2913,10 +2909,8 @@ class GGDILRMA(ILRMABase):
         self.normalization = normalization
 
         if pair_selector is None:
-            if spatial_algorithm == "IP2":
+            if spatial_algorithm in ["IP2", "ISS2"]:
                 self.pair_selector = sequential_pair_selector
-            elif spatial_algorithm == "ISS2":
-                self.pair_selector = functools.partial(sequential_pair_selector, step=2)
         else:
             self.pair_selector = pair_selector
 

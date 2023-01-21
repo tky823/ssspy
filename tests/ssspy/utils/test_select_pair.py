@@ -1,6 +1,6 @@
 import pytest
 
-from ssspy.bss._select_pair import combination_pair_selector, sequential_pair_selector
+from ssspy.utils.select_pair import combination_pair_selector, sequential_pair_selector
 
 parameters_n_sources = [2, 3, 4]
 parameters_step = [1, 2]
