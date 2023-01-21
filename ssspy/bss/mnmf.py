@@ -951,6 +951,7 @@ class FastGaussMNMF(FastMNMFBase):
     def update_once(self) -> None:
         r"""Update MNMF parameters and diagonalizers once."""
         self.update_basis()
+        self.update_activation()
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm.
@@ -995,3 +996,47 @@ class FastGaussMNMF(FastMNMFBase):
         T = self.flooring_fn(T)
 
         self.basis = T
+
+    def update_activation(self) -> None:
+        r"""Update NMF activations by MM algorithm.
+
+        Update :math:`v_{kjn}` as follows:
+
+        .. math::
+            v_{kjn}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{i,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}t_{ikn}}
+            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{i,m}\dfrac{d_{inm}t_{ikn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}v_{kjn}.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.diagonal
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+        LambD = np.sum(LambD, axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX = QX.transpose(0, 2, 1)
+        QXLambD = (QX / LambD) ** 2
+        DQXLambD = np.sum(D[:, :, na, :] * QXLambD, axis=-1)
+        DLambD = np.sum(D[:, :, na, :] / LambD, axis=-1)
+
+        num = np.sum(T[:, :, :, na] * DQXLambD[:, :, na, :], axis=1)
+        denom = np.sum(T[:, :, :, na] * DLambD[:, :, na, :], axis=1)
+
+        V = V * np.sqrt(num / denom)
+        V = self.flooring_fn(V)
+
+        self.activation = V
