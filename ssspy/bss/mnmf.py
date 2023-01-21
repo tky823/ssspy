@@ -328,10 +328,6 @@ class MNMF(MNMFBase):
                 Spatial property with shape of (n_sources, n_bins, n_channels, n_channels).
             latent (numpy.ndarray, optional):
                 Latent variables with shape of (n_sources, n_basis).
-            axis1 (int):
-                First axis of covariance matrix. Default: ``-2``.
-            axis2 (int):
-                Second axis of covariance matrix. Default: ``-1``.
 
         Returns:
             numpy.ndarray of reconstructed multichannel NMF.
