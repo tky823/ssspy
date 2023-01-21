@@ -13,7 +13,7 @@ from ..linalg import prox
 EPS = 1e-10
 
 
-class PDSBSSbase:
+class PDSBSSBase:
     r"""Base class of based on blind source separation \
     via proximal splitting algorithm [#yatabe2018determined]_.
 
@@ -48,7 +48,7 @@ class PDSBSSbase:
         penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
-            Union[Callable[["PDSBSSbase"], None], List[Callable[["PDSBSSbase"], None]]]
+            Union[Callable[["PDSBSSBase"], None], List[Callable[["PDSBSSBase"], None]]]
         ] = None,
         scale_restoration: bool = True,
         record_loss: bool = True,
@@ -133,7 +133,7 @@ class PDSBSSbase:
 
         Args:
             kwargs:
-                Keyword arguments to set as attributes of PDSBSSbase.
+                Keyword arguments to set as attributes of PDSBSSBase.
         """
         assert self.input is not None, "Specify data!"
 
@@ -288,7 +288,7 @@ class PDSBSSbase:
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class PDSBSS(PDSBSSbase):
+class PDSBSS(PDSBSSBase):
     r"""Blind source separation via proximal splitting algorithm [#yatabe2018determined]_.
 
     Args:
