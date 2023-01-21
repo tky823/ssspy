@@ -924,9 +924,9 @@ class FastGaussMNMF(FastMNMFBase):
         D = D.transpose(1, 0, 2)
         LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=0)
         QX = Q @ X.transpose(1, 0, 2)
-        QX = np.abs(QX) ** 2
+        QX2 = np.abs(QX) ** 2
         logdetQ = self.compute_logdet(Q)
-        loss = np.sum(QX / LambD + np.log(LambD), axis=1)
+        loss = np.sum(QX2 / LambD + np.log(LambD), axis=1)
         loss = np.mean(loss, axis=-1) - 2 * logdetQ
         loss = loss.sum(axis=0)
         loss = loss.item()
