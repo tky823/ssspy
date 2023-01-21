@@ -13,7 +13,7 @@ __all__ = ["GaussMNMF"]
 EPS = 1e-10
 
 
-class MNMFbase(IterativeMethodBase):
+class MNMFBase(IterativeMethodBase):
     r"""Base class of multichannel nonnegative matrix factorization (MNMF).
 
     Args:
@@ -46,7 +46,7 @@ class MNMFbase(IterativeMethodBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
+            Union[Callable[["MNMFBase"], None], List[Callable[["MNMFBase"], None]]]
         ] = None,
         normalization: bool = True,
         record_loss: bool = True,
@@ -338,7 +338,7 @@ class MNMFbase(IterativeMethodBase):
         self.spatial = H
 
 
-class GaussMNMF(MNMFbase):
+class GaussMNMF(MNMFBase):
     def __init__(
         self,
         n_basis: int,
@@ -348,7 +348,7 @@ class GaussMNMF(MNMFbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["MNMFbase"], None], List[Callable[["MNMFbase"], None]]]
+            Union[Callable[["MNMFBase"], None], List[Callable[["MNMFBase"], None]]]
         ] = None,
         normalization: bool = True,
         record_loss: bool = True,
