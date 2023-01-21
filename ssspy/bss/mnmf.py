@@ -843,3 +843,8 @@ class FastGaussMNMF(FastMNMFbase):
         s += ")"
 
         return s.format(**self.__dict__)
+
+    def compute_logdet(self, diagonalizer: np.ndarray) -> np.ndarray:
+        _, logdet = np.linalg.slogdet(diagonalizer)
+
+        return logdet
