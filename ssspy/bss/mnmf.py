@@ -1069,7 +1069,34 @@ class FastGaussMNMF(FastMNMFBase):
         self.update_diagonalizer_ip1()
 
     def update_diagonalizer_ip1(self) -> None:
-        """Update diagonalizer by IP1."""
+        r"""Update diagonalizer once using iterative projection.
+
+        Diagonalizers are updated sequentially for :math:`m=1,\ldots,M` as follows:
+
+        .. math::
+            \boldsymbol{q}_{im}
+            &\leftarrow\left(\boldsymbol{Q}_{im}^{\mathsf{H}}\boldsymbol{U}_{im}\right)^{-1} \
+            \boldsymbol{e}_{m}, \\
+            \boldsymbol{q}_{im}
+            &\leftarrow\frac{\boldsymbol{q}_{im}}
+            {\sqrt{\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{U}_{im}\boldsymbol{q}_{im}}},
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}
+            {\sum_{n}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)d_{inm}}
+
+        if ``partitioning=True``, otherwise
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}
+            {\sum_{n}\left(\sum_{k}t_{ikn}v_{kjn}\right)d_{inm}}.
+        """
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
