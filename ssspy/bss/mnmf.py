@@ -963,8 +963,8 @@ class FastGaussMNMF(FastMNMFBase):
             t_{ikn}
             \leftarrow\left[
             \frac{\displaystyle\sum_{j,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}v_{kjn}}
-            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
-            {\displaystyle\sum_{j,m}\dfrac{d_{inm}v_{kjn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            {\left(\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{j,m}\dfrac{d_{inm}v_{kjn}}{\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}}}
             \right]^{\frac{1}{2}}t_{ikn}.
         """
         assert not self.partitioning, "partitioning function is not supported."
@@ -1007,8 +1007,8 @@ class FastGaussMNMF(FastMNMFBase):
             v_{kjn}
             \leftarrow\left[
             \frac{\displaystyle\sum_{i,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}t_{ikn}}
-            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
-            {\displaystyle\sum_{i,m}\dfrac{d_{inm}t_{ikn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            {\left(\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{i,m}\dfrac{d_{inm}t_{ikn}}{\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}}}
             \right]^{\frac{1}{2}}v_{kjn}.
         """
         assert not self.partitioning, "partitioning function is not supported."
