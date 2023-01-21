@@ -936,6 +936,16 @@ class FastGaussMNMF(FastMNMFbase):
         return loss
 
     def compute_logdet(self, diagonalizer: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant.
+
+        Args:
+            reconstructed:
+                Reconstructed MNMF with shape of (\*, n_channels, n_channels).
+
+        Returns:
+            numpy.ndarray of computed log-determinant values.
+            The shape is (\*).
+        """
         _, logdet = np.linalg.slogdet(diagonalizer)
 
         return logdet
