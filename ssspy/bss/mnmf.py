@@ -862,7 +862,7 @@ class FastGaussMNMF(FastMNMFbase):
 
         X = input
         T, V = self.basis, self.activation
-        D, Q = self.diagonalizer, self.diagonal
+        Q, D = self.diagonalizer, self.diagonal
 
         if self.partitioning:
             Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
@@ -896,13 +896,13 @@ class FastGaussMNMF(FastMNMFbase):
 
         .. math::
             \mathcal{L}
-            &:=-frac{1}{J}\sum_{i,j}\left\{
+            &:=-\frac{1}{J}\sum_{i,j}\left\{
             \mathrm{tr}\left(
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}\boldsymbol{R}_{ij}^{-1}
             \right)
             - \log\det\boldsymbol{R}_{ij}
             \right\} \\
-            &:=-frac{1}{J}\sum_{i,j,m}\left\{
+            &:=-\frac{1}{J}\sum_{i,j,m}\left\{
             \sum_{m}|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}
             \left(\lambda_{ijn}d_{inm}\right)^{-1}
             - \log\sum_{n}\lambda_{ijn}d_{inm}
