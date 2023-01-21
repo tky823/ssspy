@@ -9,7 +9,7 @@ from ._psd import to_psd
 from ._update_spatial_model import update_by_ip1
 from .base import IterativeMethodBase
 
-__all__ = ["GaussMNMF"]
+__all__ = ["GaussMNMF", "FastGaussMNMF"]
 
 EPS = 1e-10
 
