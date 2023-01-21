@@ -821,6 +821,7 @@ class FastGaussMNMF(FastMNMFBase):
         self,
         n_basis: int,
         n_sources: Optional[int] = None,
+        diagonalizer_algorithm: str = "IP",
         partitioning: bool = False,
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
@@ -845,6 +846,8 @@ class FastGaussMNMF(FastMNMFBase):
             rng=rng,
         )
 
+        self.diagonalizer_algorithm = diagonalizer_algorithm
+
     def __repr__(self) -> str:
         s = "FastGaussMNMF("
         s += "n_basis={n_basis}"
@@ -855,6 +858,7 @@ class FastGaussMNMF(FastMNMFBase):
         if hasattr(self, "n_channels"):
             s += ", n_channels={n_channels}"
 
+        s += ", diagonalizer_algorithm={diagonalizer_algorithm}"
         s += ", partitioning={partitioning}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
@@ -1066,7 +1070,11 @@ class FastGaussMNMF(FastMNMFBase):
 
     def update_diagonalizer(self) -> None:
         """Update diagonalizer."""
-        self.update_diagonalizer_ip1()
+
+        if self.diagonalizer_algorithm in ["IP", "IP1"]:
+            self.update_diagonalizer_ip1()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.diagonalizer_algorithm))
 
     def update_diagonalizer_ip1(self) -> None:
         r"""Update diagonalizer once using iterative projection.
