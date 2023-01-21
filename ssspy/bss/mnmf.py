@@ -952,6 +952,7 @@ class FastGaussMNMF(FastMNMFBase):
         r"""Update MNMF parameters and diagonalizers once."""
         self.update_basis()
         self.update_activation()
+        self.update_diagonal()
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm.
@@ -1040,3 +1041,33 @@ class FastGaussMNMF(FastMNMFBase):
         V = self.flooring_fn(V)
 
         self.activation = V
+
+    def update_diagonal(self) -> None:
+        """Update diagonal elements by MM algorithm."""
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.diagonal
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX2 = QX**2
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        LambD2 = LambD**2
+        Lamb_LambD2 = Lamb[:, :, na] / LambD2[:, na, :]
+        num = np.sum(Lamb_LambD2 * QX2[:, na, :, :], axis=-1)
+
+        Lamb_LambD = Lamb[:, :, na] / LambD[:, na, :]
+        denom = np.sum(Lamb_LambD, axis=-1)
+
+        D = np.sqrt(num / denom) * D
+
+        self.diagonal = D
