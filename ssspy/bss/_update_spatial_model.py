@@ -5,7 +5,7 @@ import numpy as np
 
 from ..linalg import eigh2, inv2
 from ..special.flooring import identity, max_flooring
-from ..utils.pair_selector import sequential_pair_selector
+from ..utils.select_pair import sequential_pair_selector
 
 EPS = 1e-10
 

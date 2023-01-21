@@ -1,8 +1,8 @@
 import warnings
 from typing import Iterable, Optional, Tuple
 
-from ..utils.pair_selector import combination_pair_selector as combination_pair_selector_base
-from ..utils.pair_selector import sequential_pair_selector as sequential_pair_selector_base
+from ..utils.select_pair import combination_pair_selector as combination_pair_selector_base
+from ..utils.select_pair import sequential_pair_selector as sequential_pair_selector_base
 
 
 def sequential_pair_selector(
