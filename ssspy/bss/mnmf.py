@@ -1077,6 +1077,8 @@ class FastGaussMNMF(FastMNMFBase):
 
     def update_diagonal(self) -> None:
         """Update diagonal elements by MM algorithm."""
+        assert not self.partitioning, "partitioning function is not supported."
+
         na = np.newaxis
 
         X = self.input
