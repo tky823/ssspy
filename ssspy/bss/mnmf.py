@@ -1127,7 +1127,17 @@ class FastGaussMNMF(FastMNMFBase):
         self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
 
     def update_spatial(self) -> None:
-        """Update diagonal elements of spatial covariance matrix by MM algorithm."""
+        r"""Update diagonal elements of spatial covariance matrix by MM algorithm.
+
+        Update :math:`d_{inm}` as follows:
+
+        .. math::
+            d_{inm}\leftarrow\left[
+            \dfrac{\displaystyle\sum_{j}\frac{\lambda_{ijn}|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}}
+            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{j}\frac{\lambda_{ijn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}d_{inm}.
+        """
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
