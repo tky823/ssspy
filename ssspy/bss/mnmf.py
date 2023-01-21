@@ -844,6 +844,51 @@ class FastGaussMNMF(FastMNMFbase):
 
         return s.format(**self.__dict__)
 
+    def separate(self, input: np.ndarray) -> np.ndarray:
+        """Separate ``input`` using multichannel Wiener filter.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        na = np.newaxis
+        n_sources = self.n_sources
+        reference_id = self.reference_id
+
+        X = input
+        T, V = self.basis, self.activation
+        D, Q = self.diagonalizer, self.diagonal
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+
+        Q_inverse = np.linalg.inv(Q)
+        Q_inverse_Hermite = Q_inverse.transpose(0, 2, 1).conj()
+        QQ_Hermite = Q_inverse[:, :, :, na] * Q_inverse_Hermite[:, na, :, :]
+
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+
+        R_n = np.sum(LambD[:, :, :, na, :, na] * QQ_Hermite[:, na, :, :, :], axis=4)
+        R = np.sum(R_n, axis=0)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R = np.tile(R, reps=(n_sources, 1, 1, 1, 1))
+        W_Hermite = np.linalg.solve(R, R_n)
+        W = W_Hermite.transpose(0, 1, 2, 4, 3).conj()
+        W_ref = W[:, :, :, reference_id, :]
+        W_ref = W_ref.transpose(0, 3, 1, 2)
+        Y = np.sum(W_ref * X, axis=1)
+
+        return Y
+
     def compute_logdet(self, diagonalizer: np.ndarray) -> np.ndarray:
         _, logdet = np.linalg.slogdet(diagonalizer)
 
