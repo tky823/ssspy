@@ -947,3 +947,49 @@ class FastGaussMNMF(FastMNMFBase):
         _, logdet = np.linalg.slogdet(diagonalizer)
 
         return logdet
+
+    def update_once(self) -> None:
+        r"""Update MNMF parameters and diagonalizers once."""
+        self.update_basis()
+
+    def update_basis(self) -> None:
+        r"""Update NMF bases by MM algorithm.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{j,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}v_{kjn}}
+            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{j,m}\dfrac{d_{inm}v_{kjn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}t_{ikn}.
+        """
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.diagonal
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+        LambD = np.sum(LambD, axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX = QX.transpose(0, 2, 1)
+        QXLambD = (QX / LambD) ** 2
+        DQXLambD = np.sum(D[:, :, na, :] * QXLambD, axis=-1)
+        DLambD = np.sum(D[:, :, na, :] / LambD, axis=-1)
+
+        num = np.sum(V[:, na, :] * DQXLambD[:, :, na], axis=-1)
+        denom = np.sum(V[:, na, :] * DLambD[:, :, na], axis=-1)
+
+        T = T * np.sqrt(num / denom)
+        T = self.flooring_fn(T)
+
+        self.basis = T
