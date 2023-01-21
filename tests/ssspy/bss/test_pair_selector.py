@@ -12,7 +12,9 @@ parameters_ascend = [True, False]
 @pytest.mark.parametrize("ascend", parameters_ascend)
 def test_sequential_pair_selector(n_sources: int, step: int, ascend: bool):
     with pytest.warns(UserWarning) as record:
-        sequential_pair_selector(n_sources, step=step, sort=ascend)
+        for m, n in sequential_pair_selector(n_sources, step=step, sort=ascend):
+            if ascend:
+                assert m < n
 
     assert len(record) == 1
     assert str(record[0].message) == "Use ssspy.utils.select_pair.sequential_pair_selector instead."
@@ -22,7 +24,9 @@ def test_sequential_pair_selector(n_sources: int, step: int, ascend: bool):
 @pytest.mark.parametrize("ascend", parameters_ascend)
 def test_combination_pair_selector(n_sources: int, ascend: bool):
     with pytest.warns(UserWarning) as record:
-        combination_pair_selector(n_sources, sort=ascend)
+        for m, n in combination_pair_selector(n_sources, sort=ascend):
+            if ascend:
+                assert m < n
 
     assert len(record) == 1
     assert (
