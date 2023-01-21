@@ -889,6 +889,52 @@ class FastGaussMNMF(FastMNMFbase):
 
         return Y
 
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is defined as follows:
+
+        .. math::
+            \mathcal{L}
+            &:=-frac{1}{J}\sum_{i,j}\left\{
+            \mathrm{tr}\left(
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}\boldsymbol{R}_{ij}^{-1}
+            \right)
+            - \log\det\boldsymbol{R}_{ij}
+            \right\} \\
+            &:=-frac{1}{J}\sum_{i,j,m}\left\{
+            \sum_{m}|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}
+            \left(\lambda_{ijn}d_{inm}\right)^{-1}
+            - \log\sum_{n}\lambda_{ijn}d_{inm}
+            \right\}
+            + \sum_{i}2\log\det\boldsymbol{Q}_{i}.
+
+        Returns:
+            Computed loss.
+        """
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.diagonal
+        na = np.newaxis
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX) ** 2
+        logdetQ = self.compute_logdet(Q)
+        loss = np.sum(np.log(LambD) - QX / LambD, axis=1)
+        loss = np.mean(loss, axis=-1) - 2 * logdetQ
+        loss = loss.sum(axis=0)
+        loss = loss.item()
+
+        return loss
+
     def compute_logdet(self, diagonalizer: np.ndarray) -> np.ndarray:
         _, logdet = np.linalg.slogdet(diagonalizer)
 
