@@ -10,7 +10,7 @@ from ssspy.bss.fdica import (
     AuxFDICA,
     AuxLaplaceFDICA,
     GradFDICA,
-    GradFDICAbase,
+    GradFDICABase,
     GradLaplaceFDICA,
     NaturalGradFDICA,
     NaturalGradLaplaceFDICA,
@@ -61,7 +61,7 @@ def test_grad_fdica_base(
         denominator = np.maximum(np.abs(y), 1e-12)
         return y / denominator
 
-    fdica = GradFDICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+    fdica = GradFDICABase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
 
     print(fdica)
 

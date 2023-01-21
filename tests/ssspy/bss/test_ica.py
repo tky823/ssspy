@@ -8,7 +8,7 @@ import pytest
 from ssspy.bss.ica import (
     FastICA,
     GradICA,
-    GradICAbase,
+    GradICABase,
     GradLaplaceICA,
     NaturalGradICA,
     NaturalGradLaplaceICA,
@@ -50,7 +50,7 @@ def test_grad_ica_base(
     def score_fn(x):
         return 1 / (1 + np.exp(-x))
 
-    ica = GradICAbase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
+    ica = GradICABase(contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks)
 
     print(ica)
 

@@ -10,16 +10,16 @@ from ssspy.bss.iva import (
     PDSIVA,
     AuxGaussIVA,
     AuxIVA,
-    AuxIVAbase,
+    AuxIVABase,
     AuxLaplaceIVA,
     FasterIVA,
     FastIVA,
-    FastIVAbase,
+    FastIVABase,
     GradGaussIVA,
     GradIVA,
-    GradIVAbase,
+    GradIVABase,
     GradLaplaceIVA,
-    IVAbase,
+    IVABase,
     NaturalGradGaussIVA,
     NaturalGradIVA,
     NaturalGradLaplaceIVA,
@@ -87,7 +87,7 @@ parameters_pds_iva = [
 def test_iva_base(
     callbacks: Optional[Union[Callable[[AuxIVA], None], List[Callable[[AuxIVA], None]]]],
 ):
-    iva = IVAbase(callbacks=callbacks)
+    iva = IVABase(callbacks=callbacks)
 
     print(iva)
 
@@ -98,7 +98,7 @@ def test_fast_iva_base(
 ):
     np.random.seed(111)
 
-    iva = FastIVAbase(callbacks=callbacks)
+    iva = FastIVABase(callbacks=callbacks)
 
     print(iva)
 
@@ -139,7 +139,7 @@ def test_grad_iva_base(
         norm = np.maximum(norm, 1e-12)
         return y / norm
 
-    iva = GradIVAbase(
+    iva = GradIVABase(
         contrast_fn=contrast_fn, score_fn=score_fn, callbacks=callbacks, is_holonomic=is_holonomic
     )
 
@@ -438,7 +438,7 @@ def test_aux_iva_base(
         """
         return 2 * np.ones_like(y)
 
-    iva = AuxIVAbase(
+    iva = AuxIVABase(
         contrast_fn=contrast_fn,
         d_contrast_fn=d_contrast_fn,
         callbacks=callbacks,
