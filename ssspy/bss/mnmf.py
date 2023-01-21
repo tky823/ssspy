@@ -254,7 +254,7 @@ class MNMFBase(IterativeMethodBase):
         return Lamb
 
 
-class MNMF(MNMFbase):
+class MNMF(MNMFBase):
     def __init__(
         self,
         n_basis: int,
@@ -375,7 +375,7 @@ class MNMF(MNMFbase):
         self.spatial = H
 
 
-class FastMNMFbase(MNMFbase):
+class FastMNMFbase(MNMFBase):
     def __init__(
         self,
         n_basis: int,
