@@ -41,7 +41,7 @@ spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
 EPS = 1e-10
 
 
-class IVAbase(IterativeMethodBase):
+class IVABase(IterativeMethodBase):
     r"""Base class of independent vector analysis (IVA).
 
     Args:
@@ -72,7 +72,7 @@ class IVAbase(IterativeMethodBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
+            Union[Callable[["IVABase"], None], List[Callable[["IVABase"], None]]]
         ] = None,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
@@ -277,7 +277,7 @@ class IVAbase(IterativeMethodBase):
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class GradIVAbase(IVAbase):
+class GradIVABase(IVABase):
     r"""Base class of independent vector analysis (IVA) using gradient descent.
 
     Args:
@@ -324,7 +324,7 @@ class GradIVAbase(IVAbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["GradIVAbase"], None], List[Callable[["GradIVAbase"], None]]]
+            Union[Callable[["GradIVABase"], None], List[Callable[["GradIVABase"], None]]]
         ] = None,
         is_holonomic: bool = False,
         scale_restoration: Union[bool, str] = True,
@@ -377,8 +377,8 @@ class GradIVAbase(IVAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of IVABase's parent, i.e. __call__ of IterativeMethodBase
+        super(IVABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -402,7 +402,7 @@ class GradIVAbase(IVAbase):
         return s.format(**self.__dict__)
 
 
-class FastIVAbase(IVAbase):
+class FastIVABase(IVABase):
     r"""Base class of fast independent vector analysis (FastIVA).
 
     Args:
@@ -433,7 +433,7 @@ class FastIVAbase(IVAbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["IVAbase"], None], List[Callable[["IVAbase"], None]]]
+            Union[Callable[["IVABase"], None], List[Callable[["IVABase"], None]]]
         ] = None,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
@@ -546,7 +546,7 @@ class FastIVAbase(IVAbase):
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class AuxIVAbase(IVAbase):
+class AuxIVABase(IVABase):
     r"""Base class of auxiliary-function-based independent vector analysis (IVA).
 
     Args:
@@ -586,7 +586,7 @@ class AuxIVAbase(IVAbase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["AuxIVAbase"], None], List[Callable[["AuxIVAbase"], None]]]
+            Union[Callable[["AuxIVABase"], None], List[Callable[["AuxIVABase"], None]]]
         ] = None,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
@@ -637,7 +637,7 @@ class AuxIVAbase(IVAbase):
         return s.format(**self.__dict__)
 
 
-class GradIVA(GradIVAbase):
+class GradIVA(GradIVABase):
     r"""Independent vector analysis (IVA) [#kim2006independent]_ using gradient descent.
 
     Args:
@@ -814,7 +814,7 @@ class GradIVA(GradIVAbase):
         self.output = Y
 
 
-class NaturalGradIVA(GradIVAbase):
+class NaturalGradIVA(GradIVABase):
     r"""Independent vector analysis (IVA) using natural gradient descent.
 
     Args:
@@ -984,7 +984,7 @@ class NaturalGradIVA(GradIVAbase):
         self.output = Y
 
 
-class FastIVA(FastIVAbase):
+class FastIVA(FastIVABase):
     r"""Fast independent vector analysis (Fast IVA) [#lee2007fast]_.
 
     Args:
@@ -1119,8 +1119,8 @@ class FastIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of IVABase's parent, i.e. __call__ of IterativeMethodBase
+        super(IVABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1189,7 +1189,7 @@ class FastIVA(FastIVAbase):
         self.demix_filter = W
 
 
-class FasterIVA(FastIVAbase):
+class FasterIVA(FastIVABase):
     r"""Faster independent vector analysis (Faster IVA) [#brendel2021fasteriva]_.
 
     Args:
@@ -1309,8 +1309,8 @@ class FasterIVA(FastIVAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of IVABase's parent, i.e. __call__ of IterativeMethodBase
+        super(IVABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -1369,7 +1369,7 @@ class FasterIVA(FastIVAbase):
         self.demix_filter = W
 
 
-class AuxIVA(AuxIVAbase):
+class AuxIVA(AuxIVABase):
     r"""Auxiliary-function-based independent vector analysis (IVA) [#ono2011stable]_.
 
     Args:
@@ -1577,8 +1577,8 @@ class AuxIVA(AuxIVAbase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of IVAbase's parent, i.e. __call__ of IterativeMethod
-        super(IVAbase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of IVABase's parent, i.e. __call__ of IterativeMethodBase
+        super(IVABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()

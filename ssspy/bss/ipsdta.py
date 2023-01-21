@@ -22,7 +22,7 @@ source_algorithms = ["EM", "MM"]
 EPS = 1e-10
 
 
-class IPSDTAbase(IterativeMethodBase):
+class IPSDTABase(IterativeMethodBase):
     r"""Base class of independent positive semidefinite tensor analysis (IPSDTA).
 
     Args:
@@ -61,7 +61,7 @@ class IPSDTAbase(IterativeMethodBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["IPSDTAbase"], None], List[Callable[["IPSDTAbase"], None]]]
+            Union[Callable[["IPSDTABase"], None], List[Callable[["IPSDTABase"], None]]]
         ] = None,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
@@ -366,7 +366,7 @@ class IPSDTAbase(IterativeMethodBase):
         self.output, self.demix_filter = Y_scaled, W_scaled
 
 
-class BlockDecompositionIPSDTAbase(IPSDTAbase):
+class BlockDecompositionIPSDTABase(IPSDTABase):
     r"""Base class of independent positive semidefinite tensor analysis (IPSDTA) \
     using block decomposition of bases.
 
@@ -410,8 +410,8 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         ),
         callbacks: Optional[
             Union[
-                Callable[["BlockDecompositionIPSDTAbase"], None],
-                List[Callable[["BlockDecompositionIPSDTAbase"], None]],
+                Callable[["BlockDecompositionIPSDTABase"], None],
+                List[Callable[["BlockDecompositionIPSDTABase"], None]],
             ]
         ] = None,
         scale_restoration: Union[bool, str] = True,
@@ -672,7 +672,7 @@ class BlockDecompositionIPSDTAbase(IPSDTAbase):
         self.basis, self.activation = T, V
 
 
-class GaussIPSDTA(BlockDecompositionIPSDTAbase):
+class GaussIPSDTA(BlockDecompositionIPSDTABase):
     r"""Independent positive semidefinite tensor analysis (IPSDTA) \
     on Gaussian distribution.
 
@@ -1105,7 +1105,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTAbase):
         return loss
 
 
-class TIPSDTA(BlockDecompositionIPSDTAbase):
+class TIPSDTA(BlockDecompositionIPSDTABase):
     r"""Independent positive semidefinite tensor analysis (IPSDTA) \
     on Student's t distribution.
 
