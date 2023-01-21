@@ -965,6 +965,8 @@ class FastGaussMNMF(FastMNMFBase):
             {\displaystyle\sum_{j,m}\dfrac{d_{inm}v_{kjn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
             \right]^{\frac{1}{2}}t_{ikn}.
         """
+        assert not self.partitioning, "partitioning function is not supported."
+
         na = np.newaxis
 
         X = self.input
