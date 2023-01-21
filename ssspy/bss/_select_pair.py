@@ -35,7 +35,7 @@ def sequential_pair_selector(
             2 3
             3 0
     """
-    warnings.warn("Use ssspy.utils.sequential_pair_selector instead.", UserWarning)
+    warnings.warn("Use ssspy.utils.pair_selector.sequential_pair_selector instead.", UserWarning)
 
     yield from sequential_pair_selector_base(n_sources, stop=stop, step=step, sort=sort)
 
@@ -65,6 +65,6 @@ def combination_pair_selector(n_sources: int, sort: bool = False) -> Iterable[Tu
             1 3
             2 3
     """
-    warnings.warn("Use ssspy.utils.combination_pair_selector instead.", UserWarning)
+    warnings.warn("Use ssspy.utils.pair_selector.combination_pair_selector instead.", UserWarning)
 
     yield from combination_pair_selector_base(n_sources, sort=sort)
