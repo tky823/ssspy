@@ -906,7 +906,7 @@ class FastGaussMNMF(FastMNMFBase):
             \frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}}
             {\sum_{n}\lambda_{ijn}d_{inm}}
             + \log\sum_{n}\lambda_{ijn}d_{inm}\right\}
-            - \sum_{i}2\log\det\boldsymbol{Q}_{i}.
+            - 2\sum_{i}\log|\det\boldsymbol{Q}_{i}|.
 
         Returns:
             Computed loss.
