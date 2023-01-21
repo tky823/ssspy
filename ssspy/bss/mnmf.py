@@ -6,6 +6,7 @@ import numpy as np
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
 from ._psd import to_psd
+from ._update_spatial_model import update_by_ip1
 from .base import IterativeMethodBase
 
 __all__ = ["GaussMNMF"]
@@ -952,6 +953,7 @@ class FastGaussMNMF(FastMNMFBase):
         r"""Update MNMF parameters and diagonalizers once."""
         self.update_basis()
         self.update_activation()
+        self.update_diagonalizer()
         self.update_diagonal()
 
     def update_basis(self) -> None:
@@ -1041,6 +1043,37 @@ class FastGaussMNMF(FastMNMFBase):
         V = self.flooring_fn(V)
 
         self.activation = V
+
+    def update_diagonalizer(self) -> None:
+        """Update diagonalizer."""
+        self.update_diagonalizer_ip1()
+
+    def update_diagonalizer_ip1(self) -> None:
+        """Update diagonalizer by IP1."""
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.diagonal
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        XX_Hermite = X[:, na, :, :] * X[na, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        varphi = 1 / LambD
+
+        varphi_XX = varphi[:, :, na, na, :] * XX_Hermite[:, na, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
 
     def update_diagonal(self) -> None:
         """Update diagonal elements by MM algorithm."""
