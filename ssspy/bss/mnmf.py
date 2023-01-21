@@ -923,7 +923,6 @@ class FastGaussMNMF(FastMNMFBase):
             Lamb = self.reconstruct_nmf(T, V)
 
         D = D.transpose(1, 0, 2)
-
         LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=0)
         QX = Q @ X.transpose(1, 0, 2)
         QX = np.abs(QX) ** 2
