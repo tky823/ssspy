@@ -537,6 +537,56 @@ class FastMNMFBase(MNMFBase):
 
         self.spatial = D
 
+    def normalize(self) -> None:
+        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices."""
+        normalization = self.normalization
+
+        assert normalization, "Set normalization."
+
+        if type(normalization) is bool:
+            # when normalization is True
+            normalization = "power"
+
+        if normalization == "power":
+            self.normalize_by_power()
+        else:
+            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+
+    def normalize_by_power(self) -> None:
+        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices by power.
+
+        Diagonalizers are normalized by
+
+        .. math::
+            \boldsymbol{q}_{im}
+            \leftarrow\frac{\boldsymbol{q}_{im}}{\psi_{im}},
+
+        where
+
+        .. math::
+            \psi_{im}
+            = \sqrt{\frac{1}{IJ}\sum_{i,j}|\boldsymbol{q}_{im}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+
+        For diagonal elements of spatial covariance matrices,
+
+        .. math::
+            d_{inm}
+            \leftarrow\frac{d_{inm}}{\psi_{im}^{2}}.
+        """
+        X = self.input
+        Q, D = self.diagonalizer, self.spatial
+
+        QX = Q @ X.transpose(1, 0, 2)
+        QX2 = np.mean(np.abs(QX) ** 2, axis=(0, 2))
+        psi = np.sqrt(QX2)
+        psi = self.flooring_fn(psi)
+
+        Q = Q / psi[np.newaxis, :, np.newaxis]
+        D = D / (psi**2)
+
+        self.diagonalizer, self.spatial = Q, D
+
 
 class GaussMNMF(MNMF):
     def __init__(
@@ -1062,6 +1112,9 @@ class FastGaussMNMF(FastMNMFBase):
         self.update_activation()
         self.update_diagonalizer()
         self.update_spatial()
+
+        if self.normalization:
+            self.normalize()
 
     def update_basis(self) -> None:
         r"""Update NMF bases by MM algorithm.
