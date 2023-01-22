@@ -25,8 +25,8 @@ rng = np.random.default_rng(42)
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_permutation_alignment = [
     "posterior_score",
-    "spectrogram_score",
-    "spectrogram_correlation",
+    "amplitude_score",
+    "amplitude_correlation",
 ]
 parameters_cacgmm = [(2, 2, {}), (3, 2, {})]
 
