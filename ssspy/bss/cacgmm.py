@@ -237,16 +237,16 @@ class CACGMMBase(IterativeMethodBase):
 
         if permutation_alignment in ["posterior_score", "posterior_correlation"]:
             target = "posterior"
-        elif permutation_alignment in ["spectrogram_score", "spectrogram_correlation"]:
-            target = "spectrogram"
+        elif permutation_alignment in ["amplitude_score", "amplitude_correlation"]:
+            target = "amplitude"
         else:
             raise NotImplementedError(
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-        if permutation_alignment in ["posterior_score", "spectrogram_score"]:
+        if permutation_alignment in ["posterior_score", "amplitude_score"]:
             self.solve_permutation_by_score(target=target)
-        elif permutation_alignment in ["posterior_correlation", "spectrogram_correlation"]:
+        elif permutation_alignment in ["posterior_correlation", "amplitude_correlation"]:
             self.solve_permutation_by_correlation(target=target)
         else:
             raise NotImplementedError(
@@ -254,15 +254,15 @@ class CACGMMBase(IterativeMethodBase):
             )
 
     def solve_permutation_by_score(self, target: str = "posterior") -> None:
-        r"""Align posteriors and separated spectrograms by score value.
+        r"""Align posteriors and amplitudes of separated spectrograms by score value.
 
         Args:
             target (str):
-                Target to compute score values. Choose ``posterior`` or ``spectrogram``.
+                Target to compute score values. Choose ``posterior`` or ``amplitude``.
                 Default: ``posterior``.
         """
 
-        assert target in ["posterior", "spectrogram"], "Invalid target {} is specified.".format(
+        assert target in ["posterior", "amplitude"], "Invalid target {} is specified.".format(
             target
         )
 
@@ -296,7 +296,7 @@ class CACGMMBase(IterativeMethodBase):
                 local_iter=local_iter,
                 flooring_fn=self.flooring_fn,
             )
-        elif target == "spectrogram":
+        elif target == "amplitude":
             Y = Y.transpose(1, 0, 2)
             amplitude = np.abs(Y)
 
@@ -323,16 +323,16 @@ class CACGMMBase(IterativeMethodBase):
         self.posterior = gamma
         self.output = Y
 
-    def solve_permutation_by_correlation(self, target: str = "spectrogram") -> None:
-        r"""Align posteriors and separated spectrograms by correlation.
+    def solve_permutation_by_correlation(self, target: str = "amplitude") -> None:
+        r"""Align posteriors and amplitudes of separated spectrograms by correlation.
 
         Args:
             target (str):
-                Target to compute correlations. Choose ``posterior`` or ``spectrogram``.
-                Default: ``spectrogram``.
+                Target to compute correlations. Choose ``posterior`` or ``amplitude``.
+                Default: ``amplitude``.
         """
 
-        assert target == "spectrogram", "Only spectrogram is supported as target."
+        assert target == "amplitude", "Only amplitude is supported as target."
 
         X = self.input
         alpha = self.mixing
@@ -390,9 +390,6 @@ class CACGMM(CACGMMBase):
             of cACGMM. If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
 
-    .. note::
-        The estimated spectrograms are aligned by similarity of their power.
-
     .. [#ito2016complex] N. Ito, S. Araki, and T. Nakatani. \
         "Complex angular central Gaussian mixture model for directional statistics \
         in mask-based microphone array signal processing,"
@@ -434,7 +431,7 @@ class CACGMM(CACGMMBase):
             valid_keys = {"global_iter", "local_iter"}
         elif type(permutation_alignment) is str and permutation_alignment in [
             "posterior_score",
-            "spectrogram_score",
+            "amplitude_score",
         ]:
             valid_keys = {"global_iter", "local_iter"}
         else:
