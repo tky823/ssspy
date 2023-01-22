@@ -978,6 +978,7 @@ class FastGaussMNMF(FastMNMFBase):
         assert diagonalizer_algorithm in diagonalizer_algorithms, "Not support {}.".format(
             diagonalizer_algorithm
         )
+        assert not partitioning, "partitioning function is not supported."
 
         self.diagonalizer_algorithm = diagonalizer_algorithm
 
