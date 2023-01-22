@@ -11,6 +11,7 @@ from .base import IterativeMethodBase
 
 __all__ = ["GaussMNMF", "FastGaussMNMF"]
 
+diagonalizer_algorithms = ["IP", "IP1"]
 EPS = 1e-10
 
 
@@ -842,6 +843,10 @@ class FastGaussMNMF(FastMNMFBase):
             rng=rng,
         )
 
+        assert diagonalizer_algorithm in diagonalizer_algorithms, "Not support {}.".format(
+            diagonalizer_algorithm
+        )
+
         self.diagonalizer_algorithm = diagonalizer_algorithm
 
     def __repr__(self) -> str:
@@ -1065,7 +1070,11 @@ class FastGaussMNMF(FastMNMFBase):
         self.activation = V
 
     def update_diagonalizer(self) -> None:
-        """Update diagonalizer."""
+        """Update diagonalizer.
+
+        - If ``diagonalizer_algorithm`` is ``IP`` or ``IP1``, \
+            ``update_diagonalizer_model_ip1`` is called.
+        """
 
         if self.diagonalizer_algorithm in ["IP", "IP1"]:
             self.update_diagonalizer_ip1()
