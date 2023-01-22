@@ -14,5 +14,6 @@ Submodules
    ssspy.bss.fdica
    ssspy.bss.iva
    ssspy.bss.ilrma
+   ssspy.bss.mnmf
    ssspy.bss.pdsbss
    ssspy.bss.cacgmm

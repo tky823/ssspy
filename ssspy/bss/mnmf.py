@@ -1,15 +1,18 @@
 import functools
-from typing import Callable, List, Optional, Union
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
+from ..utils.select_pair import sequential_pair_selector
 from ._psd import to_psd
+from ._update_spatial_model import update_by_ip1, update_by_ip2
 from .base import IterativeMethodBase
 
-__all__ = ["GaussMNMF"]
+__all__ = ["GaussMNMF", "FastGaussMNMF"]
 
+diagonalizer_algorithms = ["IP", "IP1", "IP2"]
 EPS = 1e-10
 
 
@@ -19,6 +22,12 @@ class MNMFBase(IterativeMethodBase):
     Args:
         n_basis (int):
             Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -31,6 +40,8 @@ class MNMFBase(IterativeMethodBase):
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize PSDTF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
@@ -115,6 +126,7 @@ class MNMFBase(IterativeMethodBase):
             s += ", n_channels={n_channels}"
 
         s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
 
@@ -135,14 +147,6 @@ class MNMFBase(IterativeMethodBase):
             setattr(self, key, kwargs[key])
 
         X = self.input
-        XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
-        XX = XX.transpose(2, 3, 0, 1)
-        diag = np.diagonal(XX, axis1=-2, axis2=-1)
-        diag = np.real(diag)
-        diag = np.maximum(diag, 0)
-        diag = self.flooring_fn(diag)
-        eye = np.eye(diag.shape[-1])
-        self.instant_covariance = (1 - eye) * XX + eye * diag[..., np.newaxis]
 
         n_sources = self.n_sources
         n_channels, n_bins, n_frames = X.shape
@@ -175,7 +179,7 @@ class MNMFBase(IterativeMethodBase):
                 Default: ``None``.
         """
         n_basis = self.n_basis
-        n_sources, n_channels = self.n_sources, self.n_channels
+        n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
         if rng is None:
@@ -223,17 +227,6 @@ class MNMFBase(IterativeMethodBase):
 
             self.basis, self.activation = T, V
 
-        if not hasattr(self, "spatial"):
-            H = np.eye(n_channels, dtype=self.input.dtype)
-            trace = np.trace(H, axis1=-2, axis2=-1)
-            H = H / np.real(trace)
-            H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
-        else:
-            # To avoid overwriting.
-            H = self.spatial.copy()
-
-        self.spatial = H
-
     def separate(self, input: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Implement 'separate' method.")
 
@@ -272,6 +265,62 @@ class MNMFBase(IterativeMethodBase):
 
         return Lamb
 
+
+class MNMF(MNMFBase):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[Union[Callable[["MNMF"], None], List[Callable[["MNMF"], None]]]] = None,
+        normalization: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
+        r"""Initialize NMF.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        if rng is None:
+            rng = np.random.default_rng()
+
+        super()._init_nmf(rng=rng)
+
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        if not hasattr(self, "spatial"):
+            H = np.eye(n_channels, dtype=self.input.dtype)
+            trace = np.trace(H, axis1=-2, axis2=-1)
+            H = H / np.real(trace)
+            H = np.tile(H, reps=(n_sources, n_bins, 1, 1))
+        else:
+            # To avoid overwriting.
+            H = self.spatial.copy()
+
+        self.spatial = H
+
     def reconstruct_mnmf(
         self,
         basis: np.ndarray,
@@ -290,10 +339,6 @@ class MNMFBase(IterativeMethodBase):
                 Spatial property with shape of (n_sources, n_bins, n_channels, n_channels).
             latent (numpy.ndarray, optional):
                 Latent variables with shape of (n_sources, n_basis).
-            axis1 (int):
-                First axis of covariance matrix. Default: ``-2``.
-            axis2 (int):
-                Second axis of covariance matrix. Default: ``-1``.
 
         Returns:
             numpy.ndarray of reconstructed multichannel NMF.
@@ -338,7 +383,41 @@ class MNMFBase(IterativeMethodBase):
         self.spatial = H
 
 
-class GaussMNMF(MNMFBase):
+class FastMNMFBase(MNMFBase):
+    r"""Base class of fast multichannel nonnegative matrix factorization (Fast MNMF).
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        normalization (bool or str):
+            Normalization of diagonalizers and diagonal elements of spatial covariance matrices.
+            Only power-based normalization is supported. Default: ``True``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
     def __init__(
         self,
         n_basis: int,
@@ -348,9 +427,185 @@ class GaussMNMF(MNMFBase):
             max_flooring, eps=EPS
         ),
         callbacks: Optional[
-            Union[Callable[["MNMFBase"], None], List[Callable[["MNMFBase"], None]]]
+            Union[Callable[["FastMNMFBase"], None], List[Callable[["FastMNMFBase"], None]]]
         ] = None,
-        normalization: bool = True,
+        normalization: Union[bool, str] = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+    def __repr__(self) -> str:
+        s = "FastMNMF("
+        s += "n_basis={n_basis}"
+
+        if self.n_sources is not None:
+            s += ", n_sources={n_sources}"
+
+        if hasattr(self, "n_channels"):
+            s += ", n_channels={n_channels}"
+
+        s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
+        s += ", record_loss={record_loss}"
+        s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def _reset(self, **kwargs) -> None:
+        r"""Reset attributes by given keyword arguments.
+
+        Args:
+            kwargs:
+                Keyword arguments to set as attributes of MNMF.
+        """
+        assert self.input is not None, "Specify data!"
+
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
+        X = self.input
+
+        n_sources = self.n_sources
+        n_channels, n_bins, n_frames = X.shape
+
+        if n_sources is None:
+            n_sources = n_channels
+
+        self.n_sources, self.n_channels = n_sources, n_channels
+        self.n_bins, self.n_frames = n_bins, n_frames
+
+        self._init_instant_covariance()
+        self._init_nmf(rng=self.rng)
+        self._init_diagonalizer(rng=self.rng)
+        self._init_spatial(rng=self.rng)
+
+        self.output = self.separate(X)
+
+    def _init_diagonalizer(self, rng: Optional[np.random.Generator] = None) -> None:
+        """Initialize diagonalizer.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        n_channels = self.n_channels
+        n_bins = self.n_bins
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        if not hasattr(self, "diagonalizer"):
+            Q = np.eye(n_channels, dtype=np.complex128)
+            Q = np.tile(Q, reps=(n_bins, 1, 1))
+        else:
+            # To avoid overwriting.
+            Q = self.diagonalizer.copy()
+
+        self.diagonalizer = Q
+
+    def _init_spatial(self, rng: Optional[np.random.Generator] = None) -> None:
+        """Initialize diagonal elements of spatial covariance matrices.
+
+        Args:
+            rng (numpy.random.Generator, optional):
+                Random number generator. If ``None`` is given,
+                ``np.random.default_rng()`` is used.
+                Default: ``None``.
+        """
+        n_sources, n_channels = self.n_sources, self.n_channels
+        n_bins = self.n_bins
+
+        if rng is None:
+            rng = np.random.default_rng()
+
+        if not hasattr(self, "spatial"):
+            D = rng.random((n_bins, n_sources, n_channels))
+            D = self.flooring_fn(D)
+        else:
+            D = self.spatial
+
+        self.spatial = D
+
+    def normalize(self) -> None:
+        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices."""
+        normalization = self.normalization
+
+        assert normalization, "Set normalization."
+
+        if type(normalization) is bool:
+            # when normalization is True
+            normalization = "power"
+
+        if normalization == "power":
+            self.normalize_by_power()
+        else:
+            raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
+
+    def normalize_by_power(self) -> None:
+        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices by power.
+
+        Diagonalizers are normalized by
+
+        .. math::
+            \boldsymbol{q}_{im}
+            \leftarrow\frac{\boldsymbol{q}_{im}}{\psi_{im}},
+
+        where
+
+        .. math::
+            \psi_{im}
+            = \sqrt{\frac{1}{IJ}\sum_{i,j}|\boldsymbol{q}_{im}^{\mathsf{H}}
+            \boldsymbol{x}_{ij}|^{2}}.
+
+        For diagonal elements of spatial covariance matrices,
+
+        .. math::
+            d_{inm}
+            \leftarrow\frac{d_{inm}}{\psi_{im}^{2}}.
+        """
+        X = self.input
+        Q, D = self.diagonalizer, self.spatial
+
+        QX = Q @ X.transpose(1, 0, 2)
+        QX2 = np.mean(np.abs(QX) ** 2, axis=(0, 2))
+        psi = np.sqrt(QX2)
+        psi = self.flooring_fn(psi)
+
+        Q = Q / psi[np.newaxis, :, np.newaxis]
+        D = D / (psi**2)
+
+        self.diagonalizer, self.spatial = Q, D
+
+
+class GaussMNMF(MNMF):
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["GaussMNMF"], None], List[Callable[["GaussMNMF"], None]]]
+        ] = None,
+        normalization: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -378,6 +633,7 @@ class GaussMNMF(MNMFBase):
             s += ", n_channels={n_channels}"
 
         s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
 
@@ -651,3 +907,524 @@ class GaussMNMF(MNMFBase):
         Z = Z / Z.sum(axis=0)
 
         self.latent = Z
+
+
+class FastGaussMNMF(FastMNMFBase):
+    r"""Fast multichannel nonnegative matrix factorization on Gaussian distribution \
+    (Fast Gauss-MNMF).
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
+        diagonalizer_algorithm (str):
+            Algorithm for diagonalizers. Choose ``IP``, ``IP1``, or ``IP2``.
+            Default: ``IP``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
+    def __init__(
+        self,
+        n_basis: int,
+        n_sources: Optional[int] = None,
+        diagonalizer_algorithm: str = "IP",
+        partitioning: bool = False,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
+        callbacks: Optional[
+            Union[Callable[["FastGaussMNMF"], None], List[Callable[["FastGaussMNMF"], None]]]
+        ] = None,
+        normalization: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
+        super().__init__(
+            n_basis,
+            n_sources=n_sources,
+            partitioning=partitioning,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            normalization=normalization,
+            record_loss=record_loss,
+            reference_id=reference_id,
+            rng=rng,
+        )
+
+        assert diagonalizer_algorithm in diagonalizer_algorithms, "Not support {}.".format(
+            diagonalizer_algorithm
+        )
+        assert not partitioning, "partitioning function is not supported."
+
+        self.diagonalizer_algorithm = diagonalizer_algorithm
+
+        if pair_selector is None:
+            if diagonalizer_algorithm == "IP2":
+                self.pair_selector = sequential_pair_selector
+        else:
+            self.pair_selector = pair_selector
+
+    def __repr__(self) -> str:
+        s = "FastGaussMNMF("
+        s += "n_basis={n_basis}"
+
+        if self.n_sources is not None:
+            s += ", n_sources={n_sources}"
+
+        if hasattr(self, "n_channels"):
+            s += ", n_channels={n_channels}"
+
+        s += ", diagonalizer_algorithm={diagonalizer_algorithm}"
+        s += ", partitioning={partitioning}"
+        s += ", record_loss={record_loss}"
+        s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
+    def separate(self, input: np.ndarray) -> np.ndarray:
+        """Separate ``input`` using multichannel Wiener filter.
+
+        Args:
+            input (numpy.ndarray):
+                The mixture signal in frequency-domain.
+                The shape is (n_channels, n_bins, n_frames).
+
+        Returns:
+            numpy.ndarray of the separated signal in frequency-domain.
+            The shape is (n_sources, n_bins, n_frames).
+        """
+        na = np.newaxis
+        n_sources = self.n_sources
+        reference_id = self.reference_id
+
+        X = input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+
+        Q_inverse = np.linalg.inv(Q)
+        Q_inverse_Hermite = Q_inverse.transpose(0, 2, 1).conj()
+        QQ_Hermite = Q_inverse[:, :, :, na] * Q_inverse_Hermite[:, na, :, :]
+
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+
+        R_n = np.sum(LambD[:, :, :, na, :, na] * QQ_Hermite[:, na, :, :, :], axis=4)
+        R = np.sum(R_n, axis=0)
+        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R = np.tile(R, reps=(n_sources, 1, 1, 1, 1))
+        W_Hermite = np.linalg.solve(R, R_n)
+        W = W_Hermite.transpose(0, 1, 2, 4, 3).conj()
+        W_ref = W[:, :, :, reference_id, :]
+        W_ref = W_ref.transpose(0, 3, 1, 2)
+        Y = np.sum(W_ref * X, axis=1)
+
+        return Y
+
+    def compute_loss(self) -> float:
+        r"""Compute loss :math:`\mathcal{L}`.
+
+        :math:`\mathcal{L}` is defined as follows:
+
+        .. math::
+            \mathcal{L}
+            &:=-\frac{1}{J}\sum_{i,j}\left\{
+            \mathrm{tr}\left(
+            \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}\boldsymbol{R}_{ij}^{-1}
+            \right)
+            - \log\det\boldsymbol{R}_{ij}
+            \right\} \\
+            &:=\frac{1}{J}\sum_{i,j,m}\left\{
+            \frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}}
+            {\sum_{n}\lambda_{ijn}d_{inm}}
+            + \log\sum_{n}\lambda_{ijn}d_{inm}\right\}
+            - 2\sum_{i}\log|\det\boldsymbol{Q}_{i}|.
+
+        Returns:
+            Computed loss.
+        """
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+        na = np.newaxis
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX2 = np.abs(QX) ** 2
+        logdetQ = self.compute_logdet(Q)
+        loss = np.sum(QX2 / LambD + np.log(LambD), axis=1)
+        loss = np.mean(loss, axis=-1) - 2 * logdetQ
+        loss = loss.sum(axis=0)
+        loss = loss.item()
+
+        return loss
+
+    def compute_logdet(self, diagonalizer: np.ndarray) -> np.ndarray:
+        r"""Compute log-determinant.
+
+        Args:
+            reconstructed:
+                Diagonalizer with shape of (\*, n_channels, n_channels).
+
+        Returns:
+            numpy.ndarray of computed log-determinant values.
+            The shape is (\*).
+        """
+        _, logdet = np.linalg.slogdet(diagonalizer)
+
+        return logdet
+
+    def update_once(self) -> None:
+        r"""Update MNMF parameters, diagonalizers, and diagonal elements of \
+        spatial covariance matrices once.
+        """
+        self.update_basis()
+        self.update_activation()
+        self.update_diagonalizer()
+        self.update_spatial()
+
+        if self.normalization:
+            self.normalize()
+
+    def update_basis(self) -> None:
+        r"""Update NMF bases by MM algorithm.
+
+        Update :math:`t_{ikn}` as follows:
+
+        .. math::
+            t_{ikn}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{j,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}v_{kjn}}
+            {\left(\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{j,m}\dfrac{d_{inm}v_{kjn}}{\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}t_{ikn}.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+        LambD = np.sum(LambD, axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX = QX.transpose(0, 2, 1)
+        QXLambD = (QX / LambD) ** 2
+        DQXLambD = np.sum(D[:, :, na, :] * QXLambD, axis=-1)
+        DLambD = np.sum(D[:, :, na, :] / LambD, axis=-1)
+
+        num = np.sum(V[:, na, :] * DQXLambD[:, :, na], axis=-1)
+        denom = np.sum(V[:, na, :] * DLambD[:, :, na], axis=-1)
+
+        T = T * np.sqrt(num / denom)
+        T = self.flooring_fn(T)
+
+        self.basis = T
+
+    def update_activation(self) -> None:
+        r"""Update NMF activations by MM algorithm.
+
+        Update :math:`v_{kjn}` as follows:
+
+        .. math::
+            v_{kjn}
+            \leftarrow\left[
+            \frac{\displaystyle\sum_{i,m}\frac{|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}d_{inm}t_{ikn}}
+            {\left(\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{i,m}\dfrac{d_{inm}t_{ikn}}{\sum_{k',n'}t_{ik'n'}v_{k'jn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}v_{kjn}.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        D = D.transpose(1, 0, 2)
+        LambD = Lamb[:, :, :, na] * D[:, :, na, :]
+        LambD = np.sum(LambD, axis=0)
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX = QX.transpose(0, 2, 1)
+        QXLambD = (QX / LambD) ** 2
+        DQXLambD = np.sum(D[:, :, na, :] * QXLambD, axis=-1)
+        DLambD = np.sum(D[:, :, na, :] / LambD, axis=-1)
+
+        num = np.sum(T[:, :, :, na] * DQXLambD[:, :, na, :], axis=1)
+        denom = np.sum(T[:, :, :, na] * DLambD[:, :, na, :], axis=1)
+
+        V = V * np.sqrt(num / denom)
+        V = self.flooring_fn(V)
+
+        self.activation = V
+
+    def update_diagonalizer(self) -> None:
+        """Update diagonalizer.
+
+        - If ``diagonalizer_algorithm`` is ``IP`` or ``IP1``, \
+            ``update_diagonalizer_model_ip1`` is called.
+        - If ``diagonalizer_algorithm`` is ``IP2``, \
+            ``update_diagonalizer_model_ip2`` is called.
+        """
+
+        if self.diagonalizer_algorithm in ["IP", "IP1"]:
+            self.update_diagonalizer_ip1()
+        elif self.diagonalizer_algorithm in ["IP2"]:
+            self.update_diagonalizer_ip2()
+        else:
+            raise NotImplementedError("Not support {}.".format(self.diagonalizer_algorithm))
+
+    def update_diagonalizer_ip1(self) -> None:
+        r"""Update diagonalizer once using iterative projection.
+
+        Diagonalizers are updated sequentially for :math:`m=1,\ldots,M` as follows:
+
+        .. math::
+            \boldsymbol{q}_{im}
+            &\leftarrow\left(\boldsymbol{Q}_{im}^{\mathsf{H}}\boldsymbol{U}_{im}\right)^{-1} \
+            \boldsymbol{e}_{m}, \\
+            \boldsymbol{q}_{im}
+            &\leftarrow\frac{\boldsymbol{q}_{im}}
+            {\sqrt{\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{U}_{im}\boldsymbol{q}_{im}}},
+
+        where
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}
+            {\sum_{n}\left(\sum_{k}z_{nk}t_{ik}v_{kj}\right)d_{inm}}
+
+        if ``partitioning=True``, otherwise
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}
+            {\sum_{n}\left(\sum_{k}t_{ikn}v_{kjn}\right)d_{inm}}.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        XX_Hermite = X[:, na, :, :] * X[na, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        varphi = 1 / LambD
+
+        varphi_XX = varphi[:, :, na, na, :] * XX_Hermite[:, na, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
+
+    def update_diagonalizer_ip2(self) -> None:
+        r"""Update diagonalizer once using pairwise iterative projection.
+
+        For :math:`m_{1}` and :math:`m_{2}` (:math:`m_{1}\neq m_{2}`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\sum_{n}\lambda_{ijn}d_{inm}},
+
+        :math:`\lambda_{ijn}` is computed by
+
+        .. math::
+            \lambda_{ijn}=\sum_{k}z_{nk}t_{ik}v_{kj}
+
+        if ``partitioning=True``.
+        Otherwise,
+
+        .. math::
+            \lambda_{ijn}=\sum_{k}t_{ikn}v_{kjn}.
+
+        Using :math:`\boldsymbol{U}_{im_{1}}` and
+        :math:`\boldsymbol{U}_{im_{2}}`, we compute generalized eigenvectors.
+
+        .. math::
+            \left({\boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{1}}
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\right)\boldsymbol{h}_{i}
+            = \mu_{i}
+            \left({\boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{2}}
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\right)\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}
+            &= (\boldsymbol{Q}_{i}\boldsymbol{U}_{im_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}
+            &= (\boldsymbol{Q}_{i}\boldsymbol{U}_{im_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{im_{1}}`
+        and :math:`\boldsymbol{h}_{im_{2}}`.
+
+        .. math::
+            \boldsymbol{h}_{im_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{im_{1}}}
+            {\sqrt{\boldsymbol{h}_{im_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{1}}
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\right)
+            \boldsymbol{h}_{im_{1}}}}, \\
+            \boldsymbol{h}_{im_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{im_{2}}}
+            {\sqrt{\boldsymbol{h}_{im_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{2}}
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\right)
+            \boldsymbol{h}_{im_{2}}}}.
+
+        Then, update :math:`\boldsymbol{q}_{im_{1}}` and :math:`\boldsymbol{q}_{im_{2}}`
+        simultaneously.
+
+        .. math::
+            \boldsymbol{q}_{im_{1}}
+            &\leftarrow \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{1}} \\
+            \boldsymbol{q}_{im_{2}}
+            &\leftarrow \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{2}}
+
+        At each iteration, we update pairs of :math:`m_{1}` and :math:`m_{2}`
+        for :math:`m_{1}\neq m_{2}`.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        XX_Hermite = X[:, na, :, :] * X[na, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        varphi = 1 / LambD
+
+        varphi_XX = varphi[:, :, na, na, :] * XX_Hermite[:, na, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        self.diagonalizer = update_by_ip2(
+            Q, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
+
+    def update_spatial(self) -> None:
+        r"""Update diagonal elements of spatial covariance matrix by MM algorithm.
+
+        Update :math:`d_{inm}` as follows:
+
+        .. math::
+            d_{inm}\leftarrow\left[
+            \dfrac{\displaystyle\sum_{j}\frac{\lambda_{ijn}|\boldsymbol{q}_{im}^{\mathsf{H}}\boldsymbol{x}_{ij}|^{2}}
+            {\left(\sum_{n'}\lambda_{ijn'}d_{in'm}\right)^{2}}}
+            {\displaystyle\sum_{j}\frac{\lambda_{ijn}}{\sum_{n'}\lambda_{ijn'}d_{in'm}}}
+            \right]^{\frac{1}{2}}d_{inm}.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        QX = Q @ X.transpose(1, 0, 2)
+        QX = np.abs(QX)
+        QX2 = QX**2
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        LambD2 = LambD**2
+        Lamb_LambD2 = Lamb[:, :, na] / LambD2[:, na, :]
+        num = np.sum(Lamb_LambD2 * QX2[:, na, :, :], axis=-1)
+
+        Lamb_LambD = Lamb[:, :, na] / LambD[:, na, :]
+        denom = np.sum(Lamb_LambD, axis=-1)
+
+        D = np.sqrt(num / denom) * D
+
+        self.spatial = D
