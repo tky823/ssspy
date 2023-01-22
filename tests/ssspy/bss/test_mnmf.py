@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import scipy.signal as ss
 
-from ssspy.bss.mnmf import FastGaussMNMF, GaussMNMF, MNMFBase
+from ssspy.bss.mnmf import FastGaussMNMF, FastMNMFBase, GaussMNMF, MNMFBase
 
 ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(ssspy_tests_dir)
@@ -44,6 +44,27 @@ def test_mnmf_base(
     callbacks: Optional[Union[Callable[[MNMFBase], None], List[Callable[[MNMFBase], None]]]],
 ):
     ipsdta = MNMFBase(
+        n_basis,
+        callbacks=callbacks,
+        record_loss=False,
+        rng=rng,
+    )
+
+    print(ipsdta)
+
+
+@pytest.mark.parametrize(
+    "n_basis",
+    parameters_mnmf_base,
+)
+@pytest.mark.parametrize("callbacks", parameters_callbacks)
+def test_fast_mnmf_base(
+    n_basis: int,
+    callbacks: Optional[
+        Union[Callable[[FastMNMFBase], None], List[Callable[[FastMNMFBase], None]]]
+    ],
+):
+    ipsdta = FastMNMFBase(
         n_basis,
         callbacks=callbacks,
         record_loss=False,
