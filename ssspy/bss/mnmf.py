@@ -25,6 +25,8 @@ class MNMFBase(IterativeMethodBase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -387,6 +389,8 @@ class FastMNMFBase(MNMFBase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -855,6 +859,8 @@ class FastGaussMNMF(FastMNMFBase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        partitioning (bool):
+            Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
