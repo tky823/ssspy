@@ -401,6 +401,9 @@ class FastMNMFBase(MNMFBase):
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        normalization (bool or str):
+            Normalization of diagonalizers and diagonal elements of spatial covariance matrices.
+            Only ``power`` is supported. Default: ``power``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -426,7 +429,7 @@ class FastMNMFBase(MNMFBase):
         callbacks: Optional[
             Union[Callable[["FastMNMFBase"], None], List[Callable[["FastMNMFBase"], None]]]
         ] = None,
-        normalization: bool = True,
+        normalization: Union[bool, str] = "power",
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
@@ -602,7 +605,7 @@ class GaussMNMF(MNMF):
         callbacks: Optional[
             Union[Callable[["GaussMNMF"], None], List[Callable[["GaussMNMF"], None]]]
         ] = None,
-        normalization: bool = True,
+        normalization: Union[bool, str] = "power",
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
