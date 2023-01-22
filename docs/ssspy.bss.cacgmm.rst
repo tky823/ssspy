@@ -8,4 +8,4 @@ Algorithms
     :members:
         separate, normalize_covariance,
         update_once, update_posterior, update_parameters,
-        compute_loss
+        compute_loss, solve_permutation

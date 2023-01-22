@@ -23,7 +23,8 @@ def correlation_based_permutation_solver(
     r"""Solve permutaion of estimated spectrograms."""
 
     warnings.warn(
-        "Use ssspy.algorithm.permutation_alignment.correlation_based_permutation_solver instead."
+        "Use ssspy.algorithm.permutation_alignment.correlation_based_permutation_solver instead.",
+        UserWarning,
     )
 
     return correlation_based_permutation_solver_base(

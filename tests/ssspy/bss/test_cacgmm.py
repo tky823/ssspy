@@ -23,15 +23,22 @@ n_iter = 3
 rng = np.random.default_rng(42)
 
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
+parameters_permutation_alignment = [
+    "posterior_score",
+    "amplitude_score",
+    "amplitude_correlation",
+]
 parameters_cacgmm = [(2, 2, {}), (3, 2, {})]
 
 
 @pytest.mark.parametrize("n_sources, n_channels, reset_kwargs", parameters_cacgmm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
+@pytest.mark.parametrize("permutation_alignment", parameters_permutation_alignment)
 def test_CACGMM(
     n_sources: int,
     n_channels: int,
     callbacks: Optional[Union[Callable[[CACGMM], None], List[Callable[[CACGMM], None]]]],
+    permutation_alignment: bool,
     reset_kwargs: Dict[str, Any],
 ):
     if n_sources < 4:
@@ -54,7 +61,12 @@ def test_CACGMM(
         waveform_mix, window=window, nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    cacgmm = CACGMM(n_sources=n_sources, callbacks=callbacks, rng=rng)
+    cacgmm = CACGMM(
+        n_sources=n_sources,
+        callbacks=callbacks,
+        permutation_alignment=permutation_alignment,
+        rng=rng,
+    )
 
     spectrogram_est = cacgmm(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
 

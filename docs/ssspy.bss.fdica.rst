@@ -61,7 +61,10 @@ Algorithms
 
 .. autoclass:: ssspy.bss.fdica.FDICABase
    :special-members: __call__
-   :members: separate, compute_loss, compute_logdet, restore_scale, apply_projection_back
+   :members: separate,
+      compute_loss, compute_logdet,
+      restore_scale, apply_projection_back,
+      solve_permutation
 
 .. autoclass:: ssspy.bss.fdica.GradFDICABase
    :special-members: __call__

@@ -46,8 +46,8 @@ class FDICABase(IterativeMethodBase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -70,7 +70,7 @@ class FDICABase(IterativeMethodBase):
         callbacks: Optional[
             Union[Callable[["FDICABase"], None], List[Callable[["FDICABase"], None]]]
         ] = None,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -88,7 +88,7 @@ class FDICABase(IterativeMethodBase):
             self.flooring_fn = flooring_fn
 
         self.input = None
-        self.solve_permutation = solve_permutation
+        self.permutation_alignment = permutation_alignment
         self.scale_restoration = scale_restoration
 
         if reference_id is None and scale_restoration:
@@ -126,7 +126,7 @@ class FDICABase(IterativeMethodBase):
 
     def __repr__(self) -> str:
         s = "FDICA("
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -235,6 +235,36 @@ class FDICABase(IterativeMethodBase):
 
         return logdet
 
+    def solve_permutation(self) -> None:
+        r"""Align demixing filters and separated spectrograms"""
+
+        permutation_alignment = self.permutation_alignment
+
+        assert permutation_alignment, "Set permutation_alignment=True."
+
+        if type(permutation_alignment) is bool:
+            # when permutation_alignment is True
+            permutation_alignment = "spectrogram_correlation"
+
+        if permutation_alignment == "spectrogram_correlation":
+            self.solve_permutation_by_correlation()
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+    def solve_permutation_by_correlation(self) -> None:
+        r"""Align posteriors and separated spectrograms by correlation."""
+
+        X, W = self.input, self.demix_filter
+
+        Y = self.separate(X, demix_filter=W)
+        Y = Y.transpose(1, 0, 2)
+        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+        Y = Y.transpose(1, 0, 2)
+
+        self.output, self.demix_filter = Y, W
+
     def restore_scale(self) -> None:
         r"""Restore scale ambiguity.
 
@@ -306,8 +336,8 @@ class GradFDICABase(FDICABase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -332,7 +362,7 @@ class GradFDICABase(FDICABase):
         callbacks: Optional[
             Union[Callable[["GradFDICABase"], None], List[Callable[["GradFDICABase"], None]]]
         ] = None,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -341,7 +371,7 @@ class GradFDICABase(FDICABase):
             contrast_fn=contrast_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -381,15 +411,8 @@ class GradFDICABase(FDICABase):
         # Call __call__ of FDICABase's parent, i.e. __call__ of IterativeMethodBase
         super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
-        if self.solve_permutation:
-            X, W = self.input, self.demix_filter
-
-            Y = self.separate(X, demix_filter=W)
-            Y = Y.transpose(1, 0, 2)
-            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
-            Y = Y.transpose(1, 0, 2)
-
-            self.output, self.demix_filter = Y, W
+        if self.permutation_alignment:
+            self.solve_permutation()
 
         if self.scale_restoration:
             self.restore_scale()
@@ -401,7 +424,7 @@ class GradFDICABase(FDICABase):
     def __repr__(self) -> str:
         s = "GradFDICA("
         s += "step_size={step_size}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -445,8 +468,8 @@ class GradFDICA(GradFDICABase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -523,7 +546,7 @@ class GradFDICA(GradFDICABase):
             Union[Callable[["GradFDICA"], None], List[Callable[["GradFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -534,7 +557,7 @@ class GradFDICA(GradFDICABase):
             score_fn=score_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -546,7 +569,7 @@ class GradFDICA(GradFDICABase):
         s = "GradFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -640,8 +663,8 @@ class NaturalGradFDICA(GradFDICABase):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -718,7 +741,7 @@ class NaturalGradFDICA(GradFDICABase):
             Union[Callable[["NaturalGradFDICA"], None], List[Callable[["NaturalGradFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -729,7 +752,7 @@ class NaturalGradFDICA(GradFDICABase):
             score_fn=score_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -741,7 +764,7 @@ class NaturalGradFDICA(GradFDICABase):
         s = "NaturalGradFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -835,8 +858,8 @@ class AuxFDICA(FDICABase):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -917,7 +940,7 @@ class AuxFDICA(FDICABase):
         callbacks: Optional[
             Union[Callable[["AuxFDICA"], None], List[Callable[["AuxFDICA"], None]]]
         ] = None,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -926,7 +949,7 @@ class AuxFDICA(FDICABase):
             contrast_fn=contrast_fn,
             flooring_fn=flooring_fn,
             callbacks=callbacks,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -969,15 +992,8 @@ class AuxFDICA(FDICABase):
         # Call __call__ of FDICABase's parent, i.e. __call__ of IterativeMethodBase
         super(FDICABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
-        if self.solve_permutation:
-            X, W = self.input, self.demix_filter
-
-            Y = self.separate(X, demix_filter=W)
-            Y = Y.transpose(1, 0, 2)
-            Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
-            Y = Y.transpose(1, 0, 2)
-
-            self.output, self.demix_filter = Y, W
+        if self.permutation_alignment:
+            self.solve_permutation()
 
         if self.scale_restoration:
             self.restore_scale()
@@ -989,7 +1005,7 @@ class AuxFDICA(FDICABase):
     def __repr__(self) -> str:
         s = "AuxFDICA("
         s += "spatial_algorithm={spatial_algorithm}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -1194,8 +1210,8 @@ class GradLaplaceFDICA(GradFDICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -1248,7 +1264,7 @@ class GradLaplaceFDICA(GradFDICA):
             Union[Callable[["GradLaplaceFDICA"], None], List[Callable[["GradLaplaceFDICA"], None]]]
         ] = None,
         is_holonomic: bool = False,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1285,7 +1301,7 @@ class GradLaplaceFDICA(GradFDICA):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1295,7 +1311,7 @@ class GradLaplaceFDICA(GradFDICA):
         s = "GradLaplaceFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -1332,8 +1348,8 @@ class NaturalGradLaplaceFDICA(NaturalGradFDICA):
         is_holonomic (bool):
             If ``is_holonomic=True``, Holonomic-type update is used.
             Otherwise, Nonholonomic-type update is used. Default: ``False``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -1389,7 +1405,7 @@ class NaturalGradLaplaceFDICA(NaturalGradFDICA):
             ]
         ] = None,
         is_holonomic: bool = False,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1426,7 +1442,7 @@ class NaturalGradLaplaceFDICA(NaturalGradFDICA):
             flooring_fn=flooring_fn,
             callbacks=callbacks,
             is_holonomic=is_holonomic,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1436,7 +1452,7 @@ class NaturalGradLaplaceFDICA(NaturalGradFDICA):
         s = "NaturalGradLaplaceFDICA("
         s += "step_size={step_size}"
         s += ", is_holonomic={is_holonomic}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 
@@ -1475,8 +1491,8 @@ class AuxLaplaceFDICA(AuxFDICA):
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         scale_restoration (bool or str):
             Technique to restore scale ambiguity.
@@ -1534,7 +1550,7 @@ class AuxLaplaceFDICA(AuxFDICA):
         callbacks: Optional[
             Union[Callable[["AuxLaplaceFDICA"], None], List[Callable[["AuxLaplaceFDICA"], None]]]
         ] = None,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
@@ -1570,7 +1586,7 @@ class AuxLaplaceFDICA(AuxFDICA):
             flooring_fn=flooring_fn,
             pair_selector=pair_selector,
             callbacks=callbacks,
-            solve_permutation=solve_permutation,
+            permutation_alignment=permutation_alignment,
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
@@ -1579,7 +1595,7 @@ class AuxLaplaceFDICA(AuxFDICA):
     def __repr__(self) -> str:
         s = "AuxLaplaceFDICA("
         s += "spatial_algorithm={spatial_algorithm}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
 

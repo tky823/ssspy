@@ -3,9 +3,12 @@ from typing import Callable, List, Optional, Union
 
 import numpy as np
 
-from ..algorithm.permutation_alignment import correlation_based_permutation_solver
+from ..algorithm.permutation_alignment import (
+    correlation_based_permutation_solver,
+    score_based_permutation_solver,
+)
 from ..linalg.quadratic import quadratic
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
 from ..special.logsumexp import logsumexp
 from ..special.softmax import softmax
 from ._psd import to_psd
@@ -22,6 +25,11 @@ class CACGMMBase(IterativeMethodBase):
             Number of sources to be separated.
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -37,6 +45,9 @@ class CACGMMBase(IterativeMethodBase):
     def __init__(
         self,
         n_sources: Optional[int] = None,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[
                 Callable[["CACGMMBase"], None],
@@ -47,10 +58,16 @@ class CACGMMBase(IterativeMethodBase):
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         self.normalization: bool
+        self.permutation_alignment: bool
 
         super().__init__(callbacks=callbacks, record_loss=record_loss)
 
         self.n_sources = n_sources
+
+        if flooring_fn is None:
+            self.flooring_fn = identity
+        else:
+            self.flooring_fn = flooring_fn
 
         if rng is None:
             rng = np.random.default_rng()
@@ -207,6 +224,140 @@ class CACGMMBase(IterativeMethodBase):
 
         return logdet
 
+    def solve_permutation(self) -> None:
+        r"""Align posteriors and separated spectrograms"""
+
+        permutation_alignment = self.permutation_alignment
+
+        assert permutation_alignment, "Set permutation_alignment=True."
+
+        if type(permutation_alignment) is bool:
+            # when permutation_alignment is True
+            permutation_alignment = "posterior_score"
+
+        if permutation_alignment in ["posterior_score", "posterior_correlation"]:
+            target = "posterior"
+        elif permutation_alignment in ["amplitude_score", "amplitude_correlation"]:
+            target = "amplitude"
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+        if permutation_alignment in ["posterior_score", "amplitude_score"]:
+            self.solve_permutation_by_score(target=target)
+        elif permutation_alignment in ["posterior_correlation", "amplitude_correlation"]:
+            self.solve_permutation_by_correlation(target=target)
+        else:
+            raise NotImplementedError(
+                "permutation_alignment {} is not implemented.".format(permutation_alignment)
+            )
+
+    def solve_permutation_by_score(self, target: str = "posterior") -> None:
+        r"""Align posteriors and amplitudes of separated spectrograms by score value.
+
+        Args:
+            target (str):
+                Target to compute score values. Choose ``posterior`` or ``amplitude``.
+                Default: ``posterior``.
+        """
+
+        assert target in ["posterior", "amplitude"], "Invalid target {} is specified.".format(
+            target
+        )
+
+        X = self.input
+        alpha = self.mixing
+        B = self.covariance
+        gamma = self.posterior
+
+        if hasattr(self, "global_iter"):
+            global_iter = self.global_iter
+        else:
+            global_iter = 1
+
+        if hasattr(self, "local_iter"):
+            local_iter = self.local_iter
+        else:
+            local_iter = 1
+
+        Y = self.separate(X, posterior=gamma)
+
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+
+        if target == "posterior":
+            gamma, (alpha, B) = score_based_permutation_solver(
+                gamma,
+                alpha,
+                B,
+                global_iter=global_iter,
+                local_iter=local_iter,
+                flooring_fn=self.flooring_fn,
+            )
+        elif target == "amplitude":
+            Y = Y.transpose(1, 0, 2)
+            amplitude = np.abs(Y)
+
+            _, (alpha, B, gamma) = score_based_permutation_solver(
+                amplitude,
+                alpha,
+                B,
+                gamma,
+                global_iter=global_iter,
+                local_iter=local_iter,
+                flooring_fn=self.flooring_fn,
+            )
+        else:
+            raise ValueError("Invalid target {} is specified.".format(target))
+
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+
+        Y = self.separate(X, posterior=gamma)
+
+        self.mixing = alpha
+        self.covariance = B
+        self.posterior = gamma
+        self.output = Y
+
+    def solve_permutation_by_correlation(self, target: str = "amplitude") -> None:
+        r"""Align posteriors and amplitudes of separated spectrograms by correlation.
+
+        Args:
+            target (str):
+                Target to compute correlations. Choose ``posterior`` or ``amplitude``.
+                Default: ``amplitude``.
+        """
+
+        assert target == "amplitude", "Only amplitude is supported as target."
+
+        X = self.input
+        alpha = self.mixing
+        B = self.covariance
+        gamma = self.posterior
+
+        Y = self.separate(X, posterior=self.posterior)
+
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+        Y = Y.transpose(1, 0, 2)
+        Y, (alpha, B, gamma) = correlation_based_permutation_solver(
+            Y, alpha, B, gamma, flooring_fn=self.flooring_fn
+        )
+        alpha = alpha.transpose(1, 0)
+        B = B.transpose(1, 0, 2, 3)
+        gamma = gamma.transpose(1, 0, 2)
+        Y = Y.transpose(1, 0, 2)
+
+        self.mixing = alpha
+        self.covariance = B
+        self.posterior = gamma
+        self.output = Y
+
 
 class CACGMM(CACGMMBase):
     r"""Complex angular central Gaussian mixture model (cACGMM) [#ito2016complex]_.
@@ -226,8 +377,8 @@ class CACGMM(CACGMMBase):
             Default: ``None``.
         normalization (bool):
             If ``True`` is given, normalization is applied to covariance in cACG.
-        solve_permutation (bool):
-            If ``solve_permutation=True``, a permutation solver is used to align
+        permutation_alignment (bool):
+            If ``permutation_alignment=True``, a permutation solver is used to align
             estimated spectrograms. Default: ``True``.
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
@@ -238,9 +389,6 @@ class CACGMM(CACGMMBase):
             Random number generator. This is mainly used to randomly initialize parameters
             of cACGMM. If ``None`` is given, ``np.random.default_rng()`` is used.
             Default: ``None``.
-
-    .. note::
-        The estimated spectrograms are aligned by similarity of their power.
 
     .. [#ito2016complex] N. Ito, S. Araki, and T. Nakatani. \
         "Complex angular central Gaussian mixture model for directional statistics \
@@ -261,17 +409,40 @@ class CACGMM(CACGMMBase):
             ]
         ] = None,
         normalization: bool = True,
-        solve_permutation: bool = True,
+        permutation_alignment: bool = True,
         record_loss: bool = True,
         reference_id: int = 0,
         rng: Optional[np.random.Generator] = None,
+        **kwargs,
     ) -> None:
-        super().__init__(n_sources=n_sources, callbacks=callbacks, record_loss=record_loss, rng=rng)
+        super().__init__(
+            n_sources=n_sources,
+            flooring_fn=flooring_fn,
+            callbacks=callbacks,
+            record_loss=record_loss,
+            rng=rng,
+        )
 
-        self.flooring_fn = flooring_fn
         self.normalization = normalization
-        self.solve_permutation = solve_permutation
+        self.permutation_alignment = permutation_alignment
         self.reference_id = reference_id
+
+        if type(permutation_alignment) is bool and permutation_alignment:
+            valid_keys = {"global_iter", "local_iter"}
+        elif type(permutation_alignment) is str and permutation_alignment in [
+            "posterior_score",
+            "amplitude_score",
+        ]:
+            valid_keys = {"global_iter", "local_iter"}
+        else:
+            valid_keys = set()
+
+        invalid_keys = set(kwargs) - valid_keys
+
+        assert invalid_keys == set(), "Invalid keywords {} are given.".format(invalid_keys)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
@@ -303,32 +474,11 @@ class CACGMM(CACGMMBase):
         # posterior should be updated
         self.update_posterior()
 
+        if self.permutation_alignment:
+            self.solve_permutation()
+
         X = self.input
-        Y = self.separate(X, posterior=self.posterior)
-
-        if self.solve_permutation:
-            # TODO: clustering priors instead of spectrogram.
-            alpha = self.mixing
-            B = self.covariance
-            gamma = self.posterior
-
-            alpha = alpha.transpose(1, 0)
-            B = B.transpose(1, 0, 2, 3)
-            gamma = gamma.transpose(1, 0, 2)
-            Y = Y.transpose(1, 0, 2)
-            Y, (alpha, B, gamma) = correlation_based_permutation_solver(
-                Y, alpha, B, gamma, flooring_fn=self.flooring_fn
-            )
-            alpha = alpha.transpose(1, 0)
-            B = B.transpose(1, 0, 2, 3)
-            gamma = gamma.transpose(1, 0, 2)
-            Y = Y.transpose(1, 0, 2)
-
-            self.mixing = alpha
-            self.covariance = B
-            self.posterior = gamma
-
-        self.output = Y
+        self.output = self.separate(X, posterior=self.posterior)
 
         return self.output
 
@@ -340,7 +490,7 @@ class CACGMM(CACGMMBase):
 
         s += "record_loss={record_loss}"
         s += ", normalization={normalization}"
-        s += ", solve_permutation={solve_permutation}"
+        s += ", permutation_alignment={permutation_alignment}"
         s += ", reference_id={reference_id}"
 
         s += ")"
