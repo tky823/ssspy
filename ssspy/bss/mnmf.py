@@ -837,6 +837,30 @@ class GaussMNMF(MNMF):
 
 
 class FastGaussMNMF(FastMNMFBase):
+    r"""Fast multichannel nonnegative matrix factorization on Gaussian distribution \
+    (Fast Gauss-MNMF).
+
+    Args:
+        n_basis (int):
+            Number of NMF bases.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        record_loss (bool):
+            Record the loss at each iteration of the update algorithm if ``record_loss=True``.
+            Default: ``True``.
+        rng (numpy.random.Generator, optioinal):
+            Random number generator. This is mainly used to randomly initialize PSDTF.
+            If ``None`` is given, ``np.random.default_rng()`` is used.
+            Default: ``None``.
+    """
+
     def __init__(
         self,
         n_basis: int,
