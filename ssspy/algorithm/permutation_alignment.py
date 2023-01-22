@@ -34,7 +34,7 @@ def correlation_based_permutation_solver(
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-15)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         overwrite (bool):
             Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
@@ -149,7 +149,7 @@ def score_based_permutation_solver(
             and return (n_channels, n_bins, n_frames).
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``partial(max_flooring, eps=1e-15)``.
+            Default: ``partial(max_flooring, eps=1e-10)``.
         overwrite (bool):
             Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
