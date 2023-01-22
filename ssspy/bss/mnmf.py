@@ -865,7 +865,8 @@ class FastGaussMNMF(FastMNMFBase):
             If ``None`` is given, ``n_sources`` is determined by number of channels
             in input spectrogram. Default: ``None``.
         diagonalizer_algorithm (str):
-            Algorithm for diagonalizers. Choose ``IP`` or ``IP1``. Default: ``IP``.
+            Algorithm for diagonalizers. Choose ``IP``, ``IP1``, or ``IP2``.
+            Default: ``IP``.
         partitioning (bool):
             Whether to use partioning function. Default: ``False``.
         flooring_fn (callable, optional):
