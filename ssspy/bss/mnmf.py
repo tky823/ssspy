@@ -1156,7 +1156,7 @@ class FastGaussMNMF(FastMNMFBase):
 
         - If ``diagonalizer_algorithm`` is ``IP`` or ``IP1``, \
             ``update_diagonalizer_model_ip1`` is called.
-         - If ``diagonalizer_algorithm`` is ``IP2``, \
+        - If ``diagonalizer_algorithm`` is ``IP2``, \
             ``update_diagonalizer_model_ip2`` is called.
         """
 
