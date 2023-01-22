@@ -126,6 +126,7 @@ class MNMFBase(IterativeMethodBase):
             s += ", n_channels={n_channels}"
 
         s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
 
@@ -453,6 +454,7 @@ class FastMNMFBase(MNMFBase):
             s += ", n_channels={n_channels}"
 
         s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
 
@@ -628,6 +630,7 @@ class GaussMNMF(MNMF):
             s += ", n_channels={n_channels}"
 
         s += ", partitioning={partitioning}"
+        s += ", normalization={normalization}"
         s += ", record_loss={record_loss}"
         s += ", reference_id={reference_id}"
 
