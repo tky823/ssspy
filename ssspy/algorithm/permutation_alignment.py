@@ -17,7 +17,7 @@ def correlation_based_permutation_solver(
     ),
     overwrite: bool = True,
 ) -> np.ndarray:
-    """Solve permutation of estimated spectrograms.
+    r"""Solve permutation of estimated spectrograms.
 
     Group channels at each frequency bin according to correlations
     between frequencies [#murata2001approach]_.
@@ -56,7 +56,7 @@ def correlation_based_permutation_solver(
 
         In this function, the shape of ``separated`` is expected ``(n_bins, n_sources, ...)``,
         which is different from other functions.
-    """  # noqa: W605
+    """
     assert sequence.ndim == 3, "Dimension of sequence is expected to be 3."
 
     for pos_idx, arg in enumerate(args):
