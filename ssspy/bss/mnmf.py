@@ -1256,14 +1256,14 @@ class FastGaussMNMF(FastMNMFBase):
 
         .. math::
             \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}
-            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{im_{1}})^{-1}
+            &= (\boldsymbol{Q}_{i}\boldsymbol{U}_{im_{1}})^{-1}
             (
             \begin{array}{cc}
                 \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
             \end{array}
             ), \\
             \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}
-            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{im_{2}})^{-1}
+            &= (\boldsymbol{Q}_{i}\boldsymbol{U}_{im_{2}})^{-1}
             (
             \begin{array}{cc}
                 \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
@@ -1287,13 +1287,13 @@ class FastGaussMNMF(FastMNMFBase):
             \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\right)
             \boldsymbol{h}_{im_{2}}}}.
 
-        Then, update :math:`\boldsymbol{w}_{im_{1}}` and :math:`\boldsymbol{w}_{im_{2}}`
+        Then, update :math:`\boldsymbol{q}_{im_{1}}` and :math:`\boldsymbol{q}_{im_{2}}`
         simultaneously.
 
         .. math::
-            \boldsymbol{w}_{im_{1}}
+            \boldsymbol{q}_{im_{1}}
             &\leftarrow \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{1}} \\
-            \boldsymbol{w}_{im_{2}}
+            \boldsymbol{q}_{im_{2}}
             &\leftarrow \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{2}}
 
         At each iteration, we update pairs of :math:`m_{1}` and :math:`m_{2}`
