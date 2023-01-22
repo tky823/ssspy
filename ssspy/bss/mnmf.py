@@ -39,6 +39,8 @@ class MNMFBase(IterativeMethodBase):
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize PSDTF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
@@ -403,6 +405,8 @@ class FastMNMFBase(MNMFBase):
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize PSDTF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
@@ -873,6 +877,8 @@ class FastGaussMNMF(FastMNMFBase):
         record_loss (bool):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
             Default: ``True``.
+        reference_id (int):
+            Reference channel in multichannel Wiener filter. Default: ``0``.
         rng (numpy.random.Generator, optioinal):
             Random number generator. This is mainly used to randomly initialize PSDTF.
             If ``None`` is given, ``np.random.default_rng()`` is used.
