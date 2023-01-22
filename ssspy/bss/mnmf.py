@@ -12,7 +12,7 @@ from .base import IterativeMethodBase
 
 __all__ = ["GaussMNMF", "FastGaussMNMF"]
 
-diagonalizer_algorithms = ["IP", "IP1"]
+diagonalizer_algorithms = ["IP", "IP1", "IP2"]
 EPS = 1e-10
 
 
