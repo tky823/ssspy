@@ -1,11 +1,12 @@
 import functools
-from typing import Callable, List, Optional, Union
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
 from ._psd import to_psd
+from ._select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2
 from .base import IterativeMethodBase
 
@@ -896,6 +897,7 @@ class FastGaussMNMF(FastMNMFBase):
         flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
             max_flooring, eps=EPS
         ),
+        pair_selector: Optional[Callable[[int], Iterable[Tuple[int, int]]]] = None,
         callbacks: Optional[
             Union[Callable[["FastGaussMNMF"], None], List[Callable[["FastGaussMNMF"], None]]]
         ] = None,
@@ -921,6 +923,12 @@ class FastGaussMNMF(FastMNMFBase):
         )
 
         self.diagonalizer_algorithm = diagonalizer_algorithm
+
+        if pair_selector is None:
+            if diagonalizer_algorithm == "IP2":
+                self.pair_selector = sequential_pair_selector
+        else:
+            self.pair_selector = pair_selector
 
     def __repr__(self) -> str:
         s = "FastGaussMNMF("
@@ -1147,10 +1155,14 @@ class FastGaussMNMF(FastMNMFBase):
 
         - If ``diagonalizer_algorithm`` is ``IP`` or ``IP1``, \
             ``update_diagonalizer_model_ip1`` is called.
+         - If ``diagonalizer_algorithm`` is ``IP2``, \
+            ``update_diagonalizer_model_ip2`` is called.
         """
 
         if self.diagonalizer_algorithm in ["IP", "IP1"]:
             self.update_diagonalizer_ip1()
+        elif self.diagonalizer_algorithm in ["IP2"]:
+            self.update_diagonalizer_ip2()
         else:
             raise NotImplementedError("Not support {}.".format(self.diagonalizer_algorithm))
 
