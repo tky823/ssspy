@@ -129,6 +129,7 @@ def score_based_permutation_solver(
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
+    multi_centroids: bool = False,
     overwrite: bool = True,
 ) -> np.ndarray:
     r"""Align permutations between frequencies based on score value [#sawada2010underdetermined]_.
@@ -150,6 +151,9 @@ def score_based_permutation_solver(
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``partial(max_flooring, eps=1e-10)``.
+        multi_centroids (bool):
+            If ``multi_centroids=True``, multiple centroids are used in global optimization.
+            However, this is not supported now. Default: ``False``.
         overwrite (bool):
             Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
@@ -161,6 +165,7 @@ def score_based_permutation_solver(
         in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
     """
     assert sequence.ndim == 3, "Dimension of sequence is expected to be 3."
+    assert not multi_centroids, "multi_centroids version is not supported."
 
     for pos_idx, arg in enumerate(args):
         if arg.shape[:2] != sequence.shape[:2]:
