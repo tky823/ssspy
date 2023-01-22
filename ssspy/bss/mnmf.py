@@ -6,7 +6,7 @@ import numpy as np
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
 from ._psd import to_psd
-from ._update_spatial_model import update_by_ip1
+from ._update_spatial_model import update_by_ip1, update_by_ip2
 from .base import IterativeMethodBase
 
 __all__ = ["GaussMNMF", "FastGaussMNMF"]
@@ -1134,6 +1134,112 @@ class FastGaussMNMF(FastMNMFBase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
+
+    def update_diagonalizer_ip2(self) -> None:
+        r"""Update diagonalizer once using pairwise iterative projection.
+
+        For :math:`m_{1}` and :math:`m_{2}` (:math:`m_{1}\neq m_{2}`),
+        compute weighted covariance matrix as follows:
+
+        .. math::
+            \boldsymbol{U}_{im}
+            = \frac{1}{J}\sum_{j}
+            \frac{\boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}}{\sum_{n}\lambda_{ijn}d_{inm}},
+
+        :math:`\lambda_{ijn}` is computed by
+
+        .. math::
+            \lambda_{ijn}=\sum_{k}z_{nk}t_{ik}v_{kj}
+
+        if ``partitioning=True``.
+        Otherwise,
+
+        .. math::
+            \lambda_{ijn}=\sum_{k}t_{ikn}v_{kjn}.
+
+        Using :math:`\boldsymbol{U}_{im_{1}}` and
+        :math:`\boldsymbol{U}_{im_{2}}`, we compute generalized eigenvectors.
+
+        .. math::
+            \left({\boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{1}}
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\right)\boldsymbol{h}_{i}
+            = \mu_{i}
+            \left({\boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{2}}
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\right)\boldsymbol{h}_{i},
+
+        where
+
+        .. math::
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{im_{1}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
+            \end{array}
+            ), \\
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}
+            &= (\boldsymbol{W}_{i}\boldsymbol{U}_{im_{2}})^{-1}
+            (
+            \begin{array}{cc}
+                \boldsymbol{e}_{m_{1}} & \boldsymbol{e}_{m_{2}}
+            \end{array}
+            ).
+
+        After that, we standardize two eigenvectors :math:`\boldsymbol{h}_{im_{1}}`
+        and :math:`\boldsymbol{h}_{im_{2}}`.
+
+        .. math::
+            \boldsymbol{h}_{im_{1}}
+            &\leftarrow\frac{\boldsymbol{h}_{im_{1}}}
+            {\sqrt{\boldsymbol{h}_{im_{1}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{1}}
+            \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\right)
+            \boldsymbol{h}_{im_{1}}}}, \\
+            \boldsymbol{h}_{im_{2}}
+            &\leftarrow\frac{\boldsymbol{h}_{im_{2}}}
+            {\sqrt{\boldsymbol{h}_{im_{2}}^{\mathsf{H}}
+            \left({\boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}}^{\mathsf{H}}\boldsymbol{U}_{im_{2}}
+            \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\right)
+            \boldsymbol{h}_{im_{2}}}}.
+
+        Then, update :math:`\boldsymbol{w}_{im_{1}}` and :math:`\boldsymbol{w}_{im_{2}}`
+        simultaneously.
+
+        .. math::
+            \boldsymbol{w}_{im_{1}}
+            &\leftarrow \boldsymbol{P}_{im_{1}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{1}} \\
+            \boldsymbol{w}_{im_{2}}
+            &\leftarrow \boldsymbol{P}_{im_{2}}^{(m_{1},m_{2})}\boldsymbol{h}_{im_{2}}
+
+        At each iteration, we update pairs of :math:`m_{1}` and :math:`m_{2}`
+        for :math:`m_{1}\neq m_{2}`.
+        """
+        assert not self.partitioning, "partitioning function is not supported."
+
+        na = np.newaxis
+
+        X = self.input
+        T, V = self.basis, self.activation
+        Q, D = self.diagonalizer, self.spatial
+
+        if self.partitioning:
+            Lamb = self.reconstruct_nmf(T, V, latent=self.latent)
+        else:
+            Lamb = self.reconstruct_nmf(T, V)
+
+        XX_Hermite = X[:, na, :, :] * X[na, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+
+        Lamb = Lamb.transpose(1, 0, 2)
+        LambD = np.sum(Lamb[:, :, na, :] * D[:, :, :, na], axis=1)
+        varphi = 1 / LambD
+
+        varphi_XX = varphi[:, :, na, na, :] * XX_Hermite[:, na, :, :, :]
+        U = np.mean(varphi_XX, axis=-1)
+
+        self.diagonalizer = update_by_ip2(
+            Q, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+        )
 
     def update_spatial(self) -> None:
         r"""Update diagonal elements of spatial covariance matrix by MM algorithm.
