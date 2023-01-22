@@ -132,7 +132,7 @@ def score_based_permutation_solver(
     ),
     overwrite: bool = True,
 ) -> np.ndarray:
-    """Align permutations between frequencies based on score value.
+    r"""Align permutations between frequencies based on score value [#sawada2010underdetermined]_.
 
     Args:
         sequence (numpy.ndarray):
@@ -154,7 +154,13 @@ def score_based_permutation_solver(
         overwrite (bool):
             Overwrite ``sequence`` and ``args`` if ``overwrite=True``.
             Default: ``True``.
-    """  # noqa: W605
+
+    .. [#sawada2010underdetermined]
+        H. Sawada, S. Araki, and S. Makino,
+        "Underdetermined convolutive blind source separation \
+        via frequency bin-wise clustering and permutation alignment,"
+        in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
+    """
     assert sequence.ndim == 3, "Dimension of sequence is expected to be 3."
 
     for pos_idx, arg in enumerate(args):
