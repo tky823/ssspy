@@ -20,7 +20,7 @@ def correlation_based_permutation_solver(
     """Solve permutation of estimated spectrograms.
 
     Group channels at each frequency bin according to correlations
-    between frequencies [#sawada2010underdetermined]_.
+    between frequencies [#murata2001approach]_.
 
     Args:
         sequence (numpy.ndarray):
@@ -47,11 +47,10 @@ def correlation_based_permutation_solver(
         - If more than two positional arguments are given, ``numpy.ndarray``s of
             permutated separated spectrograms and the permutated positional arguments are returned.
 
-        .. [#sawada2010underdetermined]
-            H. Sawada, S. Araki, and S. Makino,
-            "Underdetermined convolutive blind source separation \
-            via frequency bin-wise clustering and permutation alignment,"
-            in *IEEE Trans. ASLP*, vol. 19, no. 3, pp. 516-527, 2010.
+        .. [#murata2001approach]
+            N. Murata, S. Ikeda, and A. Ziehe,
+            "An approach to blind source separation based on temporal structure of speech signals,"
+            in *Neurocomputing*, vol. 41, no. 1, pp. 1-24, 2001.
 
     .. note::
 
