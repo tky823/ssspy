@@ -21,6 +21,10 @@ class MNMFBase(IterativeMethodBase):
     Args:
         n_basis (int):
             Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -379,6 +383,10 @@ class FastMNMFBase(MNMFBase):
     Args:
         n_basis (int):
             Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -843,6 +851,10 @@ class FastGaussMNMF(FastMNMFBase):
     Args:
         n_basis (int):
             Number of NMF bases.
+        n_sources (int, optional):
+            Number of sources to be separated.
+            If ``None`` is given, ``n_sources`` is determined by number of channels
+            in input spectrogram. Default: ``None``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
