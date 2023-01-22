@@ -4,6 +4,10 @@ ssspy.bss.mnmf
 
 Algorithms
 ~~~~~~~~~~
+.. autoclass:: ssspy.bss.mnmf.FastMNMFBase
+    :special-members: __call__
+    :members: normalize, normalize_by_power
+
 .. autoclass:: ssspy.bss.mnmf.FastGaussMNMF
     :special-members: __call__
     :members: separate,
