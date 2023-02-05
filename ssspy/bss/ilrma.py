@@ -871,7 +871,7 @@ class GaussILRMA(ILRMABase):
         if self.source_algorithm == "MM":
             self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
-            self.update_source_model_me()
+            self.update_source_model_me(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -900,8 +900,12 @@ class GaussILRMA(ILRMABase):
         self.update_basis_mm(flooring_fn=flooring_fn)
         self.update_activation_mm(flooring_fn=flooring_fn)
 
-    def update_source_model_me(self) -> None:
+    def update_source_model_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -909,8 +913,8 @@ class GaussILRMA(ILRMABase):
         if self.partitioning:
             self.update_latent_me()
 
-        self.update_basis_me()
-        self.update_activation_me()
+        self.update_basis_me(flooring_fn=flooring_fn)
+        self.update_activation_me(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -2061,7 +2065,7 @@ class TILRMA(ILRMABase):
         if self.source_algorithm == "MM":
             self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
-            self.update_source_model_me()
+            self.update_source_model_me(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -2082,13 +2086,18 @@ class TILRMA(ILRMABase):
         self.update_basis_mm(flooring_fn=flooring_fn)
         self.update_activation_mm(flooring_fn=flooring_fn)
 
-    def update_source_model_me(self) -> None:
+    def update_source_model_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_me()
 
-        self.update_basis_me()
-        self.update_activation_me()
+        self.update_basis_me(flooring_fn=flooring_fn)
+        self.update_activation_me(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -2363,7 +2372,10 @@ class TILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_me(self) -> None:
+    def update_basis_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
@@ -2391,6 +2403,7 @@ class TILRMA(ILRMABase):
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -2432,11 +2445,14 @@ class TILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = (num / denom) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_me(self) -> None:
+    def update_activation_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by ME algorithm.
 
         Update :math:`v_{kjn}` as follows:
@@ -2462,6 +2478,7 @@ class TILRMA(ILRMABase):
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -2503,7 +2520,7 @@ class TILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = (num / denom) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
