@@ -11,6 +11,7 @@ from ..linalg.quadratic import quadratic
 from ..special.flooring import identity, max_flooring
 from ..special.logsumexp import logsumexp
 from ..special.softmax import softmax
+from ..utils.flooring import choose_flooring_fn
 from ._psd import to_psd
 from .base import IterativeMethodBase
 
@@ -231,15 +232,9 @@ class CACGMMBase(IterativeMethodBase):
         r"""Align posteriors and separated spectrograms"""
 
         permutation_alignment = self.permutation_alignment
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         assert permutation_alignment, "Set permutation_alignment=True."
-
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
 
         if type(permutation_alignment) is bool:
             # when permutation_alignment is True
@@ -280,12 +275,7 @@ class CACGMMBase(IterativeMethodBase):
             target
         )
 
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         alpha = self.mixing
@@ -359,12 +349,7 @@ class CACGMMBase(IterativeMethodBase):
 
         assert target == "amplitude", "Only amplitude is supported as target."
 
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         alpha = self.mixing
@@ -579,12 +564,7 @@ class CACGMM(CACGMMBase):
         In ``update_posterior``, posterior probabilities are updated, which corresponds to E step.
         In ``update_parameters``, parameters of cACGMM are updated, which corresponds to M step.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         self.update_posterior(flooring_fn=flooring_fn)
         self.update_parameters(flooring_fn=flooring_fn)
@@ -599,12 +579,7 @@ class CACGMM(CACGMMBase):
 
         This method corresponds to E step in EM algorithm for cACGMM.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         alpha = self.mixing
         Z = self.unit_input
@@ -631,12 +606,7 @@ class CACGMM(CACGMMBase):
 
         This method corresponds to M step in EM algorithm for cACGMM.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
-        elif type(flooring_fn) is str and flooring_fn == "self":
-            flooring_fn = self.flooring_fn
-        else:
-            assert callable(flooring_fn), "flooring_fn should be callable."
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Z = self.unit_input
         B = self.covariance
