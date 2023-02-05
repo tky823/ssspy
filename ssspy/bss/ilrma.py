@@ -11,6 +11,7 @@ from ..algorithm import (
     projection_back,
 )
 from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase
@@ -143,9 +144,7 @@ class ILRMABase(IterativeMethodBase):
 
     def _reset(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         **kwargs
     ) -> None:
         r"""Reset attributes by given keyword arguments.
@@ -164,8 +163,7 @@ class ILRMABase(IterativeMethodBase):
         """
         assert self.input is not None, "Specify data!"
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -195,9 +193,7 @@ class ILRMABase(IterativeMethodBase):
 
     def _init_nmf(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         r"""Initialize NMF.
@@ -218,8 +214,7 @@ class ILRMABase(IterativeMethodBase):
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if rng is None:
             rng = np.random.default_rng()
@@ -329,9 +324,7 @@ class ILRMABase(IterativeMethodBase):
 
     def normalize(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Normalize demixing filters and NMF parameters.
 
@@ -344,11 +337,9 @@ class ILRMABase(IterativeMethodBase):
                 Default: ``functools.partial(max_flooring, eps=1e-10)``.
         """
         normalization = self.normalization
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         assert normalization, "Set normalization."
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         if type(normalization) is bool:
             # when normalization is True
@@ -363,9 +354,7 @@ class ILRMABase(IterativeMethodBase):
 
     def normalize_by_power(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Normalize demixing filters and NMF parameters by power.
 
@@ -407,8 +396,7 @@ class ILRMABase(IterativeMethodBase):
         """
         p = self.domain
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -834,9 +822,7 @@ class GaussILRMA(ILRMABase):
 
     def _reset(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         **kwargs
     ) -> None:
         r"""Reset attributes by given keyword arguments.
@@ -851,30 +837,39 @@ class GaussILRMA(ILRMABase):
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model(flooring_fn=self.flooring_fn)
-        self.update_spatial_model(flooring_fn=self.flooring_fn)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize(flooring_fn=self.flooring_fn)
+            self.normalize(flooring_fn=flooring_fn)
 
-    def update_source_model(self) -> None:
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables.
 
         - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
         - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
             self.update_source_model_me()
         else:
@@ -886,9 +881,7 @@ class GaussILRMA(ILRMABase):
 
     def update_source_model_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases, activations, and latent variables by MM algorithm.
 
@@ -899,8 +892,7 @@ class GaussILRMA(ILRMABase):
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.partitioning:
             self.update_latent_mm()
@@ -966,9 +958,7 @@ class GaussILRMA(ILRMABase):
 
     def update_basis_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases.
 
@@ -1001,8 +991,7 @@ class GaussILRMA(ILRMABase):
         """
         p = self.domain
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -1046,9 +1035,7 @@ class GaussILRMA(ILRMABase):
 
     def update_activation_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF activations by MM algorithm.
 
@@ -1078,9 +1065,7 @@ class GaussILRMA(ILRMABase):
             \right]^{\frac{p}{p+2}}v_{kjn}.
         """
         p = self.domain
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -1165,7 +1150,10 @@ class GaussILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_me(self) -> None:
+    def update_basis_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
@@ -1188,6 +1176,8 @@ class GaussILRMA(ILRMABase):
             {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
             t_{ikn}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
@@ -1225,11 +1215,14 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = (num / denom) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_me(self) -> None:
+    def update_activation_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by ME algorithm.
 
         Update :math:`t_{ikn}` as follows:
@@ -1250,6 +1243,8 @@ class GaussILRMA(ILRMABase):
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]v_{kjn}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
@@ -1287,15 +1282,13 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = (num / denom) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
     def update_spatial_model(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once.
 
@@ -1311,8 +1304,7 @@ class GaussILRMA(ILRMABase):
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1(flooring_fn=flooring_fn)
@@ -1327,9 +1319,7 @@ class GaussILRMA(ILRMABase):
 
     def update_spatial_model_ip1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
 
@@ -1367,10 +1357,9 @@ class GaussILRMA(ILRMABase):
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
         """
         p = self.domain
-        X, W = self.input, self.demix_filter
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        X, W = self.input, self.demix_filter
 
         if self.partitioning:
             Z = self.latent
@@ -1397,9 +1386,7 @@ class GaussILRMA(ILRMABase):
 
     def update_spatial_model_ip2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection \
         following [#nakashima2021faster]_.
@@ -1494,10 +1481,9 @@ class GaussILRMA(ILRMABase):
             in *Proc. EUSIPCO*, 2021, pp. 301-305.
         """
         p = self.domain
-        X, W = self.input, self.demix_filter
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        X, W = self.input, self.demix_filter
 
         if self.partitioning:
             Z = self.latent
@@ -1524,9 +1510,7 @@ class GaussILRMA(ILRMABase):
 
     def update_spatial_model_iss1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
 
@@ -1566,10 +1550,10 @@ class GaussILRMA(ILRMABase):
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
         """
         p = self.domain
-        Y = self.output
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        Y = self.output
 
         if self.partitioning:
             Z = self.latent
@@ -1587,9 +1571,7 @@ class GaussILRMA(ILRMABase):
 
     def update_spatial_model_iss2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
@@ -1661,10 +1643,9 @@ class GaussILRMA(ILRMABase):
             \end{cases}.
         """
         p = self.domain
-        Y = self.output
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        Y = self.output
 
         if self.partitioning:
             Z = self.latent
@@ -2024,9 +2005,7 @@ class TILRMA(ILRMABase):
 
     def _reset(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         **kwargs
     ) -> None:
         r"""Reset attributes by given keyword arguments.
@@ -2041,27 +2020,29 @@ class TILRMA(ILRMABase):
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model(flooring_fn=self.flooring_fn)
-        self.update_spatial_model(flooring_fn=self.flooring_fn)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize(flooring_fn=self.flooring_fn)
+            self.normalize(flooring_fn=flooring_fn)
 
     def update_source_model(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases, activations, and latent variables.
 
@@ -2075,8 +2056,10 @@ class TILRMA(ILRMABase):
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
             self.update_source_model_me()
         else:
@@ -2086,13 +2069,18 @@ class TILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
     def update_source_model_me(self) -> None:
         r"""Update NMF bases, activations, and latent variables by ME algorithm."""
@@ -2154,9 +2142,7 @@ class TILRMA(ILRMABase):
 
     def update_basis_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases by MM algorithm.
 
@@ -2196,9 +2182,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -2246,9 +2230,7 @@ class TILRMA(ILRMABase):
 
     def update_activation_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF activations by MM algorithm.
 
@@ -2286,9 +2268,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -2529,9 +2509,7 @@ class TILRMA(ILRMABase):
 
     def update_spatial_model(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once.
 
@@ -2547,8 +2525,7 @@ class TILRMA(ILRMABase):
         - If ``spatial_algorithm`` is ``IP2``, ``update_spatial_model_ip2`` is called.
         - If ``spatial_algorithm`` is ``ISS2``, ``update_spatial_model_iss2`` is called.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1(flooring_fn=flooring_fn)
@@ -2563,9 +2540,7 @@ class TILRMA(ILRMABase):
 
     def update_spatial_model_ip1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
 
@@ -2612,12 +2587,10 @@ class TILRMA(ILRMABase):
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         if self.partitioning:
             Z = self.latent
@@ -2646,9 +2619,7 @@ class TILRMA(ILRMABase):
 
     def update_spatial_model_ip2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
@@ -2741,15 +2712,13 @@ class TILRMA(ILRMABase):
         """
         nu = self.dof
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
 
         nu_nu2 = nu / (nu + 2)
         Y = self.separate(X, demix_filter=W)
         Y2 = np.abs(Y) ** 2
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         if self.partitioning:
             Z = self.latent
@@ -2780,9 +2749,7 @@ class TILRMA(ILRMABase):
 
     def update_spatial_model_iss1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
 
@@ -2825,13 +2792,11 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         if self.partitioning:
             Z = self.latent
@@ -2853,9 +2818,7 @@ class TILRMA(ILRMABase):
 
     def update_spatial_model_iss2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
@@ -2930,13 +2893,11 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         if self.partitioning:
             Z = self.latent
@@ -3301,9 +3262,7 @@ class GGDILRMA(ILRMABase):
 
     def _reset(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         **kwargs
     ) -> None:
         r"""Reset attributes by given keyword arguments.
@@ -3318,27 +3277,29 @@ class GGDILRMA(ILRMABase):
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model(flooring_fn=self.flooring_fn)
-        self.update_spatial_model(flooring_fn=self.flooring_fn)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize(flooring_fn=self.flooring_fn)
+            self.normalize(flooring_fn=flooring_fn)
 
     def update_source_model(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases, activations, and latent variables.
 
@@ -3349,11 +3310,10 @@ class GGDILRMA(ILRMABase):
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -3361,13 +3321,18 @@ class GGDILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -3418,9 +3383,7 @@ class GGDILRMA(ILRMABase):
 
     def update_basis_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases by MM algorithm.
 
@@ -3456,9 +3419,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -3502,9 +3463,7 @@ class GGDILRMA(ILRMABase):
 
     def update_activation_mm(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF activations by MM algorithm.
 
@@ -3540,9 +3499,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -3586,9 +3543,7 @@ class GGDILRMA(ILRMABase):
 
     def update_spatial_model(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once.
 
@@ -3604,8 +3559,7 @@ class GGDILRMA(ILRMABase):
         - If ``spatial_algorithm`` is ``IP2``, ``update_spatial_model_ip2`` is called.
         - If ``spatial_algorithm`` is ``ISS2``, ``update_spatial_model_iss2`` is called.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1"]:
             self.update_spatial_model_ip1(flooring_fn=flooring_fn)
@@ -3620,9 +3574,7 @@ class GGDILRMA(ILRMABase):
 
     def update_spatial_model_ip1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
 
@@ -3666,9 +3618,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -3703,9 +3653,7 @@ class GGDILRMA(ILRMABase):
 
     def update_spatial_model_ip2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
@@ -3798,9 +3746,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
-
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -3837,9 +3783,7 @@ class GGDILRMA(ILRMABase):
 
     def update_spatial_model_iss1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
 
@@ -3881,11 +3825,9 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Y = self.output
-
-        if flooring_fn is None:
-            flooring_fn = identity
-
         Y2b = np.abs(Y) ** (2 - beta)
         Y2b = flooring_fn(Y2b)
 
@@ -3909,9 +3851,7 @@ class GGDILRMA(ILRMABase):
 
     def update_spatial_model_iss2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
 
@@ -3986,11 +3926,9 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Y = self.output
-
-        if flooring_fn is None:
-            flooring_fn = identity
-
         Y2b = np.abs(Y) ** (2 - beta)
         Y2b = flooring_fn(Y2b)
 
