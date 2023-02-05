@@ -11,6 +11,7 @@ from ..algorithm import (
 )
 from ..algorithm.permutation_alignment import correlation_based_permutation_solver
 from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
@@ -253,14 +254,18 @@ class FDICABase(IterativeMethodBase):
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_correlation(self) -> None:
+    def solve_permutation_by_correlation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and separated spectrograms by correlation."""
 
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
         X, W = self.input, self.demix_filter
 
         Y = self.separate(X, demix_filter=W)
         Y = Y.transpose(1, 0, 2)
-        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=flooring_fn)
         Y = Y.transpose(1, 0, 2)
 
         self.output, self.demix_filter = Y, W
@@ -1016,21 +1021,27 @@ class AuxFDICA(FDICABase):
 
         return s.format(**self.__dict__)
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_once_ip1(flooring_fn=self.flooring_fn)
+            self.update_once_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_once_ip2(flooring_fn=self.flooring_fn)
+            self.update_once_ip2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_once_ip1(
-        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
 
@@ -1056,8 +1067,7 @@ class AuxFDICA(FDICABase):
             G_{\mathbb{R}}(|y_{ijn}|)
             &= G(y_{ijn}).
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -1074,7 +1084,8 @@ class AuxFDICA(FDICABase):
         self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
     def update_once_ip2(
-        self, flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
@@ -1164,11 +1175,9 @@ class AuxFDICA(FDICABase):
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         n_sources = self.n_sources
-
         X, W = self.input, self.demix_filter
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
@@ -1179,7 +1188,7 @@ class AuxFDICA(FDICABase):
             Y_mn = self.separate(X, demix_filter=W_mn)
 
             Y_abs_mn = np.abs(Y_mn)
-            denom = self.flooring_fn(2 * Y_abs_mn)
+            denom = flooring_fn(2 * Y_abs_mn)
             varphi_mn = self.d_contrast_fn(Y_abs_mn) / denom
             varphi_mn = varphi_mn.transpose(1, 0, 2)
             GXX_mn = varphi_mn[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
@@ -1189,7 +1198,7 @@ class AuxFDICA(FDICABase):
                 W,
                 U_mn,
                 pair=(m, n),
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
 
         self.demix_filter = W
