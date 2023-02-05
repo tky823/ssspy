@@ -10,7 +10,8 @@ from ..algorithm import (
     projection_back,
 )
 from ..algorithm.permutation_alignment import correlation_based_permutation_solver
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2_one_pair
 from .base import IterativeMethodBase
@@ -83,7 +84,7 @@ class FDICABase(IterativeMethodBase):
             self.contrast_fn = contrast_fn
 
         if flooring_fn is None:
-            self.flooring_fn = lambda x: x
+            self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
 
@@ -253,14 +254,28 @@ class FDICABase(IterativeMethodBase):
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_correlation(self) -> None:
-        r"""Align posteriors and separated spectrograms by correlation."""
+    def solve_permutation_by_correlation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Align posteriors and separated spectrograms by correlation.
 
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+        """
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
         X, W = self.input, self.demix_filter
 
         Y = self.separate(X, demix_filter=W)
         Y = Y.transpose(1, 0, 2)
-        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=self.flooring_fn)
+        Y, W = correlation_based_permutation_solver(Y, W, flooring_fn=flooring_fn)
         Y = Y.transpose(1, 0, 2)
 
         self.output, self.demix_filter = Y, W
@@ -1016,21 +1031,47 @@ class AuxFDICA(FDICABase):
 
         return s.format(**self.__dict__)
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_once_ip1()
+            self.update_once_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_once_ip2()
+            self.update_once_ip2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_once_ip1(self) -> None:
+    def update_once_ip1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
@@ -1054,22 +1095,36 @@ class AuxFDICA(FDICABase):
             G_{\mathbb{R}}(|y_{ijn}|)
             &= G(y_{ijn}).
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         Y_abs = np.abs(Y)
-        denom = self.flooring_fn(2 * Y_abs)
+        denom = flooring_fn(2 * Y_abs)
         varphi = self.d_contrast_fn(Y_abs) / denom  # (n_sources, n_bins, n_frames)
         varphi = varphi.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
         GXX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(GXX, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_once_ip2(self) -> None:
+    def update_once_ip2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
@@ -1157,8 +1212,9 @@ class AuxFDICA(FDICABase):
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
         """
-        n_sources = self.n_sources
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
+        n_sources = self.n_sources
         X, W = self.input, self.demix_filter
 
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
@@ -1169,7 +1225,7 @@ class AuxFDICA(FDICABase):
             Y_mn = self.separate(X, demix_filter=W_mn)
 
             Y_abs_mn = np.abs(Y_mn)
-            denom = self.flooring_fn(2 * Y_abs_mn)
+            denom = flooring_fn(2 * Y_abs_mn)
             varphi_mn = self.d_contrast_fn(Y_abs_mn) / denom
             varphi_mn = varphi_mn.transpose(1, 0, 2)
             GXX_mn = varphi_mn[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
@@ -1179,7 +1235,7 @@ class AuxFDICA(FDICABase):
                 W,
                 U_mn,
                 pair=(m, n),
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
 
         self.demix_filter = W

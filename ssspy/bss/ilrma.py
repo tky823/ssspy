@@ -10,7 +10,8 @@ from ..algorithm import (
     minimal_distortion_principle,
     projection_back,
 )
-from ..special.flooring import max_flooring
+from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import update_by_ip1, update_by_ip2, update_by_iss1, update_by_iss2
 from .base import IterativeMethodBase
@@ -77,7 +78,7 @@ class ILRMABase(IterativeMethodBase):
         self.partitioning = partitioning
 
         if flooring_fn is None:
-            self.flooring_fn = lambda x: x
+            self.flooring_fn = identity
         else:
             self.flooring_fn = flooring_fn
 
@@ -116,7 +117,7 @@ class ILRMABase(IterativeMethodBase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         super().__call__(n_iter=n_iter, initial_call=initial_call)
 
@@ -141,16 +142,29 @@ class ILRMABase(IterativeMethodBase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         We also set variance of Gaussian distribution.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
         assert self.input is not None, "Specify data!"
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -176,12 +190,23 @@ class ILRMABase(IterativeMethodBase):
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
 
-        self._init_nmf(rng=self.rng)
+        self._init_nmf(flooring_fn=flooring_fn, rng=self.rng)
 
-    def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
+    def _init_nmf(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         r"""Initialize NMF.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             rng (numpy.random.Generator, optional):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
@@ -191,6 +216,8 @@ class ILRMABase(IterativeMethodBase):
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if rng is None:
             rng = np.random.default_rng()
 
@@ -198,21 +225,21 @@ class ILRMABase(IterativeMethodBase):
             if not hasattr(self, "latent"):
                 Z = rng.random((n_sources, n_basis))
                 Z = Z / Z.sum(axis=0)
-                Z = self.flooring_fn(Z)
+                Z = flooring_fn(Z)
             else:
                 # To avoid overwriting.
                 Z = self.latent.copy()
 
             if not hasattr(self, "basis"):
                 T = rng.random((n_bins, n_basis))
-                T = self.flooring_fn(T)
+                T = flooring_fn(T)
             else:
                 # To avoid overwriting.
                 T = self.basis.copy()
 
             if not hasattr(self, "activation"):
                 V = rng.random((n_basis, n_frames))
-                V = self.flooring_fn(V)
+                V = flooring_fn(V)
             else:
                 # To avoid overwriting.
                 V = self.activation.copy()
@@ -222,14 +249,14 @@ class ILRMABase(IterativeMethodBase):
         else:
             if not hasattr(self, "basis"):
                 T = rng.random((n_sources, n_bins, n_basis))
-                T = self.flooring_fn(T)
+                T = flooring_fn(T)
             else:
                 # To avoid overwriting.
                 T = self.basis.copy()
 
             if not hasattr(self, "activation"):
                 V = rng.random((n_sources, n_basis, n_frames))
-                V = self.flooring_fn(V)
+                V = flooring_fn(V)
             else:
                 # To avoid overwriting.
                 V = self.activation.copy()
@@ -297,9 +324,24 @@ class ILRMABase(IterativeMethodBase):
         r"""Update demixing filters once."""
         raise NotImplementedError("Implement 'update_once' method.")
 
-    def normalize(self) -> None:
-        r"""Normalize demixing filters and NMF parameters."""
+    def normalize(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Normalize demixing filters and NMF parameters.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         normalization = self.normalization
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         assert normalization, "Set normalization."
 
@@ -308,14 +350,26 @@ class ILRMABase(IterativeMethodBase):
             normalization = "power"
 
         if normalization == "power":
-            self.normalize_by_power()
+            self.normalize_by_power(flooring_fn=flooring_fn)
         elif normalization == "projection_back":
             self.normalize_by_projection_back()
         else:
             raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
 
-    def normalize_by_power(self) -> None:
+    def normalize_by_power(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Normalize demixing filters and NMF parameters by power.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are normalized by
 
@@ -347,6 +401,8 @@ class ILRMABase(IterativeMethodBase):
         """
         p = self.domain
 
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
@@ -355,7 +411,7 @@ class ILRMABase(IterativeMethodBase):
 
         Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
         psi = np.sqrt(Y2)
-        psi = self.flooring_fn(psi)
+        psi = flooring_fn(psi)
 
         if self.partitioning:
             Z, T = self.latent, self.basis
@@ -738,7 +794,7 @@ class GaussILRMA(ILRMABase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
         super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
@@ -769,36 +825,80 @@ class GaussILRMA(ILRMABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        super()._reset(**kwargs)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model()
-        self.update_spatial_model()
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF parameters and demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize()
+            self.normalize(flooring_fn=flooring_fn)
 
-    def update_source_model(self) -> None:
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables.
 
         - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
         - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
-            self.update_source_model_me()
+            self.update_source_model_me(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -806,17 +906,47 @@ class GaussILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
-        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
-    def update_source_model_me(self) -> None:
-        r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+    def update_source_model_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -824,8 +954,8 @@ class GaussILRMA(ILRMABase):
         if self.partitioning:
             self.update_latent_me()
 
-        self.update_basis_me()
-        self.update_activation_me()
+        self.update_basis_me(flooring_fn=flooring_fn)
+        self.update_activation_me(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -871,8 +1001,20 @@ class GaussILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_mm(self) -> None:
-        r"""Update NMF bases by MM algorithm.
+    def update_basis_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -895,6 +1037,8 @@ class GaussILRMA(ILRMABase):
             ^{\frac{p}{p+2}}t_{ikn}.
         """
         p = self.domain
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -932,12 +1076,24 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = ((num / denom) ** p_p2) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_mm(self) -> None:
+    def update_activation_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`v_{kjn}` as follows:
 
@@ -958,6 +1114,7 @@ class GaussILRMA(ILRMABase):
             \right]^{\frac{p}{p+2}}v_{kjn}.
         """
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -995,7 +1152,7 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
@@ -1042,8 +1199,20 @@ class GaussILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_me(self) -> None:
+    def update_basis_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1065,6 +1234,8 @@ class GaussILRMA(ILRMABase):
             {\displaystyle\sum_{j}\frac{v_{kjn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}\right]
             t_{ikn}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
@@ -1102,12 +1273,24 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = (num / denom) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_me(self) -> None:
+    def update_activation_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1127,6 +1310,8 @@ class GaussILRMA(ILRMABase):
             {\displaystyle\sum_{i}\frac{t_{ikn}}{\sum_{k'}t_{ik'n}v_{k'jn}}}
             \right]v_{kjn}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
@@ -1164,31 +1349,58 @@ class GaussILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = (num / denom) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
-    def update_spatial_model(self) -> None:
+    def update_spatial_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``spatial_algorithm`` is ``IP`` or ``IP1``, ``update_spatial_model_ip1`` is called.
         - If ``spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_spatial_model_iss1`` is called.
         - If ``spatial_algorithm`` is ``IP2``, ``update_spatial_model_ip2`` is called.
         - If ``spatial_algorithm`` is ``ISS2``, ``update_spatial_model_iss2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_spatial_model_ip1()
+            self.update_spatial_model_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_spatial_model_ip2()
+            self.update_spatial_model_ip2(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS", "ISS1"]:
-            self.update_spatial_model_iss1()
+            self.update_spatial_model_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
-            self.update_spatial_model_iss2()
+            self.update_spatial_model_iss2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_ip1(self) -> None:
+    def update_spatial_model_ip1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
@@ -1217,6 +1429,8 @@ class GaussILRMA(ILRMABase):
             \boldsymbol{x}_{ij}\boldsymbol{x}_{ij}^{\mathsf{H}}.
         """
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         X, W = self.input, self.demix_filter
 
         if self.partitioning:
@@ -1240,11 +1454,23 @@ class GaussILRMA(ILRMABase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_spatial_model_ip2(self) -> None:
+    def update_spatial_model_ip2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection \
         following [#nakashima2021faster]_.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
@@ -1329,6 +1555,7 @@ class GaussILRMA(ILRMABase):
             in *Proc. EUSIPCO*, 2021, pp. 301-305.
         """
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
 
@@ -1352,11 +1579,23 @@ class GaussILRMA(ILRMABase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            W, U, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
-    def update_spatial_model_iss1(self) -> None:
+    def update_spatial_model_iss1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`y_{ijn}` as follows:
 
@@ -1387,6 +1626,9 @@ class GaussILRMA(ILRMABase):
             = \left(\sum_{k}t_{ikn}v_{kjn}\right)^{\frac{2}{p}}.
         """
         p = self.domain
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Y = self.output
 
         if self.partitioning:
@@ -1401,10 +1643,22 @@ class GaussILRMA(ILRMABase):
 
         varphi = 1 / R
 
-        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
+        self.output = update_by_iss1(Y, varphi, flooring_fn=flooring_fn)
 
-    def update_spatial_model_iss2(self) -> None:
+    def update_spatial_model_iss2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
@@ -1467,6 +1721,8 @@ class GaussILRMA(ILRMABase):
             \end{cases}.
         """
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Y = self.output
 
         if self.partitioning:
@@ -1482,7 +1738,7 @@ class GaussILRMA(ILRMABase):
         varphi = 1 / R
 
         self.output = update_by_iss2(
-            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            Y, varphi, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
     def compute_loss(self) -> float:
@@ -1793,7 +2049,7 @@ class TILRMA(ILRMABase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
         super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
@@ -1825,36 +2081,80 @@ class TILRMA(ILRMABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        super()._reset(**kwargs)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model()
-        self.update_spatial_model()
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF parameters and demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize()
+            self.normalize(flooring_fn=flooring_fn)
 
-    def update_source_model(self) -> None:
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases, activations, and latent variables.
 
         - If ``source_algorithm`` is ``MM``, ``update_source_model_mm`` is called.
         - If ``source_algorithm`` is ``ME``, ``update_source_model_me`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         elif self.source_algorithm == "ME":
-            self.update_source_model_me()
+            self.update_source_model_me(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -1862,21 +2162,53 @@ class TILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
-        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
-    def update_source_model_me(self) -> None:
-        r"""Update NMF bases, activations, and latent variables by ME algorithm."""
+    def update_source_model_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_me()
 
-        self.update_basis_me()
-        self.update_activation_me()
+        self.update_basis_me(flooring_fn=flooring_fn)
+        self.update_activation_me(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -1928,8 +2260,20 @@ class TILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_mm(self) -> None:
+    def update_basis_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1959,6 +2303,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -2000,12 +2345,24 @@ class TILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = ((num / denom) ** p_p2) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_mm(self) -> None:
+    def update_activation_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`v_{kjn}` as follows:
 
@@ -2033,6 +2390,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -2074,7 +2432,7 @@ class TILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_p2) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
@@ -2127,8 +2485,20 @@ class TILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_me(self) -> None:
+    def update_basis_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -2155,6 +2525,7 @@ class TILRMA(ILRMABase):
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -2196,12 +2567,24 @@ class TILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = (num / denom) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_me(self) -> None:
+    def update_activation_me(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by ME algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`v_{kjn}` as follows:
 
@@ -2226,6 +2609,7 @@ class TILRMA(ILRMABase):
             &= \frac{\nu}{\nu+2}\sum_{k}t_{ikn}v_{kjn}+\frac{2}{\nu+2}|y_{ijn}|^{2}.
         """
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
@@ -2267,31 +2651,58 @@ class TILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = (num / denom) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
-    def update_spatial_model(self) -> None:
+    def update_spatial_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``spatial_algorithm`` is ``IP`` or ``IP1``, ``update_spatial_model_ip1`` is called.
         - If ``spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_spatial_model_iss1`` is called.
         - If ``spatial_algorithm`` is ``IP2``, ``update_spatial_model_ip2`` is called.
         - If ``spatial_algorithm`` is ``ISS2``, ``update_spatial_model_iss2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_spatial_model_ip1()
+            self.update_spatial_model_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_spatial_model_ip2()
+            self.update_spatial_model_ip2(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS", "ISS1"]:
-            self.update_spatial_model_iss1()
+            self.update_spatial_model_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
-            self.update_spatial_model_iss2()
+            self.update_spatial_model_iss2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_ip1(self) -> None:
+    def update_spatial_model_ip1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
@@ -2329,6 +2740,7 @@ class TILRMA(ILRMABase):
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
@@ -2356,10 +2768,22 @@ class TILRMA(ILRMABase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_spatial_model_ip2(self) -> None:
+    def update_spatial_model_ip2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
@@ -2443,6 +2867,7 @@ class TILRMA(ILRMABase):
         """
         nu = self.dof
         p = self.domain
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
 
@@ -2474,11 +2899,23 @@ class TILRMA(ILRMABase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            W, U, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
-    def update_spatial_model_iss1(self) -> None:
+    def update_spatial_model_iss1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`y_{ijn}` as follows:
 
@@ -2512,6 +2949,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
         Y2 = np.abs(Y) ** 2
@@ -2533,10 +2971,22 @@ class TILRMA(ILRMABase):
 
         varphi = 1 / R_tilde
 
-        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
+        self.output = update_by_iss1(Y, varphi, flooring_fn=flooring_fn)
 
-    def update_spatial_model_iss2(self) -> None:
+    def update_spatial_model_iss2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
@@ -2602,6 +3052,7 @@ class TILRMA(ILRMABase):
         """
         p = self.domain
         nu = self.dof
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
         Y2 = np.abs(Y) ** 2
@@ -2624,7 +3075,7 @@ class TILRMA(ILRMABase):
         varphi = 1 / R_tilde
 
         self.output = update_by_iss2(
-            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            Y, varphi, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
     def compute_loss(self) -> float:
@@ -2936,7 +3387,7 @@ class GGDILRMA(ILRMABase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         # Call __call__ of ILRMABase's parent, i.e. __call__ of IterativeMethodBase
         super(ILRMABase, self).__call__(n_iter=n_iter, initial_call=initial_call)
@@ -2968,31 +3419,75 @@ class GGDILRMA(ILRMABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of ILRMA.
         """
-        super()._reset(**kwargs)
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        super()._reset(flooring_fn=flooring_fn, **kwargs)
 
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
-        r"""Update NMF parameters and demixing filters once."""
-        self.update_source_model()
-        self.update_spatial_model()
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF parameters and demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
 
         if self.normalization:
-            self.normalize()
+            self.normalize(flooring_fn=flooring_fn)
 
-    def update_source_model(self) -> None:
-        r"""Update NMF bases, activations, and latent variables."""
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         else:
             raise ValueError(
                 "{}-algorithm-based source model updates are not supported.".format(
@@ -3000,13 +3495,29 @@ class GGDILRMA(ILRMABase):
                 )
             )
 
-    def update_source_model_mm(self) -> None:
-        r"""Update NMF bases, activations, and latent variables by MM algorithm."""
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update NMF bases, activations, and latent variables by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.partitioning:
             self.update_latent_mm()
 
-        self.update_basis_mm()
-        self.update_activation_mm()
+        self.update_basis_mm(flooring_fn=flooring_fn)
+        self.update_activation_mm(flooring_fn=flooring_fn)
 
     def update_latent_mm(self) -> None:
         r"""Update latent variables in NMF by MM algorithm.
@@ -3055,8 +3566,20 @@ class GGDILRMA(ILRMABase):
 
         self.latent = Z
 
-    def update_basis_mm(self) -> None:
+    def update_basis_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -3082,6 +3605,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -3119,12 +3643,24 @@ class GGDILRMA(ILRMABase):
             denom = np.sum(V_TV, axis=3)
 
         T = ((num / denom) ** p_bp) * T
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation_mm(self) -> None:
+    def update_activation_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`v_{kjn}` as follows:
 
@@ -3150,6 +3686,7 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             X, W = self.input, self.demix_filter
@@ -3187,31 +3724,58 @@ class GGDILRMA(ILRMABase):
             denom = np.sum(T_TV, axis=1)
 
         V = ((num / denom) ** p_bp) * V
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
-    def update_spatial_model(self) -> None:
+    def update_spatial_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``spatial_algorithm`` is ``IP`` or ``IP1``, ``update_spatial_model_ip1`` is called.
         - If ``spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_spatial_model_iss1`` is called.
         - If ``spatial_algorithm`` is ``IP2``, ``update_spatial_model_ip2`` is called.
         - If ``spatial_algorithm`` is ``ISS2``, ``update_spatial_model_iss2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_spatial_model_ip1()
+            self.update_spatial_model_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_spatial_model_ip2()
+            self.update_spatial_model_ip2(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS", "ISS1"]:
-            self.update_spatial_model_iss1()
+            self.update_spatial_model_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
-            self.update_spatial_model_iss2()
+            self.update_spatial_model_iss2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_ip1(self) -> None:
+    def update_spatial_model_ip1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
@@ -3246,12 +3810,13 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
         Y2b = np.abs(Y) ** (2 - beta)
-        Y2b = self.flooring_fn(Y2b)
+        Y2b = flooring_fn(Y2b)
 
         if self.partitioning:
             Z = self.latent
@@ -3276,10 +3841,22 @@ class GGDILRMA(ILRMABase):
         varphi_XX = varphi[:, :, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        self.demix_filter = update_by_ip1(W, U, flooring_fn=self.flooring_fn)
+        self.demix_filter = update_by_ip1(W, U, flooring_fn=flooring_fn)
 
-    def update_spatial_model_ip2(self) -> None:
+    def update_spatial_model_ip2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute weighted covariance matrix as follows:
@@ -3363,12 +3940,13 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
 
         Y2b = np.abs(Y) ** (2 - beta)
-        Y2b = self.flooring_fn(Y2b)
+        Y2b = flooring_fn(Y2b)
 
         if self.partitioning:
             Z = self.latent
@@ -3394,11 +3972,23 @@ class GGDILRMA(ILRMABase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.demix_filter = update_by_ip2(
-            W, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            W, U, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
-    def update_spatial_model_iss1(self) -> None:
+    def update_spatial_model_iss1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`y_{ijn}` as follows:
 
@@ -3431,11 +4021,11 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
-
         Y2b = np.abs(Y) ** (2 - beta)
-        Y2b = self.flooring_fn(Y2b)
+        Y2b = flooring_fn(Y2b)
 
         if self.partitioning:
             Z = self.latent
@@ -3453,10 +4043,22 @@ class GGDILRMA(ILRMABase):
 
         varphi = beta / (2 * R_bar)
 
-        self.output = update_by_iss1(Y, varphi, flooring_fn=self.flooring_fn)
+        self.output = update_by_iss1(Y, varphi, flooring_fn=flooring_fn)
 
-    def update_spatial_model_iss2(self) -> None:
+    def update_spatial_model_iss2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update estimated spectrograms once using pairwise iterative source steering.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Compute :math:`\boldsymbol{G}_{in}^{(n_{1},n_{2})}`
         and :math:`\boldsymbol{f}_{in}^{(n_{1},n_{2})}` for :math:`n_{1}\neq n_{2}`:
@@ -3522,11 +4124,11 @@ class GGDILRMA(ILRMABase):
         """
         p = self.domain
         beta = self.beta
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
-
         Y2b = np.abs(Y) ** (2 - beta)
-        Y2b = self.flooring_fn(Y2b)
+        Y2b = flooring_fn(Y2b)
 
         if self.partitioning:
             Z = self.latent
@@ -3545,7 +4147,7 @@ class GGDILRMA(ILRMABase):
         varphi = 1 / R_tilde
 
         self.output = update_by_iss2(
-            Y, varphi, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            Y, varphi, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
     def compute_loss(self) -> float:

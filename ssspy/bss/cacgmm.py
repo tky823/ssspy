@@ -10,8 +10,9 @@ from ..algorithm.permutation_alignment import (
 from ..linalg.quadratic import quadratic
 from ..special.flooring import identity, max_flooring
 from ..special.logsumexp import logsumexp
+from ..special.psd import to_psd
 from ..special.softmax import softmax
-from ._psd import to_psd
+from ..utils.flooring import choose_flooring_fn
 from .base import IterativeMethodBase
 
 EPS = 1e-10
@@ -224,10 +225,25 @@ class CACGMMBase(IterativeMethodBase):
 
         return logdet
 
-    def solve_permutation(self) -> None:
-        r"""Align posteriors and separated spectrograms"""
+    def solve_permutation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Align posteriors and separated spectrograms.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         permutation_alignment = self.permutation_alignment
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         assert permutation_alignment, "Set permutation_alignment=True."
 
@@ -245,26 +261,39 @@ class CACGMMBase(IterativeMethodBase):
             )
 
         if permutation_alignment in ["posterior_score", "amplitude_score"]:
-            self.solve_permutation_by_score(target=target)
+            self.solve_permutation_by_score(target=target, flooring_fn=flooring_fn)
         elif permutation_alignment in ["posterior_correlation", "amplitude_correlation"]:
-            self.solve_permutation_by_correlation(target=target)
+            self.solve_permutation_by_correlation(target=target, flooring_fn=flooring_fn)
         else:
             raise NotImplementedError(
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_score(self, target: str = "posterior") -> None:
+    def solve_permutation_by_score(
+        self,
+        target: str = "posterior",
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and amplitudes of separated spectrograms by score value.
 
         Args:
             target (str):
                 Target to compute score values. Choose ``posterior`` or ``amplitude``.
                 Default: ``posterior``.
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
 
         assert target in ["posterior", "amplitude"], "Invalid target {} is specified.".format(
             target
         )
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         alpha = self.mixing
@@ -294,7 +323,7 @@ class CACGMMBase(IterativeMethodBase):
                 B,
                 global_iter=global_iter,
                 local_iter=local_iter,
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
         elif target == "amplitude":
             Y = Y.transpose(1, 0, 2)
@@ -307,7 +336,7 @@ class CACGMMBase(IterativeMethodBase):
                 gamma,
                 global_iter=global_iter,
                 local_iter=local_iter,
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
         else:
             raise ValueError("Invalid target {} is specified.".format(target))
@@ -323,16 +352,30 @@ class CACGMMBase(IterativeMethodBase):
         self.posterior = gamma
         self.output = Y
 
-    def solve_permutation_by_correlation(self, target: str = "amplitude") -> None:
+    def solve_permutation_by_correlation(
+        self,
+        target: str = "amplitude",
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and amplitudes of separated spectrograms by correlation.
 
         Args:
             target (str):
                 Target to compute correlations. Choose ``posterior`` or ``amplitude``.
                 Default: ``amplitude``.
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
 
         assert target == "amplitude", "Only amplitude is supported as target."
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         alpha = self.mixing
@@ -346,7 +389,7 @@ class CACGMMBase(IterativeMethodBase):
         gamma = gamma.transpose(1, 0, 2)
         Y = Y.transpose(1, 0, 2)
         Y, (alpha, B, gamma) = correlation_based_permutation_solver(
-            Y, alpha, B, gamma, flooring_fn=self.flooring_fn
+            Y, alpha, B, gamma, flooring_fn=flooring_fn
         )
         alpha = alpha.transpose(1, 0)
         B = B.transpose(1, 0, 2, 3)
@@ -472,10 +515,10 @@ class CACGMM(CACGMMBase):
         super(CACGMMBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         # posterior should be updated
-        self.update_posterior()
+        self.update_posterior(flooring_fn=self.flooring_fn)
 
         if self.permutation_alignment:
-            self.solve_permutation()
+            self.solve_permutation(flooring_fn=self.flooring_fn)
 
         X = self.input
         self.output = self.separate(X, posterior=self.posterior)
@@ -539,23 +582,51 @@ class CACGMM(CACGMMBase):
 
         return gamma * X[self.reference_id]
 
-    def update_once(self) -> None:
+    def update_once(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Perform E and M step once.
 
         In ``update_posterior``, posterior probabilities are updated, which corresponds to E step.
         In ``update_parameters``, parameters of cACGMM are updated, which corresponds to M step.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
-        self.update_posterior()
-        self.update_parameters()
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_posterior(flooring_fn=flooring_fn)
+        self.update_parameters(flooring_fn=flooring_fn)
 
         if self.normalization:
             self.normalize_covariance()
 
-    def update_posterior(self) -> None:
+    def update_posterior(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Update posteriors.
 
         This method corresponds to E step in EM algorithm for cACGMM.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         alpha = self.mixing
         Z = self.unit_input
         B = self.covariance
@@ -565,7 +636,7 @@ class CACGMM(CACGMMBase):
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
         ZBZ = np.maximum(ZBZ, 0)
-        ZBZ = self.flooring_fn(ZBZ)
+        ZBZ = flooring_fn(ZBZ)
 
         log_prob = np.log(alpha) - self.compute_logdet(B)
         log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
@@ -574,11 +645,24 @@ class CACGMM(CACGMMBase):
 
         self.posterior = gamma
 
-    def update_parameters(self) -> None:
+    def update_parameters(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Update parameters of mixture of complex angular central Gaussian distributions.
 
         This method corresponds to M step in EM algorithm for cACGMM.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Z = self.unit_input
         B = self.covariance
         gamma = self.posterior
@@ -588,7 +672,7 @@ class CACGMM(CACGMMBase):
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
         ZBZ = np.maximum(ZBZ, 0)
-        ZBZ = self.flooring_fn(ZBZ)
+        ZBZ = flooring_fn(ZBZ)
         ZZ = Z[:, :, :, np.newaxis] * Z[:, :, np.newaxis, :].conj()
 
         alpha = np.mean(gamma, axis=-1)
@@ -597,7 +681,7 @@ class CACGMM(CACGMMBase):
         num = np.sum(GZBZ[:, :, :, np.newaxis, np.newaxis] * ZZ, axis=2)
         denom = np.sum(gamma, axis=2)
         B = self.n_channels * (num / denom[:, :, np.newaxis, np.newaxis])
-        B = to_psd(B, flooring_fn=self.flooring_fn)
+        B = to_psd(B, flooring_fn=flooring_fn)
 
         self.mixing = alpha
         self.covariance = B

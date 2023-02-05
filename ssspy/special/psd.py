@@ -1,5 +1,4 @@
 import functools
-import warnings
 from typing import Callable, Optional
 
 import numpy as np
@@ -36,8 +35,6 @@ def to_psd(
     Returns:
         Positive semidefinite matrix.
     """
-    warnings.warn("Use ssspy.special.to_psd instead.", FutureWarning)
-
     if flooring_fn is None:
         flooring_fn = identity
 
