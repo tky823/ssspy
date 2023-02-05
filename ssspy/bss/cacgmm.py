@@ -224,12 +224,22 @@ class CACGMMBase(IterativeMethodBase):
 
         return logdet
 
-    def solve_permutation(self) -> None:
+    def solve_permutation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and separated spectrograms"""
 
         permutation_alignment = self.permutation_alignment
 
         assert permutation_alignment, "Set permutation_alignment=True."
+
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
 
         if type(permutation_alignment) is bool:
             # when permutation_alignment is True
@@ -245,15 +255,19 @@ class CACGMMBase(IterativeMethodBase):
             )
 
         if permutation_alignment in ["posterior_score", "amplitude_score"]:
-            self.solve_permutation_by_score(target=target)
+            self.solve_permutation_by_score(target=target, flooring_fn=flooring_fn)
         elif permutation_alignment in ["posterior_correlation", "amplitude_correlation"]:
-            self.solve_permutation_by_correlation(target=target)
+            self.solve_permutation_by_correlation(target=target, flooring_fn=flooring_fn)
         else:
             raise NotImplementedError(
                 "permutation_alignment {} is not implemented.".format(permutation_alignment)
             )
 
-    def solve_permutation_by_score(self, target: str = "posterior") -> None:
+    def solve_permutation_by_score(
+        self,
+        target: str = "posterior",
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and amplitudes of separated spectrograms by score value.
 
         Args:
@@ -265,6 +279,13 @@ class CACGMMBase(IterativeMethodBase):
         assert target in ["posterior", "amplitude"], "Invalid target {} is specified.".format(
             target
         )
+
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
 
         X = self.input
         alpha = self.mixing
@@ -294,7 +315,7 @@ class CACGMMBase(IterativeMethodBase):
                 B,
                 global_iter=global_iter,
                 local_iter=local_iter,
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
         elif target == "amplitude":
             Y = Y.transpose(1, 0, 2)
@@ -307,7 +328,7 @@ class CACGMMBase(IterativeMethodBase):
                 gamma,
                 global_iter=global_iter,
                 local_iter=local_iter,
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
         else:
             raise ValueError("Invalid target {} is specified.".format(target))
@@ -323,7 +344,11 @@ class CACGMMBase(IterativeMethodBase):
         self.posterior = gamma
         self.output = Y
 
-    def solve_permutation_by_correlation(self, target: str = "amplitude") -> None:
+    def solve_permutation_by_correlation(
+        self,
+        target: str = "amplitude",
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Align posteriors and amplitudes of separated spectrograms by correlation.
 
         Args:
@@ -333,6 +358,13 @@ class CACGMMBase(IterativeMethodBase):
         """
 
         assert target == "amplitude", "Only amplitude is supported as target."
+
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
 
         X = self.input
         alpha = self.mixing
@@ -346,7 +378,7 @@ class CACGMMBase(IterativeMethodBase):
         gamma = gamma.transpose(1, 0, 2)
         Y = Y.transpose(1, 0, 2)
         Y, (alpha, B, gamma) = correlation_based_permutation_solver(
-            Y, alpha, B, gamma, flooring_fn=self.flooring_fn
+            Y, alpha, B, gamma, flooring_fn=flooring_fn
         )
         alpha = alpha.transpose(1, 0)
         B = B.transpose(1, 0, 2, 3)
