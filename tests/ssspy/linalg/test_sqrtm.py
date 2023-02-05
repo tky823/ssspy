@@ -51,7 +51,7 @@ def test_invsqrtmh(
         X = np.mean(x[:, :, np.newaxis, :] * x[:, np.newaxis, :, :], axis=-1)
 
     if is_flooring:
-        X_invsqrt = invsqrtmh(X, flooring_fn=lambda x: np.maximum(x, 1e-12))
+        X_invsqrt = invsqrtmh(X, flooring_fn=lambda x: np.maximum(x, 1e-10))
     else:
         X_invsqrt = invsqrtmh(X)
 
