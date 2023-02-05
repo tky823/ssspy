@@ -13,6 +13,7 @@ from ..linalg.mean import gmeanmh
 from ..linalg.quadratic import quadratic
 from ..linalg.sqrtm import invsqrtmh, sqrtmh
 from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ._psd import to_psd
 from ._update_spatial_model import update_by_block_decomposition_vcd
 from .base import IterativeMethodBase
@@ -133,16 +134,20 @@ class IPSDTABase(IterativeMethodBase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
-
-        We also set variance of Gaussian distribution.
 
         Args:
             kwargs:
                 Keyword arguments to set as attributes of IPSDTA.
         """
         assert self.input is not None, "Specify data!"
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -168,13 +173,11 @@ class IPSDTABase(IterativeMethodBase):
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
 
-        self._init_psdtf(flooring_fn=self.flooring_fn, rng=self.rng)
+        self._init_psdtf(flooring_fn=flooring_fn, rng=self.rng)
 
     def _init_psdtf(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         r"""Initialize PSDTF.
@@ -189,8 +192,7 @@ class IPSDTABase(IterativeMethodBase):
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if rng is None:
             rng = np.random.default_rng()
@@ -445,16 +447,20 @@ class BlockDecompositionIPSDTABase(IPSDTABase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
-
-        We also set variance of Gaussian distribution.
 
         Args:
             kwargs:
                 Keyword arguments to set as attributes of IPSDTA.
         """
         assert self.input is not None, "Specify data!"
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -480,13 +486,11 @@ class BlockDecompositionIPSDTABase(IPSDTABase):
         self.demix_filter = W
         self.output = self.separate(X, demix_filter=W)
 
-        self._init_block_decomposition_psdtf(flooring_fn=self.flooring_fn, rng=self.rng)
+        self._init_block_decomposition_psdtf(flooring_fn=flooring_fn, rng=self.rng)
 
     def _init_block_decomposition_psdtf(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
         rng: Optional[np.random.Generator] = None,
     ) -> None:
         r"""Initialize PSDTF using block decomposition of bases.
@@ -511,8 +515,7 @@ class BlockDecompositionIPSDTABase(IPSDTABase):
 
         n_neighbors = n_bins // n_blocks
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if rng is None:
             rng = np.random.default_rng()
@@ -792,30 +795,51 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
 
             raise NotImplementedError("IPSDTA with fixed-point iteration is not supported.")
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF parameters and demixing filters once."""
-        self.update_source_model()
-        self.update_spatial_model()
 
-    def update_source_model(self) -> None:
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
+
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF basis matrices and activations."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
         if self.source_normalization:
             self.normalize_block_decomposition_psdtf()
 
-    def update_source_model_mm(self):
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ):
         r"""Update PSDTF basis matrices and activations by MM algorithm."""
-        self.update_basis_mm()
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_basis_mm(flooring_fn=flooring_fn)
         self.update_activation_mm()
 
-    def update_basis_mm(self) -> None:
+    def update_basis_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF basis matrices by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _update_basis_mm(
             basis: np.ndarray, activation: np.ndarray, separated: np.ndarray = None
@@ -849,12 +873,12 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
             )
             TQT = T @ Q @ T
 
-            P = to_psd(P, flooring_fn=self.flooring_fn)
-            TQT = to_psd(TQT, flooring_fn=self.flooring_fn)
+            P = to_psd(P, flooring_fn=flooring_fn)
+            TQT = to_psd(TQT, flooring_fn=flooring_fn)
 
             # geometric mean of P^(-1) and TQT
             T = gmeanmh(P, TQT, type=2)
-            T = to_psd(T, flooring_fn=self.flooring_fn)
+            T = to_psd(T, flooring_fn=flooring_fn)
 
             return T
 
@@ -942,15 +966,25 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
 
         self.activation = V * np.sqrt(num / denom)
 
-    def update_spatial_model(self) -> None:
+    def update_spatial_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm == "VCD":
-            self.update_spatial_model_vcd()
+            self.update_spatial_model_vcd(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_vcd(self) -> None:
+    def update_spatial_model_vcd(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once by VCD."""
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _update(input: np.ndarray, demix_filter: np.ndarray, covariance: np.ndarray):
             r"""
@@ -980,7 +1014,7 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
             RXX = np.mean(R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
 
             W = update_by_block_decomposition_vcd(
-                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < self.flooring_fn(0)
+                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < flooring_fn(0)
             )
 
             return W
@@ -1210,30 +1244,51 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
 
         return s.format(**self.__dict__)
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF parameters and demixing filters once."""
-        self.update_source_model()
-        self.update_spatial_model()
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-    def update_source_model(self) -> None:
+        self.update_source_model(flooring_fn=flooring_fn)
+        self.update_spatial_model(flooring_fn=flooring_fn)
+
+    def update_source_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF basis matrices and activations."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.source_algorithm == "MM":
-            self.update_source_model_mm()
+            self.update_source_model_mm(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.source_algorithm))
 
         if self.source_normalization:
             self.normalize_block_decomposition_psdtf()
 
-    def update_source_model_mm(self):
+    def update_source_model_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ):
         r"""Update PSDTF basis matrices and activations by MM algorithm."""
-        self.update_basis_mm()
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_basis_mm(flooring_fn=flooring_fn)
         self.update_activation_mm()
 
-    def update_basis_mm(self) -> None:
+    def update_basis_mm(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update PSDTF basis matrices by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
             r"""
@@ -1294,13 +1349,13 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
                 V[:, :, :, na, na, na] * piRYYR[:, na, :, :, :, :],
                 axis=2,
             )
-            Q = to_psd(Q, flooring_fn=self.flooring_fn)
+            Q = to_psd(Q, flooring_fn=flooring_fn)
             Q_sqrt = sqrtmh(Q)
 
             QTPTQ = Q_sqrt @ T @ P @ T @ Q_sqrt
-            QTPTQ = to_psd(QTPTQ, flooring_fn=self.flooring_fn)
-            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=self.flooring_fn) @ Q_sqrt @ T
-            T = to_psd(T, flooring_fn=self.flooring_fn)
+            QTPTQ = to_psd(QTPTQ, flooring_fn=flooring_fn)
+            T = T @ Q_sqrt @ invsqrtmh(QTPTQ, flooring_fn=flooring_fn) @ Q_sqrt @ T
+            T = to_psd(T, flooring_fn=flooring_fn)
 
             return T
 
@@ -1444,15 +1499,25 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
 
         self.activation = V * np.sqrt(num / denom)
 
-    def update_spatial_model(self) -> None:
+    def update_spatial_model(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm == "VCD":
-            self.update_spatial_model_vcd()
+            self.update_spatial_model_vcd(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
-    def update_spatial_model_vcd(self) -> None:
+    def update_spatial_model_vcd(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once by VCD."""
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _quadratic(Y: np.ndarray, R: np.ndarray) -> np.ndarray:
             r"""
@@ -1499,7 +1564,7 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
             RXX = np.mean(pi_R_inverse[:, :, :, :, na, na] * XX[:, :, :, na, :, :], axis=-1)
 
             W = update_by_block_decomposition_vcd(
-                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < self.flooring_fn(0)
+                W, weighted_covariance=RXX, singular_fn=lambda x: np.abs(x) < flooring_fn(0)
             )
 
             return W
