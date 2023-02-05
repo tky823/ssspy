@@ -539,14 +539,23 @@ class CACGMM(CACGMMBase):
 
         return gamma * X[self.reference_id]
 
-    def update_once(self) -> None:
+    def update_once(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Perform E and M step once.
 
         In ``update_posterior``, posterior probabilities are updated, which corresponds to E step.
         In ``update_parameters``, parameters of cACGMM are updated, which corresponds to M step.
         """
-        self.update_posterior()
-        self.update_parameters()
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
+
+        self.update_posterior(flooring_fn=flooring_fn)
+        self.update_parameters(flooring_fn=flooring_fn)
 
         if self.normalization:
             self.normalize_covariance()
