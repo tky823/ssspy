@@ -5,6 +5,7 @@ import numpy as np
 
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._psd import to_psd
 from ._update_spatial_model import update_by_ip1, update_by_ip2
@@ -162,14 +163,23 @@ class MNMFBase(IterativeMethodBase):
 
         self.output = self.separate(X)
 
-    def _init_instant_covariance(self) -> None:
+    def _init_instant_covariance(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Initialize instantaneous covariance of input."""
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         X = self.input
         XX = X[:, np.newaxis] * X[np.newaxis, :].conj()
         XX = XX.transpose(2, 3, 0, 1)
-        self.instant_covariance = to_psd(XX, flooring_fn=self.flooring_fn)
+        self.instant_covariance = to_psd(XX, flooring_fn=flooring_fn)
 
-    def _init_nmf(self, rng: Optional[np.random.Generator] = None) -> None:
+    def _init_nmf(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         r"""Initialize NMF.
 
         Args:
@@ -182,20 +192,22 @@ class MNMFBase(IterativeMethodBase):
         n_sources = self.n_sources
         n_bins, n_frames = self.n_bins, self.n_frames
 
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if rng is None:
             rng = np.random.default_rng()
 
         if self.partitioning:
             if not hasattr(self, "basis"):
                 T = rng.random((n_bins, n_basis))
-                T = self.flooring_fn(T)
+                T = flooring_fn(T)
             else:
                 # To avoid overwriting.
                 T = self.basis.copy()
 
             if not hasattr(self, "activation"):
                 V = rng.random((n_basis, n_frames))
-                V = self.flooring_fn(V)
+                V = flooring_fn(V)
             else:
                 # To avoid overwriting.
                 V = self.activation.copy()
@@ -203,7 +215,7 @@ class MNMFBase(IterativeMethodBase):
             if not hasattr(self, "latent"):
                 Z = rng.random((n_sources, n_basis))
                 Z = Z / Z.sum(axis=0)
-                Z = self.flooring_fn(Z)
+                Z = flooring_fn(Z)
             else:
                 # To avoid overwriting.
                 Z = self.latent.copy()
@@ -213,14 +225,14 @@ class MNMFBase(IterativeMethodBase):
         else:
             if not hasattr(self, "basis"):
                 T = rng.random((n_sources, n_bins, n_basis))
-                T = self.flooring_fn(T)
+                T = flooring_fn(T)
             else:
                 # To avoid overwriting.
                 T = self.basis.copy()
 
             if not hasattr(self, "activation"):
                 V = rng.random((n_sources, n_basis, n_frames))
-                V = self.flooring_fn(V)
+                V = flooring_fn(V)
             else:
                 # To avoid overwriting.
                 V = self.activation.copy()
@@ -465,7 +477,11 @@ class FastMNMFBase(MNMFBase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
@@ -473,6 +489,8 @@ class FastMNMFBase(MNMFBase):
                 Keyword arguments to set as attributes of MNMF.
         """
         assert self.input is not None, "Specify data!"
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -488,10 +506,10 @@ class FastMNMFBase(MNMFBase):
         self.n_sources, self.n_channels = n_sources, n_channels
         self.n_bins, self.n_frames = n_bins, n_frames
 
-        self._init_instant_covariance()
-        self._init_nmf(rng=self.rng)
+        self._init_instant_covariance(flooring_fn=flooring_fn)
+        self._init_nmf(flooring_fn=flooring_fn, rng=self.rng)
         self._init_diagonalizer(rng=self.rng)
-        self._init_spatial(rng=self.rng)
+        self._init_spatial(flooring_fn=flooring_fn, rng=self.rng)
 
         self.output = self.separate(X)
 
@@ -519,7 +537,11 @@ class FastMNMFBase(MNMFBase):
 
         self.diagonalizer = Q
 
-    def _init_spatial(self, rng: Optional[np.random.Generator] = None) -> None:
+    def _init_spatial(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        rng: Optional[np.random.Generator] = None,
+    ) -> None:
         """Initialize diagonal elements of spatial covariance matrices.
 
         Args:
@@ -531,20 +553,26 @@ class FastMNMFBase(MNMFBase):
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins
 
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if rng is None:
             rng = np.random.default_rng()
 
         if not hasattr(self, "spatial"):
             D = rng.random((n_bins, n_sources, n_channels))
-            D = self.flooring_fn(D)
+            D = flooring_fn(D)
         else:
             D = self.spatial
 
         self.spatial = D
 
-    def normalize(self) -> None:
+    def normalize(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices."""
         normalization = self.normalization
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         assert normalization, "Set normalization."
 
@@ -553,11 +581,14 @@ class FastMNMFBase(MNMFBase):
             normalization = "power"
 
         if normalization == "power":
-            self.normalize_by_power()
+            self.normalize_by_power(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Normalization {} is not implemented.".format(normalization))
 
-    def normalize_by_power(self) -> None:
+    def normalize_by_power(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices by power.
 
         Diagonalizers are normalized by
@@ -581,11 +612,12 @@ class FastMNMFBase(MNMFBase):
         """
         X = self.input
         Q, D = self.diagonalizer, self.spatial
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         QX = Q @ X.transpose(1, 0, 2)
         QX2 = np.mean(np.abs(QX) ** 2, axis=(0, 2))
         psi = np.sqrt(QX2)
-        psi = self.flooring_fn(psi)
+        psi = flooring_fn(psi)
 
         Q = Q / psi[np.newaxis, :, np.newaxis]
         D = D / (psi**2)
@@ -718,11 +750,16 @@ class GaussMNMF(MNMF):
 
         return logdet
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update MNMF parameters once."""
-        self.update_basis()
-        self.update_activation()
-        self.update_spatial()
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_basis(flooring_fn=flooring_fn)
+        self.update_activation(flooring_fn=flooring_fn)
+        self.update_spatial(flooring_fn=flooring_fn)
 
         if self.normalization:
             # ensure unit trace of spatial property
@@ -730,13 +767,18 @@ class GaussMNMF(MNMF):
             self.normalize(axis1=-2, axis2=-1)
 
         if self.partitioning:
-            self.update_latent()
+            self.update_latent(flooring_fn=flooring_fn)
 
-    def update_basis(self) -> None:
+    def update_basis(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
@@ -760,7 +802,7 @@ class GaussMNMF(MNMF):
         if self.partitioning:
             Z = self.latent
             R = self.reconstruct_mnmf(T, V, H, latent=Z)
-            R = to_psd(R, flooring_fn=self.flooring_fn)
+            R = to_psd(R, flooring_fn=flooring_fn)
 
             trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
@@ -771,7 +813,7 @@ class GaussMNMF(MNMF):
             denom = np.sum(Z[:, na, :] * VRH, axis=0)
         else:
             R = self.reconstruct_mnmf(T, V, H)
-            R = to_psd(R, flooring_fn=self.flooring_fn)
+            R = to_psd(R, flooring_fn=flooring_fn)
 
             trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
@@ -779,15 +821,20 @@ class GaussMNMF(MNMF):
             denom = np.sum(V[:, na, :, :] * trace_RH[:, :, na, :], axis=-1)
 
         T = T * np.sqrt(num / denom)
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation(self) -> None:
+    def update_activation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
@@ -811,7 +858,7 @@ class GaussMNMF(MNMF):
         if self.partitioning:
             Z = self.latent
             R = self.reconstruct_mnmf(T, V, H, latent=Z)
-            R = to_psd(R, flooring_fn=self.flooring_fn)
+            R = to_psd(R, flooring_fn=flooring_fn)
 
             trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
@@ -822,7 +869,7 @@ class GaussMNMF(MNMF):
             denom = np.sum(Z[:, :, na] * TRH, axis=0)
         else:
             R = self.reconstruct_mnmf(T, V, H)
-            R = to_psd(R, flooring_fn=self.flooring_fn)
+            R = to_psd(R, flooring_fn=flooring_fn)
 
             trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
@@ -830,13 +877,17 @@ class GaussMNMF(MNMF):
             denom = np.sum(T[:, :, :, na] * trace_RH[:, :, na, :], axis=1)
 
         V = V * np.sqrt(num / denom)
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
-    def update_spatial(self) -> None:
+    def update_spatial(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update spatial properties in NMF by MM algorithm."""
         na = np.newaxis
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         XX = self.instant_covariance
         T, V = self.basis, self.activation
@@ -850,7 +901,7 @@ class GaussMNMF(MNMF):
 
         R_n = Lamb[:, :, :, na, na] * H[:, :, na, :, :]
         R = np.sum(R_n, axis=0)
-        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R = to_psd(R, flooring_fn=flooring_fn)
         R_inverse = np.linalg.inv(R)
         RXXR = R_inverse @ XX @ R_inverse
 
@@ -858,20 +909,25 @@ class GaussMNMF(MNMF):
         Q = np.sum(Lamb[:, :, :, na, na] * RXXR, axis=2)
         HQH = H @ Q @ H
 
-        P = to_psd(P, flooring_fn=self.flooring_fn)
-        HQH = to_psd(HQH, flooring_fn=self.flooring_fn)
+        P = to_psd(P, flooring_fn=flooring_fn)
+        HQH = to_psd(HQH, flooring_fn=flooring_fn)
 
         # geometric mean of P^(-1) and HQH
         H = gmeanmh(P, HQH, type=2)
-        H = to_psd(H, flooring_fn=self.flooring_fn)
+        H = to_psd(H, flooring_fn=flooring_fn)
 
         self.spatial = H
 
-    def update_latent(self) -> None:
+    def update_latent(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update latent variables in NMF by MM algorithm."""
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
@@ -893,7 +949,7 @@ class GaussMNMF(MNMF):
         H, Z = self.spatial, self.latent
 
         R = self.reconstruct_mnmf(T, V, H, latent=Z)
-        R = to_psd(R, flooring_fn=self.flooring_fn)
+        R = to_psd(R, flooring_fn=flooring_fn)
 
         trace_RXXRH, trace_RH = _compute_traces(XX, R, spatial=H)
 
@@ -1111,19 +1167,27 @@ class FastGaussMNMF(FastMNMFBase):
 
         return logdet
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update MNMF parameters, diagonalizers, and diagonal elements of \
         spatial covariance matrices once.
         """
-        self.update_basis()
-        self.update_activation()
-        self.update_diagonalizer()
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        self.update_basis(flooring_fn=flooring_fn)
+        self.update_activation(flooring_fn=flooring_fn)
+        self.update_diagonalizer(flooring_fn=flooring_fn)
         self.update_spatial()
 
         if self.normalization:
-            self.normalize()
+            self.normalize(flooring_fn=flooring_fn)
 
-    def update_basis(self) -> None:
+    def update_basis(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF bases by MM algorithm.
 
         Update :math:`t_{ikn}` as follows:
@@ -1139,6 +1203,7 @@ class FastGaussMNMF(FastMNMFBase):
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         T, V = self.basis, self.activation
@@ -1163,11 +1228,14 @@ class FastGaussMNMF(FastMNMFBase):
         denom = np.sum(V[:, na, :] * DLambD[:, :, na], axis=-1)
 
         T = T * np.sqrt(num / denom)
-        T = self.flooring_fn(T)
+        T = flooring_fn(T)
 
         self.basis = T
 
-    def update_activation(self) -> None:
+    def update_activation(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update NMF activations by MM algorithm.
 
         Update :math:`v_{kjn}` as follows:
@@ -1183,6 +1251,7 @@ class FastGaussMNMF(FastMNMFBase):
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         T, V = self.basis, self.activation
@@ -1207,11 +1276,14 @@ class FastGaussMNMF(FastMNMFBase):
         denom = np.sum(T[:, :, :, na] * DLambD[:, :, na, :], axis=1)
 
         V = V * np.sqrt(num / denom)
-        V = self.flooring_fn(V)
+        V = flooring_fn(V)
 
         self.activation = V
 
-    def update_diagonalizer(self) -> None:
+    def update_diagonalizer(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         """Update diagonalizer.
 
         - If ``diagonalizer_algorithm`` is ``IP`` or ``IP1``, \
@@ -1219,15 +1291,19 @@ class FastGaussMNMF(FastMNMFBase):
         - If ``diagonalizer_algorithm`` is ``IP2``, \
             ``update_diagonalizer_model_ip2`` is called.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.diagonalizer_algorithm in ["IP", "IP1"]:
-            self.update_diagonalizer_ip1()
+            self.update_diagonalizer_ip1(flooring_fn=flooring_fn)
         elif self.diagonalizer_algorithm in ["IP2"]:
-            self.update_diagonalizer_ip2()
+            self.update_diagonalizer_ip2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.diagonalizer_algorithm))
 
-    def update_diagonalizer_ip1(self) -> None:
+    def update_diagonalizer_ip1(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update diagonalizer once using iterative projection.
 
         Diagonalizers are updated sequentially for :math:`m=1,\ldots,M` as follows:
@@ -1259,6 +1335,7 @@ class FastGaussMNMF(FastMNMFBase):
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         T, V = self.basis, self.activation
@@ -1279,9 +1356,12 @@ class FastGaussMNMF(FastMNMFBase):
         varphi_XX = varphi[:, :, na, na, :] * XX_Hermite[:, na, :, :, :]
         U = np.mean(varphi_XX, axis=-1)
 
-        self.diagonalizer = update_by_ip1(Q, U, flooring_fn=self.flooring_fn)
+        self.diagonalizer = update_by_ip1(Q, U, flooring_fn=flooring_fn)
 
-    def update_diagonalizer_ip2(self) -> None:
+    def update_diagonalizer_ip2(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update diagonalizer once using pairwise iterative projection.
 
         For :math:`m_{1}` and :math:`m_{2}` (:math:`m_{1}\neq m_{2}`),
@@ -1363,6 +1443,7 @@ class FastGaussMNMF(FastMNMFBase):
         assert not self.partitioning, "partitioning function is not supported."
 
         na = np.newaxis
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
         T, V = self.basis, self.activation
@@ -1384,7 +1465,7 @@ class FastGaussMNMF(FastMNMFBase):
         U = np.mean(varphi_XX, axis=-1)
 
         self.diagonalizer = update_by_ip2(
-            Q, U, flooring_fn=self.flooring_fn, pair_selector=self.pair_selector
+            Q, U, flooring_fn=flooring_fn, pair_selector=self.pair_selector
         )
 
     def update_spatial(self) -> None:
