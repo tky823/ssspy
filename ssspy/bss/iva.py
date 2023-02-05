@@ -12,6 +12,7 @@ from ..algorithm import (
 from ..linalg import eigh, prox
 from ..special.flooring import identity, max_flooring
 from ..transform import whiten
+from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import (
     update_by_ip1,
@@ -1143,7 +1144,10 @@ class FastIVA(FastIVABase):
 
         return s.format(**self.__dict__)
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         Demixing filters are updated as follows:
@@ -1163,11 +1167,13 @@ class FastIVA(FastIVABase):
             \leftarrow&\left(\boldsymbol{W}_{i}\boldsymbol{W}_{i}^{\mathsf{H}}\right)^{-\frac{1}{2}}
             \boldsymbol{W}_{i}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         norm = np.linalg.norm(Y, axis=1)
-        varphi = self.d_contrast_fn(norm) / self.flooring_fn(2 * norm)  # (n_sources, n_frames)
+        varphi = self.d_contrast_fn(norm) / flooring_fn(2 * norm)  # (n_sources, n_frames)
 
         Y_conj = Y.conj()
         YZ = Y_conj[:, np.newaxis, :, :] * Z
@@ -1175,7 +1181,7 @@ class FastIVA(FastIVABase):
         W_YZ = W_Hermite[:, :, :, np.newaxis] - YZ
         W_YZ = np.mean(varphi[:, np.newaxis, np.newaxis, :] * W_YZ, axis=-1)
 
-        Y_GG = (2 * varphi - self.dd_contrast_fn(norm)) / self.flooring_fn(2 * norm)
+        Y_GG = (2 * varphi - self.dd_contrast_fn(norm)) / flooring_fn(2 * norm)
         YY_GG = Y_GG[:, np.newaxis, :] * (np.abs(Y) ** 2)
         YY_GGW = np.mean(W_Hermite[:, :, :, np.newaxis] * YY_GG[:, np.newaxis, :, :], axis=-1)
 
@@ -1333,7 +1339,10 @@ class FasterIVA(FastIVABase):
 
         return s.format(**self.__dict__)
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         In FasterIVA, we compute the eigenvector of :math:`\boldsymbol{U}_{in}`
@@ -1350,14 +1359,15 @@ class FasterIVA(FastIVABase):
             \leftarrow\left(\boldsymbol{W}_{i}\boldsymbol{W}_{i}^{\mathsf{H}}\right)^{-\frac{1}{2}}
             \boldsymbol{W}_{i}.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         Z, W = self.whitened_input, self.demix_filter
         Y = self.separate(Z, demix_filter=W, use_whitening=False)
 
         ZZ_Hermite = Z[:, np.newaxis, :, :] * Z[np.newaxis, :, :, :].conj()
         ZZ_Hermite = ZZ_Hermite.transpose(2, 0, 1, 3)  # (n_bins, n_channels, n_channels, n_frames)
         norm = np.linalg.norm(Y, axis=1)
-        denom = self.flooring_fn(2 * norm)
-        varphi = self.d_contrast_fn(norm) / denom  # (n_sources, n_frames)
+        varphi = self.d_contrast_fn(norm) / flooring_fn(2 * norm)  # (n_sources, n_frames)
         varphi_ZZ = varphi[:, np.newaxis, np.newaxis, :] * ZZ_Hermite[:, np.newaxis, :, :, :]
         U = np.mean(varphi_ZZ, axis=-1)  # (n_bins, n_sources, n_channels, n_channels)
 
@@ -1611,7 +1621,10 @@ class AuxIVA(AuxIVABase):
         if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
             self.demix_filter = None
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update demixing filters once.
 
         - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
@@ -1619,22 +1632,22 @@ class AuxIVA(AuxIVABase):
         - If ``self.spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
         - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         if self.spatial_algorithm in ["IP", "IP1"]:
-            self.update_once_ip1(flooring_fn=self.flooring_fn)
+            self.update_once_ip1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["IP2"]:
-            self.update_once_ip2(flooring_fn=self.flooring_fn)
+            self.update_once_ip2(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS", "ISS1"]:
-            self.update_once_iss1(flooring_fn=self.flooring_fn)
+            self.update_once_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
-            self.update_once_iss2(flooring_fn=self.flooring_fn)
+            self.update_once_iss2(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
     def update_once_ip1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
 
@@ -1675,8 +1688,7 @@ class AuxIVA(AuxIVABase):
             G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
             &= G(\vec{\boldsymbol{y}}_{jn}).
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X, W = self.input, self.demix_filter
         Y = self.separate(X, demix_filter=W)
@@ -1693,9 +1705,7 @@ class AuxIVA(AuxIVABase):
 
     def update_once_ip2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
@@ -1789,21 +1799,19 @@ class AuxIVA(AuxIVABase):
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
         """
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
         n_sources = self.n_sources
         X, W = self.input, self.demix_filter
         XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
         XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
-
-        if flooring_fn is None:
-            flooring_fn = identity
 
         for m, n in self.pair_selector(n_sources):
             W_mn = W[:, (m, n), :]
             Y_mn = self.separate(X, demix_filter=W_mn)
 
             norm = np.linalg.norm(Y_mn, axis=1)
-            denom = self.flooring_fn(2 * norm)
-            weight = self.d_contrast_fn(norm) / denom
+            weight = self.d_contrast_fn(norm) / flooring_fn(2 * norm)
             GXX_mn = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
             U_mn = np.mean(GXX_mn, axis=-1)
 
@@ -1811,16 +1819,14 @@ class AuxIVA(AuxIVABase):
                 W,
                 U_mn,
                 pair=(m, n),
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
 
         self.demix_filter = W
 
     def update_once_iss1(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using \
         iterative source steering [#scheibler2020fast]_.
@@ -1859,8 +1865,7 @@ class AuxIVA(AuxIVABase):
             "Fast and stable blind source separation with rank-1 updates,"
             in *Proc. ICASSP*, 2020, pp. 236-240.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
         r = np.linalg.norm(Y, axis=1)
@@ -1871,9 +1876,7 @@ class AuxIVA(AuxIVABase):
 
     def update_once_iss2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update estimated spectrograms once using \
         pairwise iterative source steering [#ikeshita2022iss2]_.
@@ -1955,8 +1958,7 @@ class AuxIVA(AuxIVABase):
             majorization-minimization-based independent vector analysis,"
             *arXiv:2202.00875*, 2022.
         """
-        if flooring_fn is None:
-            flooring_fn = identity
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
 
@@ -3046,17 +3048,18 @@ class AuxGaussIVA(AuxIVA):
 
         self.variance = np.ones((n_sources, n_frames))
 
-    def update_once(self) -> None:
+    def update_once(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
         r"""Update variance and demixing filters and once."""
         self.update_source_model()
 
-        super().update_once()
+        super().update_once(flooring_fn=flooring_fn)
 
     def update_once_ip2(
         self,
-        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
-            max_flooring, eps=EPS
-        ),
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
 
@@ -3142,10 +3145,9 @@ class AuxGaussIVA(AuxIVA):
         At each iteration, we update pairs of :math:`n_{1}` and :math:`n_{1}`
         for :math:`n_{1}\neq n_{2}`.
         """
-        n_sources = self.n_sources
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if flooring_fn is None:
-            flooring_fn = identity
+        n_sources = self.n_sources
 
         X, W = self.input, self.demix_filter
         R = self.variance
@@ -3159,8 +3161,7 @@ class AuxGaussIVA(AuxIVA):
             R_mn = R[(m, n), :]
 
             norm = np.linalg.norm(Y_mn, axis=1)
-            denom = self.flooring_fn(2 * norm)
-            weight_mn = self.d_contrast_fn(norm, variance=R_mn) / denom
+            weight_mn = self.d_contrast_fn(norm, variance=R_mn) / flooring_fn(2 * norm)
             GXX_mn = weight_mn[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
             U_mn = np.mean(GXX_mn, axis=-1)
 
@@ -3168,7 +3169,7 @@ class AuxGaussIVA(AuxIVA):
                 W,
                 U_mn,
                 pair=(m, n),
-                flooring_fn=self.flooring_fn,
+                flooring_fn=flooring_fn,
             )
 
         self.demix_filter = W
