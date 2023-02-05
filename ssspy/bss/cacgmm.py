@@ -551,11 +551,20 @@ class CACGMM(CACGMMBase):
         if self.normalization:
             self.normalize_covariance()
 
-    def update_posterior(self) -> None:
+    def update_posterior(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Update posteriors.
 
         This method corresponds to E step in EM algorithm for cACGMM.
         """
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
+
         alpha = self.mixing
         Z = self.unit_input
         B = self.covariance
@@ -565,7 +574,7 @@ class CACGMM(CACGMMBase):
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
         ZBZ = np.maximum(ZBZ, 0)
-        ZBZ = self.flooring_fn(ZBZ)
+        ZBZ = flooring_fn(ZBZ)
 
         log_prob = np.log(alpha) - self.compute_logdet(B)
         log_gamma = log_prob[:, :, np.newaxis] - self.n_channels * np.log(ZBZ)
@@ -574,11 +583,20 @@ class CACGMM(CACGMMBase):
 
         self.posterior = gamma
 
-    def update_parameters(self) -> None:
+    def update_parameters(
+        self, flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self"
+    ) -> None:
         r"""Update parameters of mixture of complex angular central Gaussian distributions.
 
         This method corresponds to M step in EM algorithm for cACGMM.
         """
+        if flooring_fn is None:
+            flooring_fn = identity
+        elif type(flooring_fn) is str and flooring_fn == "self":
+            flooring_fn = self.flooring_fn
+        else:
+            assert callable(flooring_fn), "flooring_fn should be callable."
+
         Z = self.unit_input
         B = self.covariance
         gamma = self.posterior
@@ -588,7 +606,7 @@ class CACGMM(CACGMMBase):
         ZBZ = quadratic(Z, B_inverse[:, :, np.newaxis])
         ZBZ = np.real(ZBZ)
         ZBZ = np.maximum(ZBZ, 0)
-        ZBZ = self.flooring_fn(ZBZ)
+        ZBZ = flooring_fn(ZBZ)
         ZZ = Z[:, :, :, np.newaxis] * Z[:, :, np.newaxis, :].conj()
 
         alpha = np.mean(gamma, axis=-1)
@@ -597,7 +615,7 @@ class CACGMM(CACGMMBase):
         num = np.sum(GZBZ[:, :, :, np.newaxis, np.newaxis] * ZZ, axis=2)
         denom = np.sum(gamma, axis=2)
         B = self.n_channels * (num / denom[:, :, np.newaxis, np.newaxis])
-        B = to_psd(B, flooring_fn=self.flooring_fn)
+        B = to_psd(B, flooring_fn=flooring_fn)
 
         self.mixing = alpha
         self.covariance = B
