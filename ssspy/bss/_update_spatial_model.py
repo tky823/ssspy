@@ -32,7 +32,7 @@ def update_by_ip1(
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
         overwrite (bool):
             Overwrite ``demix_filter`` if ``overwrite=True``.
             Default: ``True``.
@@ -97,7 +97,7 @@ def update_by_ip2(
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair.
             If ``None`` is given, ``sequential_pair_selector`` is used.
@@ -160,7 +160,7 @@ def update_by_iss1(
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
         numpy.ndarray of updated spectrograms.
@@ -212,7 +212,7 @@ def update_by_iss2(
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
         pair_selector (callable, optional):
             Selector to choose updaing pair.
             If ``None`` is given, ``sequential_pair_selector`` is used.
@@ -334,7 +334,7 @@ def update_by_ip2_one_pair(
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
-            Default: ``functools.partial(max_flooring, eps=1e-15)``.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
         numpy.ndarray of updated demixing filter pair.
