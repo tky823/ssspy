@@ -10,9 +10,9 @@ from ..algorithm.permutation_alignment import (
 from ..linalg.quadratic import quadratic
 from ..special.flooring import identity, max_flooring
 from ..special.logsumexp import logsumexp
+from ..special.psd import to_psd
 from ..special.softmax import softmax
 from ..utils.flooring import choose_flooring_fn
-from ._psd import to_psd
 from .base import IterativeMethodBase
 
 EPS = 1e-10

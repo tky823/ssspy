@@ -5,9 +5,9 @@ import numpy as np
 
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
+from ..special.psd import to_psd
 from ..utils.flooring import choose_flooring_fn
 from ..utils.select_pair import sequential_pair_selector
-from ._psd import to_psd
 from ._update_spatial_model import update_by_ip1, update_by_ip2
 from .base import IterativeMethodBase
 
