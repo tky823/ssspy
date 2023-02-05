@@ -504,10 +504,10 @@ class CACGMM(CACGMMBase):
         super(CACGMMBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         # posterior should be updated
-        self.update_posterior()
+        self.update_posterior(flooring_fn=self.flooring_fn)
 
         if self.permutation_alignment:
-            self.solve_permutation()
+            self.solve_permutation(flooring_fn=self.flooring_fn)
 
         X = self.input
         self.output = self.separate(X, posterior=self.posterior)
