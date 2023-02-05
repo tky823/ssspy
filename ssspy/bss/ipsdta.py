@@ -142,6 +142,13 @@ class IPSDTABase(IterativeMethodBase):
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of IPSDTA.
         """
@@ -183,6 +190,13 @@ class IPSDTABase(IterativeMethodBase):
         r"""Initialize PSDTF.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             rng (numpy.random.Generator, optional):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
@@ -455,6 +469,13 @@ class BlockDecompositionIPSDTABase(IPSDTABase):
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of IPSDTA.
         """
@@ -496,12 +517,13 @@ class BlockDecompositionIPSDTABase(IPSDTABase):
         r"""Initialize PSDTF using block decomposition of bases.
 
         Args:
-            flooring_fn (callable, optional):
+            flooring_fn (callable or str, optional):
                 A flooring function for numerical stability.
                 This function is expected to return the same shape tensor as the input.
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
-                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             rng (numpy.random.Generator, optional):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
@@ -799,7 +821,18 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF parameters and demixing filters once."""
+        r"""Update PSDTF parameters and demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -810,7 +843,18 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF basis matrices and activations."""
+        r"""Update PSDTF basis matrices and activations.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.source_algorithm == "MM":
@@ -824,8 +868,19 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
     def update_source_model_mm(
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
-    ):
-        r"""Update PSDTF basis matrices and activations by MM algorithm."""
+    ) -> None:
+        r"""Update PSDTF basis matrices and activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         self.update_basis_mm(flooring_fn=flooring_fn)
@@ -835,7 +890,18 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF basis matrices by MM algorithm."""
+        r"""Update PSDTF basis matrices by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         n_sources = self.n_sources
         n_frames = self.n_frames
 
@@ -970,7 +1036,18 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update demixing filters once."""
+        r"""Update demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm == "VCD":
@@ -982,7 +1059,18 @@ class GaussIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update demixing filters once by VCD."""
+        r"""Update demixing filters once by VCD.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1248,7 +1336,18 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF parameters and demixing filters once."""
+        r"""Update PSDTF parameters and demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         self.update_source_model(flooring_fn=flooring_fn)
@@ -1258,7 +1357,18 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF basis matrices and activations."""
+        r"""Update PSDTF basis matrices and activations.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.source_algorithm == "MM":
@@ -1272,8 +1382,19 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
     def update_source_model_mm(
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
-    ):
-        r"""Update PSDTF basis matrices and activations by MM algorithm."""
+    ) -> None:
+        r"""Update PSDTF basis matrices and activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1284,7 +1405,18 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update PSDTF basis matrices by MM algorithm."""
+        r"""Update PSDTF basis matrices by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         n_sources = self.n_sources
         n_frames = self.n_frames
 
@@ -1503,7 +1635,18 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update demixing filters once."""
+        r"""Update demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         if self.spatial_algorithm == "VCD":
@@ -1515,7 +1658,18 @@ class TIPSDTA(BlockDecompositionIPSDTABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update demixing filters once by VCD."""
+        r"""Update demixing filters once by VCD.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 

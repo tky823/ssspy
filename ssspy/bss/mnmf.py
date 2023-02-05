@@ -167,7 +167,18 @@ class MNMFBase(IterativeMethodBase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Initialize instantaneous covariance of input."""
+        r"""Initialize instantaneous covariance of input.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         X = self.input
@@ -183,6 +194,13 @@ class MNMFBase(IterativeMethodBase):
         r"""Initialize NMF.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             rng (numpy.random.Generator, optional):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
@@ -485,6 +503,13 @@ class FastMNMFBase(MNMFBase):
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of MNMF.
         """
@@ -545,6 +570,13 @@ class FastMNMFBase(MNMFBase):
         """Initialize diagonal elements of spatial covariance matrices.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             rng (numpy.random.Generator, optional):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
@@ -570,7 +602,18 @@ class FastMNMFBase(MNMFBase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices."""
+        r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         normalization = self.normalization
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -590,6 +633,15 @@ class FastMNMFBase(MNMFBase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Normalize diagonalizers and diagonal elements of spatial covariance matrices by power.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Diagonalizers are normalized by
 
@@ -754,7 +806,18 @@ class GaussMNMF(MNMF):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update MNMF parameters once."""
+        r"""Update MNMF parameters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         self.update_basis(flooring_fn=flooring_fn)
@@ -773,7 +836,18 @@ class GaussMNMF(MNMF):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update NMF bases by MM algorithm."""
+        r"""Update NMF bases by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
@@ -829,7 +903,18 @@ class GaussMNMF(MNMF):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update NMF activations by MM algorithm."""
+        r"""Update NMF activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
@@ -885,7 +970,18 @@ class GaussMNMF(MNMF):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update spatial properties in NMF by MM algorithm."""
+        r"""Update spatial properties in NMF by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         na = np.newaxis
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -922,7 +1018,18 @@ class GaussMNMF(MNMF):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update latent variables in NMF by MM algorithm."""
+        r"""Update latent variables in NMF by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         n_sources = self.n_sources
         n_frames = self.n_frames
         na = np.newaxis
@@ -1173,6 +1280,16 @@ class FastGaussMNMF(FastMNMFBase):
     ) -> None:
         r"""Update MNMF parameters, diagonalizers, and diagonal elements of \
         spatial covariance matrices once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1189,6 +1306,15 @@ class FastGaussMNMF(FastMNMFBase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF bases by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`t_{ikn}` as follows:
 
@@ -1237,6 +1363,15 @@ class FastGaussMNMF(FastMNMFBase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update NMF activations by MM algorithm.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Update :math:`v_{kjn}` as follows:
 
@@ -1290,6 +1425,16 @@ class FastGaussMNMF(FastMNMFBase):
             ``update_diagonalizer_model_ip1`` is called.
         - If ``diagonalizer_algorithm`` is ``IP2``, \
             ``update_diagonalizer_model_ip2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1305,6 +1450,15 @@ class FastGaussMNMF(FastMNMFBase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update diagonalizer once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Diagonalizers are updated sequentially for :math:`m=1,\ldots,M` as follows:
 
@@ -1363,6 +1517,15 @@ class FastGaussMNMF(FastMNMFBase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update diagonalizer once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`m_{1}` and :math:`m_{2}` (:math:`m_{1}\neq m_{2}`),
         compute weighted covariance matrix as follows:

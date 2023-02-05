@@ -1150,6 +1150,15 @@ class FastIVA(FastIVABase):
     ) -> None:
         r"""Update demixing filters once.
 
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         Demixing filters are updated as follows:
 
         .. math::
@@ -1344,6 +1353,15 @@ class FasterIVA(FastIVABase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         In FasterIVA, we compute the eigenvector of :math:`\boldsymbol{U}_{in}`
         which corresponds to the largest eigenvalue by solving
@@ -1631,6 +1649,16 @@ class AuxIVA(AuxIVABase):
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         - If ``self.spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
         - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1652,12 +1680,13 @@ class AuxIVA(AuxIVABase):
         r"""Update demixing filters once using iterative projection.
 
         Args:
-            flooring_fn (callable, optional):
+            flooring_fn (callable or str, optional):
                 A flooring function for numerical stability.
                 This function is expected to return the same shape tensor as the input.
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
-                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Compute auxiliary variables:
 
@@ -1710,12 +1739,13 @@ class AuxIVA(AuxIVABase):
         r"""Update demixing filters once using pairwise iterative projection.
 
         Args:
-            flooring_fn (callable, optional):
+            flooring_fn (callable or str, optional):
                 A flooring function for numerical stability.
                 This function is expected to return the same shape tensor as the input.
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
-                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
@@ -1832,12 +1862,13 @@ class AuxIVA(AuxIVABase):
         iterative source steering [#scheibler2020fast]_.
 
         Args:
-            flooring_fn (callable, optional):
+            flooring_fn (callable or str, optional):
                 A flooring function for numerical stability.
                 This function is expected to return the same shape tensor as the input.
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
-                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         First, update auxiliary variables
 
@@ -1882,12 +1913,13 @@ class AuxIVA(AuxIVABase):
         pairwise iterative source steering [#ikeshita2022iss2]_.
 
         Args:
-            flooring_fn (callable, optional):
+            flooring_fn (callable or str, optional):
                 A flooring function for numerical stability.
                 This function is expected to return the same shape tensor as the input.
                 If you explicitly set ``flooring_fn=None``,
                 the identity function (``lambda x: x``) is used.
-                Default: ``functools.partial(max_flooring, eps=1e-10)``.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         First, we compute auxiliary variables:
 
@@ -3052,7 +3084,18 @@ class AuxGaussIVA(AuxIVA):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Update variance and demixing filters and once."""
+        r"""Update variance and demixing filters and once.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
         self.update_source_model()
 
         super().update_once(flooring_fn=flooring_fn)
@@ -3062,6 +3105,15 @@ class AuxGaussIVA(AuxIVA):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:

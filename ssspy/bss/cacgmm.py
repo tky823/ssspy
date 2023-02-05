@@ -229,7 +229,18 @@ class CACGMMBase(IterativeMethodBase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Align posteriors and separated spectrograms"""
+        r"""Align posteriors and separated spectrograms.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        """
 
         permutation_alignment = self.permutation_alignment
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
@@ -269,6 +280,13 @@ class CACGMMBase(IterativeMethodBase):
             target (str):
                 Target to compute score values. Choose ``posterior`` or ``amplitude``.
                 Default: ``posterior``.
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
 
         assert target in ["posterior", "amplitude"], "Invalid target {} is specified.".format(
@@ -345,6 +363,14 @@ class CACGMMBase(IterativeMethodBase):
             target (str):
                 Target to compute correlations. Choose ``posterior`` or ``amplitude``.
                 Default: ``amplitude``.
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
 
         assert target == "amplitude", "Only amplitude is supported as target."
@@ -563,6 +589,16 @@ class CACGMM(CACGMMBase):
 
         In ``update_posterior``, posterior probabilities are updated, which corresponds to E step.
         In ``update_parameters``, parameters of cACGMM are updated, which corresponds to M step.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -578,6 +614,16 @@ class CACGMM(CACGMMBase):
         r"""Update posteriors.
 
         This method corresponds to E step in EM algorithm for cACGMM.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -605,6 +651,15 @@ class CACGMM(CACGMMBase):
         r"""Update parameters of mixture of complex angular central Gaussian distributions.
 
         This method corresponds to M step in EM algorithm for cACGMM.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 

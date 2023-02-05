@@ -258,7 +258,17 @@ class FDICABase(IterativeMethodBase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
-        r"""Align posteriors and separated spectrograms by correlation."""
+        r"""Align posteriors and separated spectrograms by correlation.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+        """
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
         X, W = self.input, self.demix_filter
@@ -1029,6 +1039,15 @@ class AuxFDICA(FDICABase):
 
         - If ``self.spatial_algorithm`` is ``IP`` or ``IP1``, ``update_once_ip1`` is called.
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
         """
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
@@ -1044,6 +1063,15 @@ class AuxFDICA(FDICABase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         Demixing filters are updated sequentially for :math:`n=1,\ldots,N` as follows:
 
@@ -1088,6 +1116,15 @@ class AuxFDICA(FDICABase):
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
         r"""Update demixing filters once using pairwise iterative projection.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
 
         For :math:`n_{1}` and :math:`n_{2}` (:math:`n_{1}\neq n_{2}`),
         compute auxiliary variables:
