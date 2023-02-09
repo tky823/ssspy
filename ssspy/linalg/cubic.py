@@ -1,7 +1,17 @@
 import numpy as np
 
 
-def cbrt(x):
+def cbrt(x: np.ndarray) -> np.ndarray:
+    """Return cube-root of an array.
+
+    Args:
+        x (np.ndarray):
+            Values to compute cube-root. Complex value is available.
+
+    Returns:
+        np.ndarray of cube-root.
+
+    """
     if np.iscomplexobj(x):
         amplitude = np.abs(x)
         phase = np.angle(x)
