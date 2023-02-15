@@ -1,9 +1,52 @@
+from typing import Optional
+
 import numpy as np
 
 from .cubic import cbrt
 
 
-def find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray):
+def solve_equation(Phi: np.ndarray, v: np.ndarray, z: np.ndarray):
+    r"""Find largest root of :math:`f(\lambda_{in})`, where
+
+    .. math::
+
+        f(\lambda_{in})
+        = \lambda_{in}^{2}\sum_{n'}
+        \frac{\phi_{inn'}|\tilde{v}_{inn'}|^{2}}{(\lambda_{in}-\phi_{inn'})^{2}}
+        - \lambda_{in} + z_{in}
+
+    Args:
+        Phi (numpy.ndarray): Eigen values defined in LQPQM of shape (n_bins, n_sources).
+        v (numpy.ndarray): Linear term defined in LQPQM of shape (n_bins, n_sources).
+        z (numpy.ndarray): Constant term defined in LQPQM of shape (n_bins,).
+
+    Returns:
+        numpy.ndarray of largest root of :math:`f(\lambda_{in})`.
+        The shape is (n_bins,).
+
+    """
+    phi_max = Phi[..., -1]
+    v_max = v[..., -1]
+
+    # Find largest root of cubic polynomial for initialization
+    A = -(phi_max * np.abs(v_max) ** 2 + 2 * phi_max + z)
+    B = (phi_max + 2 * z) * phi_max
+    C = -(phi_max**2) * z
+    lamb = _find_largest_root(A, B, C)
+
+    lamb = np.maximum(lamb, z)
+
+    # TODO: generalize for-loop
+    for _ in range(10):
+        f = _fn(lamb, Phi, v, z)
+        df = _d_fn(lamb, Phi, v, z)
+        mu = lamb - f / df
+        lamb = np.where(mu > phi_max, mu, (phi_max + lamb) / 2)
+
+    return lamb
+
+
+def _find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarray:
     r"""Find largest (real) roots of the following cubic equations:
 
     .. math::
@@ -67,3 +110,63 @@ def find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray):
     root = root - A / 3
 
     return root
+
+
+def _fn(lamb: np.ndarray, Phi: np.ndarray, f: np.ndarray, z: np.ndarray) -> np.ndarray:
+    r"""Compute values of :math:`f(\lambda_{in})`, where
+
+    .. math::
+
+        f(\lambda_{in})
+        = \lambda_{in}^{2}\sum_{n'}
+        \frac{\phi_{inn'}|\tilde{v}_{inn'}|^{2}}{(\lambda_{in}-\phi_{inn'})^{2}}
+        - \lambda_{in} + z_{in}
+
+    Args:
+        lamb (numpy.ndarray): Argument of :math:`f(\lambda_{in})` with shape of (n_bins,).
+        Phi (numpy.ndarray): Eigen values defined in LQPQM of shape (n_bins, n_sources).
+        v (numpy.ndarray): Linear term defined in LQPQM of shape (n_bins, n_sources).
+        z (numpy.ndarray): Constant term defined in LQPQM of shape (n_bins,).
+
+    Returns:
+        numpy.ndarray of values :math:`f(\lambda_{in})` of shape (n_bins,).
+
+    """
+    num = Phi * np.abs(f) ** 2
+    denom = (lamb[..., np.newaxis] - Phi) ** 2
+    f = lamb**2 * np.sum(num / denom, axis=-1) - lamb + z
+
+    return f
+
+
+def _d_fn(
+    lamb: np.ndarray,
+    Phi: np.ndarray,
+    v: np.ndarray,
+    z: Optional[np.ndarray] = None,
+):
+    r"""Compute values of :math:`f'(\lambda_{in})`, where
+
+    .. math::
+
+        f'(\lambda_{in})
+        = -2\lambda_{in}\sum_{n'}
+        \frac{\phi_{inn'}^{2}|\tilde{v}_{inn'}|^{2}}{(\lambda_{in}-\phi_{inn'})^{3}}
+        - 1
+
+    Args:
+        lamb (numpy.ndarray): Argument of :math:`f'(\lambda_{in})` with shape of (n_bins,).
+        Phi (numpy.ndarray): Eigen values defined in LQPQM of shape (n_bins, n_sources).
+        v (numpy.ndarray): Linear term defined in LQPQM of shape (n_bins, n_sources).
+        z (numpy.ndarray, optional): Constant term defined in LQPQM of shape (n_bins,).
+            This argument is not used in this funtion.
+
+    Returns:
+        numpy.ndarray of values :math:`f'(\lambda_{in})` of shape (n_bins,).
+
+    """
+    num = (Phi * np.abs(v)) ** 2
+    denom = (lamb[..., np.newaxis] - Phi) ** 3
+    df = -2 * lamb * np.sum(num / denom, axis=-1) - 1
+
+    return df
