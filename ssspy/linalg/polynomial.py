@@ -81,7 +81,7 @@ def _find_cubic_roots(P: np.ndarray, Q: np.ndarray) -> np.ndarray:
 
     U = cbrt(-Q / 2 + np.sqrt(discriminant))
     # U = 0, when P = 0.
-    is_singular = U == 0
+    is_singular = P == 0
     U = np.where(is_singular, 1, U)
     V = -P / (3 * U)
 
