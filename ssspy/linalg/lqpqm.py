@@ -66,9 +66,9 @@ def _find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarra
         :math:`x^{3} + Ax^{2} + Bx + C = 0` can be transformed into
         :math:`t^{3} + pt + q = 0` by :math:`t=x+\frac{A}{3}`.
         When :math:`p<0` and :math:`\frac{q^{2}}{4}+\frac{p^{3}}{27}\leq 0`,
-        there exists three real solutions: :math:`t=u+\frac{p}{3u}`,
-        :math:`x=u\omega+\frac{p\omega^{*}}{3u}`, and
-        :math:`x=u\omega^{*}+\frac{p\omega}{3u}`, where
+        there exists three real solutions: :math:`t=u-\frac{p}{3u}`,
+        :math:`x=u\omega-\frac{p\omega^{*}}{3u}`, and
+        :math:`x=u\omega^{*}-\frac{p\omega}{3u}`, where
 
         .. math::
 
@@ -77,7 +77,10 @@ def _find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarra
             \omega
             &=\frac{-1+j\sqrt{3}}{2}.
 
-        Otherwise, :math:`t=u+v` is a unique real solution.
+        When :math:`p<0` and :math:`\frac{q^{2}}{4}+\frac{p^{3}}{27}>0`,
+        :math:`t=u-p/(3u)` is a unique real solution.
+        When :math:`p>0`, :math:`t=u-p/(3u)` is a unique real solution.
+        Otherwise (when :math:`p=0`), :math:`t=\sqrt[3]{-q}` is a unique real solution.
 
     """
     P = -(A**2) / 3 + B
@@ -89,9 +92,13 @@ def _find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarra
     discriminant = (Q / 2) ** 2 + (P / 3) ** 3
     discriminant = discriminant.astype(np.complex128)
     U = cbrt(-Q / 2 + np.sqrt(discriminant))
+    # to avoid zero division
+    is_singular = U == 0
+    U = np.where(is_singular, 1, U)
     V = -P / (3 * U)
 
     X1 = U + V
+    X1 = np.where(is_singular, cbrt(-Q), X1)
     X2 = np.real(U * omega + V * omega_conj)
     X3 = np.real(U * omega_conj + V * omega)
 
