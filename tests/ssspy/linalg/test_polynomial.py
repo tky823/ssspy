@@ -35,3 +35,12 @@ def test_solve_cubic():
     Y = A * X**3 + B * X**2 + C * X + D
 
     assert np.allclose(Y, 0)
+
+    # corner case
+    A = np.zeros_like(C)
+    B = np.zeros_like(C)
+
+    X = solve_cubic(A, B, C)
+    Y = X**3 + A * X**2 + B * X + C
+
+    assert np.allclose(Y, 0)
