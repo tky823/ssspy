@@ -92,7 +92,7 @@ def _find_largest_root(A: np.ndarray, B: np.ndarray, C: np.ndarray) -> np.ndarra
     discriminant = (Q / 2) ** 2 + (P / 3) ** 3
     discriminant = discriminant.astype(np.complex128)
     U = cbrt(-Q / 2 + np.sqrt(discriminant))
-    # to avoid zero division
+    # When U = 0, P is always 0 in real coefficients cases.
     is_singular = U == 0
     U = np.where(is_singular, 1, U)
     V = -P / (3 * U)
