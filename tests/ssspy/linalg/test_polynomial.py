@@ -21,6 +21,7 @@ def test_solve_cubic():
 
     n_bins, n_channels = 3, 2
 
+    # real coefficients
     A = rng.standard_normal((n_bins, n_channels))
     B = rng.standard_normal((n_bins, n_channels))
     C = rng.standard_normal((n_bins, n_channels))
@@ -33,5 +34,39 @@ def test_solve_cubic():
 
     X = solve_cubic(A, B, C, D)
     Y = A * X**3 + B * X**2 + C * X + D
+
+    assert np.allclose(Y, 0)
+
+    # corner case
+    A = np.zeros_like(C)
+    B = np.zeros_like(C)
+
+    X = solve_cubic(A, B, C)
+    Y = X**3 + A * X**2 + B * X + C
+
+    assert np.allclose(Y, 0)
+
+    # complex coefficients
+    A = rng.standard_normal((n_bins, n_channels)) + 1j * rng.standard_normal((n_bins, n_channels))
+    B = rng.standard_normal((n_bins, n_channels)) + 1j * rng.standard_normal((n_bins, n_channels))
+    C = rng.standard_normal((n_bins, n_channels)) + 1j * rng.standard_normal((n_bins, n_channels))
+    D = rng.standard_normal((n_bins, n_channels)) + 1j * rng.standard_normal((n_bins, n_channels))
+
+    X = solve_cubic(A, B, C)
+    Y = X**3 + A * X**2 + B * X + C
+
+    assert np.allclose(Y, 0)
+
+    X = solve_cubic(A, B, C, D)
+    Y = A * X**3 + B * X**2 + C * X + D
+
+    assert np.allclose(Y, 0)
+
+    # corner case
+    A = np.zeros_like(C)
+    B = np.zeros_like(C)
+
+    X = solve_cubic(A, B, C)
+    Y = X**3 + A * X**2 + B * X + C
 
     assert np.allclose(Y, 0)

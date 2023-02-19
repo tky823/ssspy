@@ -80,10 +80,16 @@ def _find_cubic_roots(P: np.ndarray, Q: np.ndarray) -> np.ndarray:
     discriminant = (Q / 2) ** 2 + (P / 3) ** 3
 
     U = cbrt(-Q / 2 + np.sqrt(discriminant))
+    # U = 0, when P = 0.
+    is_singular = P == 0
+    U = np.where(is_singular, 1, U)
     V = -P / (3 * U)
 
     X1 = U + V
+    X1 = np.where(is_singular, cbrt(-Q), X1)
     X2 = U * omega + V * omega_conj
+    X2 = np.where(is_singular, X1 * omega, X2)
     X3 = U * omega_conj + V * omega
+    X3 = np.where(is_singular, X1 * omega_conj, X3)
 
     return np.stack([X1, X2, X3], axis=0)
