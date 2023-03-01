@@ -4,6 +4,54 @@ import numpy as np
 
 from .cubic import cbrt
 
+EPS = 1e-10
+
+
+def lqpqm2(U: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
+    phi, sigma = np.linalg.eigh(U)
+    is_singular = np.linalg.norm(v, axis=-1) < EPS
+
+    # when v = 0
+    phi_singular = phi[is_singular]
+    sigma_singular = sigma[is_singular]
+    z_singular = z[is_singular]
+
+    phi_max_singular = phi_singular[:, -1]
+    sigma_max_singular = sigma_singular[:, -1]
+    lamb_singular = np.maximum(z_singular, phi_max_singular)
+    scale = (lamb_singular - z_singular) / phi_max_singular
+    scale = np.maximum(scale, 0)
+    scale = np.sqrt(scale)
+    y_singular = scale[..., np.newaxis] * sigma_max_singular
+
+    # when v != 0
+    phi_non_singular = phi[~is_singular]
+    sigma_non_singular = sigma[~is_singular]
+    v_non_singular = v[~is_singular]
+    z_non_singular = z[~is_singular]
+
+    v_tilde_non_singular = np.sum(
+        sigma_non_singular.conj() * v_non_singular[:, :, np.newaxis], axis=-2
+    )
+    phi_max_non_singular = phi_non_singular[:, -1]
+    lamb_non_singular = solve_equation(
+        phi_non_singular / phi_max_non_singular[:, np.newaxis],
+        v_tilde_non_singular / phi_max_non_singular[:, np.newaxis],
+        z_non_singular / phi_max_non_singular,
+    )
+    lamb_non_singular = lamb_non_singular * phi_max_non_singular
+
+    num = phi_non_singular * v_tilde_non_singular
+    denom = lamb_non_singular[..., np.newaxis] - phi_non_singular
+    v_nonsingular = num / denom
+    y_non_singular = np.sum(sigma_non_singular * v_nonsingular[:, np.newaxis, :], axis=-1)
+
+    y = np.zeros_like(v)
+    y[is_singular] = y_singular
+    y[~is_singular] = y_non_singular
+
+    return y
+
 
 def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
     r"""Find largest root of :math:`f(\lambda_{in})`, where
