@@ -1570,7 +1570,7 @@ class AuxIVA(AuxIVABase):
             reference_id=reference_id,
         )
 
-        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
 
         self.spatial_algorithm = spatial_algorithm
 
