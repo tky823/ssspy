@@ -17,6 +17,7 @@ from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import (
     update_by_ip1,
     update_by_ip2_one_pair,
+    update_by_ipa,
     update_by_iss1,
     update_by_iss2,
 )
@@ -2004,6 +2005,25 @@ class AuxIVA(AuxIVABase):
             flooring_fn=flooring_fn,
             pair_selector=self.pair_selector,
         )
+
+    def update_once_ipa(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        X, W = self.input, self.demix_filter
+        Y = self.separate(X, demix_filter=W)
+
+        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+        norm = np.linalg.norm(Y, axis=1)
+        denom = flooring_fn(2 * norm)
+        weight = self.d_contrast_fn(norm) / denom
+        GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+        U = np.mean(GXX, axis=-1)
+
+        self.demix_filter = update_by_ipa(W, U, flooring_fn=flooring_fn)
 
     def compute_loss(self) -> float:
         r"""Compute loss."""
