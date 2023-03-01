@@ -444,7 +444,7 @@ def update_by_ipa(
         E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
         U_tilde = W[:, np.newaxis, :, :] @ U @ W_Hermite[:, np.newaxis, :, :]
         U_tilde_n = U_tilde[:, source_idx, :, :]
-        U_tilde_n = to_psd(U_tilde_n, axis1=-2, axis2=-1)
+        U_tilde_n = to_psd(U_tilde_n, axis1=-2, axis2=-1, flooring_fn=flooring_fn)
         U_tilde_n_inverse = np.linalg.inv(U_tilde_n)
         a_n = U_tilde[:, :, source_idx, source_idx]
         a_n = np.real(a_n)
