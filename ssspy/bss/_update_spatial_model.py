@@ -465,7 +465,7 @@ def update_by_ipa(
         H_n = C_n / aa_n
         v_n = -b_n / a_sqrt_n - a_sqrt_n * Cd_n
 
-        y_n = lqpqm2(H_n, v_n, z_n)
+        y_n = lqpqm2(H_n, v_n, z_n, flooring_fn=flooring_fn)
 
         q_n = y_n / a_sqrt_n - b_n / a_n
 
