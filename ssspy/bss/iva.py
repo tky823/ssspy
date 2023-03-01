@@ -39,7 +39,7 @@ __all__ = [
     "AuxGaussIVA",
 ]
 
-spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2", "IPA"]
 EPS = 1e-10
 
 
