@@ -7,8 +7,20 @@ from .cubic import cbrt
 EPS = 1e-10
 
 
-def lqpqm2(U: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
-    phi, sigma = np.linalg.eigh(U)
+def lqpqm2(H: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
+    """Solve of log-quadratically penelized quadratic minimization (type 2).
+
+    Args:
+        H (numpy.ndarray): Positive semidefinite matrices of shape
+            (n_bins, n_sources - 1, n_sources - 1).
+        v (numpy.ndarray): Linear terms in LQPQM of shape (n_bins, n_sources - 1).
+        z (numpy.ndarray): Constant terms in LQPQM of shape (n_bins,).
+
+    Returns:
+        np.ndarray: Solutions of LQPQM type-2 of shape (n_bins, n_sources - 1).
+
+    """
+    phi, sigma = np.linalg.eigh(H)
     is_singular = np.linalg.norm(v, axis=-1) < EPS
 
     # when v = 0
