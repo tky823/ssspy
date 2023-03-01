@@ -1650,6 +1650,7 @@ class AuxIVA(AuxIVABase):
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         - If ``self.spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
         - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
+        - If ``self.spatial_algorithm`` is ``IPA``, ``update_once_ipa`` is called.
 
         Args:
             flooring_fn (callable or str, optional):
@@ -1671,6 +1672,8 @@ class AuxIVA(AuxIVABase):
             self.update_once_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
             self.update_once_iss2(flooring_fn=flooring_fn)
+        elif self.spatial_algorithm in ["IPA"]:
+            self.update_once_ipa(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
