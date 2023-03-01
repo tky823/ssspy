@@ -34,6 +34,8 @@ def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
     C = -(phi_max**2) * z
     lamb = _find_largest_root(A, B, C)
 
+    is_valid = lamb > phi_max
+    lamb[~is_valid] = phi_max[~is_valid] + 1e-4
     lamb = np.maximum(lamb, z)
 
     # TODO: generalize for-loop
@@ -42,6 +44,7 @@ def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
         df = _d_fn(lamb, phi, v, z)
         mu = lamb - f / df
         lamb = np.where(mu > phi_max, mu, (phi_max + lamb) / 2)
+        lamb = np.maximum(lamb, phi_max + 1e-4)
 
     return lamb
 
