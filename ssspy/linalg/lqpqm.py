@@ -1,7 +1,9 @@
-from typing import Optional
+import functools
+from typing import Callable, Optional
 
 import numpy as np
 
+from ..special.flooring import identity, max_flooring
 from .cubic import cbrt
 
 EPS = 1e-10
@@ -65,7 +67,14 @@ def lqpqm2(H: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
     return y
 
 
-def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
+def solve_equation(
+    phi: np.ndarray,
+    v: np.ndarray,
+    z: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+):
     r"""Find largest root of :math:`f(\lambda_{in})`, where
 
     .. math::
@@ -79,12 +88,21 @@ def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
         phi (numpy.ndarray): Eigen values defined in LQPQM of shape (n_bins, n_sources).
         v (numpy.ndarray): Linear term defined in LQPQM of shape (n_bins, n_sources).
         z (numpy.ndarray): Constant term defined in LQPQM of shape (n_bins,).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
         numpy.ndarray of largest root of :math:`f(\lambda_{in})`.
         The shape is (n_bins,).
 
     """
+    if flooring_fn is None:
+        flooring_fn = identity
+
     phi_max = phi[..., -1]
     v_max = v[..., -1]
 
@@ -95,7 +113,7 @@ def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
     lamb = _find_largest_root(A, B, C)
 
     is_valid = lamb > phi_max
-    lamb[~is_valid] = phi_max[~is_valid] + 1e-4
+    lamb[~is_valid] = phi_max[~is_valid] + flooring_fn(0)
     lamb = np.maximum(lamb, z)
 
     # TODO: generalize for-loop
@@ -104,7 +122,7 @@ def solve_equation(phi: np.ndarray, v: np.ndarray, z: np.ndarray):
         df = _d_fn(lamb, phi, v, z)
         mu = lamb - f / df
         lamb = np.where(mu > phi_max, mu, (phi_max + lamb) / 2)
-        lamb = np.maximum(lamb, phi_max + 1e-4)
+        lamb = np.maximum(lamb, phi_max + flooring_fn(0))
 
     return lamb
 
