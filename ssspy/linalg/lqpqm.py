@@ -9,7 +9,14 @@ from .cubic import cbrt
 EPS = 1e-10
 
 
-def lqpqm2(H: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
+def lqpqm2(
+    H: np.ndarray,
+    v: np.ndarray,
+    z: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+) -> None:
     """Solve of log-quadratically penelized quadratic minimization (type 2).
 
     Args:
@@ -17,11 +24,20 @@ def lqpqm2(H: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
             (n_bins, n_sources - 1, n_sources - 1).
         v (numpy.ndarray): Linear terms in LQPQM of shape (n_bins, n_sources - 1).
         z (numpy.ndarray): Constant terms in LQPQM of shape (n_bins,).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
 
     Returns:
         np.ndarray: Solutions of LQPQM type-2 of shape (n_bins, n_sources - 1).
 
     """
+    if flooring_fn is None:
+        flooring_fn = identity
+
     phi, sigma = np.linalg.eigh(H)
     is_singular = np.linalg.norm(v, axis=-1) < EPS
 
@@ -52,6 +68,7 @@ def lqpqm2(H: np.ndarray, v: np.ndarray, z: np.ndarray) -> None:
         phi_non_singular / phi_max_non_singular[:, np.newaxis],
         v_tilde_non_singular / phi_max_non_singular[:, np.newaxis],
         z_non_singular / phi_max_non_singular,
+        flooring_fn=flooring_fn,
     )
     lamb_non_singular = lamb_non_singular * phi_max_non_singular
 
