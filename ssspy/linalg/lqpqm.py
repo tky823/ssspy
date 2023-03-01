@@ -1,5 +1,5 @@
 import functools
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import numpy as np
 
@@ -16,6 +16,7 @@ def lqpqm2(
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
+    singular_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "flooring",
 ) -> None:
     """Solve of log-quadratically penelized quadratic minimization (type 2).
 
@@ -30,6 +31,11 @@ def lqpqm2(
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        singular_fn (callable, optional):
+            A flooring function to return singular condition.
+            This function is expected to return the same shape bool tensor as the input.
+            If ``singular_fn=None``,``lambda x: x == 0`` is used.
+            Default: ``flooring_fn``.
 
     Returns:
         np.ndarray: Solutions of LQPQM type-2 of shape (n_bins, n_sources - 1).
@@ -38,8 +44,22 @@ def lqpqm2(
     if flooring_fn is None:
         flooring_fn = identity
 
+    if singular_fn is None:
+
+        def _is_zero(x: np.ndarray) -> np.ndarray:
+            return x == 0
+
+        singular_fn = _is_zero
+    elif singular_fn == "flooring":
+
+        def _is_lower_than_floor(x: np.ndarray) -> np.ndarray:
+            return x < flooring_fn(0)
+
+        singular_fn = _is_lower_than_floor
+
     phi, sigma = np.linalg.eigh(H)
-    is_singular = np.linalg.norm(v, axis=-1) < EPS
+    norm = np.linalg.norm(v, axis=-1)
+    is_singular = singular_fn(norm)
 
     # when v = 0
     phi_singular = phi[is_singular]
