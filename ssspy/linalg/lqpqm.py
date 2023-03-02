@@ -154,8 +154,14 @@ def solve_equation(
     lamb = np.maximum(lamb, z)
 
     # TODO: generalize for-loop
-    for _ in range(10):
+    for _ in range(100):
         f = _fn(lamb, phi, v, z)
+
+        is_convergence = np.abs(f) <= flooring_fn(0)
+
+        if np.all(is_convergence):
+            break
+
         df = _d_fn(lamb, phi, v, z)
         mu = lamb - f / df
         lamb = np.where(mu > phi_max, mu, (phi_max + lamb) / 2)
