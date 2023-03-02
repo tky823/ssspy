@@ -2015,18 +2015,12 @@ class AuxIVA(AuxIVABase):
     ) -> None:
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        X, W = self.input, self.demix_filter
-        Y = self.separate(X, demix_filter=W)
+        Y = self.output
+        r = np.linalg.norm(Y, axis=1)
+        denom = flooring_fn(2 * r)
+        varphi = self.d_contrast_fn(r) / denom
 
-        XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
-        XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
-        norm = np.linalg.norm(Y, axis=1)
-        denom = flooring_fn(2 * norm)
-        weight = self.d_contrast_fn(norm) / denom
-        GXX = weight[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
-        U = np.mean(GXX, axis=-1)
-
-        self.demix_filter = update_by_ipa(W, U, flooring_fn=flooring_fn)
+        self.output = update_by_ipa(Y, varphi[:, np.newaxis, :], flooring_fn=flooring_fn)
 
     def compute_loss(self) -> float:
         r"""Compute loss."""

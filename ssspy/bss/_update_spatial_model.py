@@ -394,55 +394,50 @@ def update_by_ip2_one_pair(
 
 
 def update_by_ipa(
-    demix_filter: np.ndarray,
-    weighted_covariance: np.ndarray,
+    separated: np.ndarray,
+    weight: np.ndarray,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
-    overwrite: bool = True,
 ) -> np.ndarray:
     r"""Update estimated spectrogram by iterative projection with adjustment (IPA).
 
     Args:
-        demix_filter (numpy.ndarray):
-            Demixing filters to be updated.
-            The shape is (n_bins, n_sources, n_channels).
-        weighted_covariance (numpy.ndarray):
-            Weighted covariance matrix.
-            The shape is (n_bins, n_sources, n_channels, n_channels).
+        separated (numpy.ndarray):
+            Estimated spectrograms to be updated.
+            The shape is (n_sources, n_bins, n_frames).
+        weight (numpy.ndarray):
+            Weights for estimated spectrogram.
+            The shape is (n_sources, n_bins, n_frames).
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
-        overwrite (bool):
-            Overwrite ``demix_filter`` if ``overwrite=True``.
-            Default: ``True``.
 
     Returns:
-        numpy.ndarray of updated demixing filters of shape (n_sources, n_bins, n_frames).
+        numpy.ndarray of estimated spectrograms of shape (n_sources, n_bins, n_frames).
 
     """
     if flooring_fn is None:
         flooring_fn = identity
 
-    if overwrite:
-        W = demix_filter
-    else:
-        W = demix_filter.copy()
+    Y = separated
+    varphi = weight
 
-    U = weighted_covariance
+    n_sources, n_bins, _ = Y.shape
 
-    n_bins, n_sources, n_channels = W.shape
-
-    E = np.eye(n_sources, n_channels)
+    E = np.eye(n_sources)
 
     for source_idx in range(n_sources):
-        W_Hermite = W.transpose(0, 2, 1).conj()
+        YY_conj = Y[:, np.newaxis] * Y[np.newaxis, :].conj()
+        U_tilde = np.mean(varphi[:, np.newaxis, np.newaxis] * YY_conj, axis=-1)
+        U_tilde = U_tilde.transpose(3, 0, 1, 2)
+
         E_n_left, e_n, E_n_right = np.split(E, [source_idx, source_idx + 1], axis=-1)
         E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
-        U_tilde = W[:, np.newaxis, :, :] @ U @ W_Hermite[:, np.newaxis, :, :]
+
         U_tilde_n = U_tilde[:, source_idx, :, :]
         U_tilde_n = to_psd(U_tilde_n, axis1=-2, axis2=-1, flooring_fn=flooring_fn)
         U_tilde_n_inverse = np.linalg.inv(U_tilde_n)
@@ -467,7 +462,7 @@ def update_by_ipa(
         H_n = C_n / aa_n
         v_n = -b_n / a_sqrt_n - a_sqrt_n * Cd_n
 
-        y_n = lqpqm2(
+        q_check_n = lqpqm2(
             H_n,
             v_n,
             z_n,
@@ -475,7 +470,7 @@ def update_by_ipa(
             singular_fn=lambda x: x < flooring_fn(0),
         )
 
-        q_n = y_n / a_sqrt_n - b_n / a_n
+        q_n = q_check_n / a_sqrt_n - b_n / a_n
 
         Eq_n = q_n.conj() @ E_n.transpose(1, 0)
         q_tilde_n = e_n.transpose(1, 0) - Eq_n
@@ -493,9 +488,10 @@ def update_by_ipa(
         T_n = np.tile(T_n, reps=(n_bins, 1, 1))
         T_n[:, :, source_idx] = Eq_n
         T_n[:, source_idx, :] = u_n.conj()
-        W[:] = T_n @ W
+        Y = T_n @ Y.transpose(1, 0, 2)
+        Y = Y.transpose(1, 0, 2)
 
-    return W
+    return Y
 
 
 def update_by_block_decomposition_vcd(
