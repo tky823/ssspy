@@ -1,4 +1,5 @@
 import functools
+import warnings
 from typing import Callable, Optional, Union
 
 import numpy as np
@@ -111,6 +112,7 @@ def solve_equation(
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
+    max_iter: int = 1000,
 ):
     r"""Find largest root of :math:`f(\lambda_{in})`, where
 
@@ -131,6 +133,7 @@ def solve_equation(
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        max_iter (int): Maximum iteration of Newton-Raphson method. Default: ``1000``.
 
     Returns:
         numpy.ndarray of largest root of :math:`f(\lambda_{in})`.
@@ -153,8 +156,7 @@ def solve_equation(
     lamb[~is_valid] = phi_max[~is_valid] + flooring_fn(0)
     lamb = np.maximum(lamb, z)
 
-    # TODO: generalize for-loop
-    for _ in range(100):
+    for iter_idx in range(max_iter):
         f = _fn(lamb, phi, v, z)
 
         is_convergence = np.abs(f) <= flooring_fn(0)
@@ -168,6 +170,13 @@ def solve_equation(
         # When lamb nearly equals lamb, 1 / (lamb - phi_max) becomes inf.
         # To avoid this numerical instability, add epsilon.
         lamb = np.maximum(lamb, phi_max + flooring_fn(0))
+
+    if iter_idx == max_iter - 1:
+        f = _fn(lamb, phi, v, z)
+        is_convergence = np.abs(f) <= flooring_fn(0)
+
+        if not np.all(is_convergence):
+            warnings.warn("Newton-Raphson method did not converge.", UserWarning)
 
     return lamb
 
