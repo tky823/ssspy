@@ -1610,7 +1610,7 @@ class AuxIVA(AuxIVABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2", "IPA"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -1637,7 +1637,7 @@ class AuxIVA(AuxIVABase):
         """
         super()._reset(**kwargs)
 
-        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2", "IPA"]:
             self.demix_filter = None
 
     def update_once(
@@ -2024,7 +2024,7 @@ class AuxIVA(AuxIVABase):
 
     def compute_loss(self) -> float:
         r"""Compute loss."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2", "IPA"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             return super().compute_loss()
         else:
             X, Y = self.input, self.output
@@ -2041,7 +2041,7 @@ class AuxIVA(AuxIVABase):
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2", "IPA"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_projection_back()
         else:
             assert self.scale_restoration, "Set self.scale_restoration=True."
@@ -2053,7 +2053,7 @@ class AuxIVA(AuxIVABase):
 
     def apply_minimal_distortion_principle(self) -> None:
         r"""Apply minimal distortion principle to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2", "IPA"]:
+        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
             super().apply_minimal_distortion_principle()
         else:
             X, Y = self.input, self.output
