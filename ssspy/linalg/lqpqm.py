@@ -159,6 +159,8 @@ def solve_equation(
         df = _d_fn(lamb, phi, v, z)
         mu = lamb - f / df
         lamb = np.where(mu > phi_max, mu, (phi_max + lamb) / 2)
+        # When lamb nearly equals lamb, 1 / (lamb - phi_max) becomes inf.
+        # To avoid this numerical instability, add epsilon.
         lamb = np.maximum(lamb, phi_max + flooring_fn(0))
 
     return lamb
