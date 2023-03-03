@@ -24,7 +24,8 @@ def lqpqm2(
     .. math::
 
         \check{\boldsymbol{q}}_{in}
-        = \mathrm{Minimize}~~\check{\boldsymbol{q}}_{in}^{\mathsf{H}}\check{\boldsymbol{q}}_{in}
+        = \min_{\check{\boldsymbol{q}}_{in}}
+        ~~\check{\boldsymbol{q}}_{in}^{\mathsf{H}}\check{\boldsymbol{q}}_{in}
         - \log\left((\check{\boldsymbol{q}}_{in}+\boldsymbol{v}_{in})^{\mathsf{H}}
         \boldsymbol{H}_{in}(\check{\boldsymbol{q}}_{in}+\boldsymbol{v}_{in})
         + z_{in}
