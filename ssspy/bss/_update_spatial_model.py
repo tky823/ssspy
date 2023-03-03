@@ -399,6 +399,7 @@ def update_by_ipa(
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
+    max_iter: int = 10,
 ) -> np.ndarray:
     r"""Update estimated spectrogram by iterative projection with adjustment (IPA).
 
@@ -415,6 +416,8 @@ def update_by_ipa(
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        max_iter (int):
+            Maximum number of Newton-Raphson method. Default: ``10``.
 
     Returns:
         numpy.ndarray of estimated spectrograms of shape (n_sources, n_bins, n_frames).
