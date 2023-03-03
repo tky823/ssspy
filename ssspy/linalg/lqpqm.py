@@ -45,8 +45,8 @@ def lqpqm2(
         singular_fn (callable, optional):
             A flooring function to return singular condition.
             This function is expected to return the same shape bool tensor as the input.
-            If ``singular_fn=None``,``lambda x: x == 0`` is used.
-            Default: ``flooring_fn``.
+            If ``singular_fn=None``, ``lambda x: x == 0`` is used.
+            Default: ``flooring``.
 
     Returns:
         np.ndarray: Solutions of LQPQM type-2 of shape (n_bins, n_sources - 1).
