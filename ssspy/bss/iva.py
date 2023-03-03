@@ -1590,6 +1590,9 @@ class AuxIVA(AuxIVABase):
 
         assert invalid_keys == set(), "Invalid keywords {} are given.".format(invalid_keys)
 
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
     ) -> np.ndarray:
