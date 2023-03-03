@@ -396,6 +396,7 @@ def update_by_ip2_one_pair(
 def update_by_ipa(
     separated: np.ndarray,
     weight: np.ndarray,
+    normalization: bool = True,
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
@@ -410,6 +411,9 @@ def update_by_ipa(
         weight (numpy.ndarray):
             Weights for estimated spectrogram.
             The shape is (n_sources, n_bins, n_frames).
+        normalization (bool):
+            If ``normalization=True``, normalization is applied to LQPQM.
+            Default: ``True``.
         flooring_fn (callable, optional):
             A flooring function for numerical stability.
             This function is expected to return the same shape tensor as the input.
@@ -464,6 +468,13 @@ def update_by_ipa(
         aa_n = a_sqrt_n[:, :, np.newaxis] * a_sqrt_n[:, np.newaxis, :]
         H_n = C_n / aa_n
         v_n = -b_n / a_sqrt_n - a_sqrt_n * Cd_n
+
+        if normalization:
+            trace = np.trace(H_n, axis1=-2, axis2=-1)
+            trace = np.real(trace)
+
+            H_n = H_n / trace[..., np.newaxis, np.newaxis]
+            z_n = z_n / trace
 
         q_check_n = lqpqm2(
             H_n,
