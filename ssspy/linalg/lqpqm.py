@@ -57,6 +57,8 @@ def lqpqm2(
             return x < flooring_fn(0)
 
         singular_fn = _is_lower_than_floor
+    else:
+        assert callable(singular_fn), "singular_fn should be callable."
 
     phi, sigma = np.linalg.eigh(H)
     norm = np.linalg.norm(v, axis=-1)
