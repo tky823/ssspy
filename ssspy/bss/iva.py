@@ -2902,6 +2902,7 @@ class AuxLaplaceIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         def contrast_fn(y) -> np.ndarray:
             r"""Contrast function.
@@ -2937,6 +2938,7 @@ class AuxLaplaceIVA(AuxIVA):
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
+            **kwargs,
         )
 
 
@@ -3063,6 +3065,7 @@ class AuxGaussIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -3109,6 +3112,7 @@ class AuxGaussIVA(AuxIVA):
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
+            **kwargs,
         )
 
     def _reset(self, **kwargs) -> None:
