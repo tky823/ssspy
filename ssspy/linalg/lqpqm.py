@@ -192,7 +192,9 @@ def solve_equation(
         is_convergence = np.abs(f) <= flooring_fn(0)
 
         if not np.all(is_convergence):
-            warnings.warn("Newton-Raphson method did not converge.", UserWarning)
+            warnings.warn(
+                f"Newton-Raphson method did not converge in {max_iter} iterations.", UserWarning
+            )
 
     return lamb
 
