@@ -482,6 +482,7 @@ def update_by_ipa(
             z_n,
             flooring_fn=flooring_fn,
             singular_fn=lambda x: x < flooring_fn(0),
+            max_iter=max_iter,
         )
 
         q_n = q_check_n / a_sqrt_n - b_n / a_n
