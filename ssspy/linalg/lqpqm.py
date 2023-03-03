@@ -19,7 +19,16 @@ def lqpqm2(
     ),
     singular_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "flooring",
 ) -> None:
-    """Solve of log-quadratically penelized quadratic minimization (type 2).
+    r"""Solve of log-quadratically penelized quadratic minimization (type 2).
+
+    .. math::
+
+        \check{\boldsymbol{q}}_{in}
+        = \mathrm{Minimize}~~\check{\boldsymbol{q}}_{in}^{\mathsf{H}}\check{\boldsymbol{q}}_{in}
+        - \log\left((\check{\boldsymbol{q}}_{in}+\boldsymbol{v}_{in})^{\mathsf{H}}
+        \boldsymbol{H}_{in}(\check{\boldsymbol{q}}_{in}+\boldsymbol{v}_{in})
+        + z_{in}
+        \right)
 
     Args:
         H (numpy.ndarray): Positive semidefinite matrices of shape
