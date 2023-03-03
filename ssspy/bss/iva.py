@@ -1582,7 +1582,7 @@ class AuxIVA(AuxIVABase):
             self.pair_selector = pair_selector
 
         if spatial_algorithm == "IPA":
-            valid_keys = {"newton_iter", "lqpqm_normalization"}
+            valid_keys = {"lqpqm_normalization", "newton_iter"}
         else:
             valid_keys = set()
 
