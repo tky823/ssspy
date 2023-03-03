@@ -1559,6 +1559,7 @@ class AuxIVA(AuxIVABase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
@@ -1579,6 +1580,15 @@ class AuxIVA(AuxIVABase):
                 self.pair_selector = sequential_pair_selector
         else:
             self.pair_selector = pair_selector
+
+        if spatial_algorithm == "IPA":
+            valid_keys = {"newton_iter", "lqpqm_normalization"}
+        else:
+            valid_keys = set()
+
+        invalid_keys = set(kwargs) - valid_keys
+
+        assert invalid_keys == set(), "Invalid keywords {} are given.".format(invalid_keys)
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
@@ -2020,7 +2030,23 @@ class AuxIVA(AuxIVABase):
         denom = flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom
 
-        self.output = update_by_ipa(Y, varphi[:, np.newaxis, :], flooring_fn=flooring_fn)
+        if hasattr(self, "lqpqm_normalization"):
+            normalization = self.lqpqm_normalization
+        else:
+            normalization = True
+
+        if hasattr(self, "newton_iter"):
+            max_iter = self.newton_iter
+        else:
+            max_iter = 1
+
+        self.output = update_by_ipa(
+            Y,
+            varphi[:, np.newaxis, :],
+            normalization=normalization,
+            flooring_fn=flooring_fn,
+            max_iter=max_iter,
+        )
 
     def compute_loss(self) -> float:
         r"""Compute loss."""
