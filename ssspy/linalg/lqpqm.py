@@ -128,7 +128,7 @@ def solve_equation(
     flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
         max_flooring, eps=EPS
     ),
-    max_iter: int = 1000,
+    max_iter: int = 10,
 ):
     r"""Find largest root of :math:`f(\lambda_{in})`, where
 
@@ -149,7 +149,7 @@ def solve_equation(
             If you explicitly set ``flooring_fn=None``,
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
-        max_iter (int): Maximum iteration of Newton-Raphson method. Default: ``1000``.
+        max_iter (int): Maximum iteration of Newton-Raphson method. Default: ``10``.
 
     Returns:
         numpy.ndarray of largest root of :math:`f(\lambda_{in})`.
