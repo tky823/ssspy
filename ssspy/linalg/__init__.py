@@ -1,6 +1,7 @@
 from .cubic import cbrt
 from .eigh import eigh, eigh2
 from .inv import inv2
+from .lqpqm import lqpqm2
 from .mean import gmeanmh
 from .polynomial import solve_cubic
 from .quadratic import quadratic
@@ -16,4 +17,5 @@ __all__ = [
     "invsqrtmh",
     "gmeanmh",
     "solve_cubic",
+    "lqpqm2",
 ]
