@@ -18,6 +18,7 @@ def lqpqm2(
         max_flooring, eps=EPS
     ),
     singular_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "flooring",
+    max_iter: int = 10,
 ) -> None:
     r"""Solve of log-quadratically penelized quadratic minimization (type 2).
 
@@ -47,6 +48,8 @@ def lqpqm2(
             This function is expected to return the same shape bool tensor as the input.
             If ``singular_fn=None``, ``lambda x: x == 0`` is used.
             Default: ``flooring``.
+        max_iter (int):
+            Maximum number of Newton-Raphson method. Default: ``10``.
 
     Returns:
         np.ndarray: Solutions of LQPQM type-2 of shape (n_bins, n_sources - 1).
@@ -102,6 +105,7 @@ def lqpqm2(
         v_tilde_non_singular / phi_max_non_singular[:, np.newaxis],
         z_non_singular / phi_max_non_singular,
         flooring_fn=flooring_fn,
+        max_iter=max_iter,
     )
     lamb_non_singular = lamb_non_singular * phi_max_non_singular
 
