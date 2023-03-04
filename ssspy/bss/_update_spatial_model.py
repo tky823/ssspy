@@ -497,12 +497,12 @@ def update_by_ipa(
         qUq_n = np.maximum(qUq_n, 0)
         denom = np.sqrt(qUq_n)
         denom = flooring_fn(denom)
-        u_n = Uq_n / denom
+        p_n = Uq_n / denom
 
         T_n = np.eye(n_sources, dtype=np.complex128)
         T_n = np.tile(T_n, reps=(n_bins, 1, 1))
         T_n[:, :, source_idx] = Eq_n
-        T_n[:, source_idx, :] = u_n.conj()
+        T_n[:, source_idx, :] = p_n.conj()
         Y = T_n @ Y.transpose(1, 0, 2)
         Y = Y.transpose(1, 0, 2)
 
