@@ -6,7 +6,6 @@ import numpy as np
 from ..linalg import eigh2, inv2
 from ..linalg.lqpqm import lqpqm2
 from ..special.flooring import identity, max_flooring
-from ..special.psd import to_psd
 from ..utils.select_pair import sequential_pair_selector
 
 EPS = 1e-10
@@ -446,8 +445,9 @@ def update_by_ipa(
         E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
 
         U_tilde_n = U_tilde[:, source_idx, :, :]
-        U_tilde_n = to_psd(U_tilde_n, axis1=-2, axis2=-1, flooring_fn=flooring_fn)
-        U_tilde_n_inverse = np.linalg.inv(U_tilde_n)
+        U_cholesky = np.linalg.cholesky(U_tilde_n)
+        U_cholesky_inverse = np.linalg.inv(U_cholesky)
+        U_tilde_n_inverse = U_cholesky_inverse.transpose(0, 2, 1).conj() @ U_cholesky_inverse
         a_n = U_tilde[:, :, source_idx, source_idx]
         a_n = np.real(a_n)
         a_n = a_n @ E_n
