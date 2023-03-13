@@ -432,7 +432,7 @@ def update_by_ipa(
     Y = separated
     varphi = weight
 
-    n_sources, n_bins, _ = Y.shape
+    n_sources = Y.shape[0]
 
     E = np.eye(n_sources)
 
