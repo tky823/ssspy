@@ -174,7 +174,6 @@ def solve_equation(
 
     for iter_idx in range(max_iter):
         f = _fn(lamb, phi, v, z)
-
         is_convergence = np.abs(f) <= flooring_fn(0)
 
         if np.all(is_convergence):
