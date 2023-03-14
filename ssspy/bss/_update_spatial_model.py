@@ -6,6 +6,7 @@ import numpy as np
 from ..linalg import eigh2, inv2
 from ..linalg.lqpqm import lqpqm2
 from ..special.flooring import identity, max_flooring
+from ..special.psd import to_psd
 from ..utils.select_pair import sequential_pair_selector
 
 EPS = 1e-10
@@ -440,6 +441,7 @@ def update_by_ipa(
         YY_conj = Y[:, np.newaxis] * Y[np.newaxis, :].conj()
         U_tilde = np.mean(varphi[:, np.newaxis, np.newaxis] * YY_conj, axis=-1)
         U_tilde = U_tilde.transpose(3, 0, 1, 2)
+        U_tilde = to_psd(U_tilde, axis1=-2, axis2=-1, flooring_fn=flooring_fn)
 
         E_n_left, e_n, E_n_right = np.split(E, [source_idx, source_idx + 1], axis=-1)
         E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
