@@ -36,6 +36,7 @@ docs = [
 tests = [
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
 ]
 
 [tool.setuptools.dynamic]
