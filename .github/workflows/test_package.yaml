@@ -37,7 +37,7 @@ jobs:
         id: run_redundant
         if: startsWith(github.head_ref, 'release/')
         run: |
-          pytest --run-redundant -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
+          pytest --run-redundant -vvv -n 16 --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Pytest (skip redundant tests)
         if: steps.run_redundant.conclusion == 'skipped'
         run: |
