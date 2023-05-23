@@ -38,7 +38,7 @@ jobs:
       - name: Pytest (skip redundant tests)
         if: steps.run_redundant.conclusion == 'skipped'
         run: |
-          pytest -vvv --cov=./ssspy --cov-report=xml tests/ssspy/
+          pytest -vvv -n 16 --cov=./ssspy --cov-report=xml tests/ssspy/
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v3
         with:
