@@ -31,8 +31,6 @@ jobs:
         run: |
           sudo apt-get install libsndfile1
       - name: Preparation of pytest
-        env:
-          PYTHONPATH: "./tests:$PYTHONPATH"
         run: |
           python tests/scripts/download_all.py
       - name: Pytest (run all tests including redundant ones)

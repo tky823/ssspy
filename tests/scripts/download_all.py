@@ -1,4 +1,5 @@
-from dummy.utils.dataset import download_sample_speech_data
+# It is expected to run from root ssspy directory
+from tests.dummy.utils.dataset import download_sample_speech_data
 
 
 def download_all() -> None:
