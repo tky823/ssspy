@@ -1404,7 +1404,7 @@ class AuxIVA(AuxIVABase):
     Args:
         spatial_algorithm (str):
             Algorithm for demixing filter updates.
-            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, ``ISS2``, or ``IPA``.
             Default: ``IP``.
         contrast_fn (callable):
             A contrast function which corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
@@ -1436,6 +1436,13 @@ class AuxIVA(AuxIVABase):
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back and minimal distortion principle. Default: ``0``.
+        lqpqm_normalization (bool):
+            This keyword argument can be specified when ``spatial_algorithm='IPA'``.
+            If ``True``, normalization by trace is applied to positive semi-definite matrix
+            in LQPQM. Default: ``True``.
+        newton_iter (int):
+            This keyword argument can be specified when ``spatial_algorithm='IPA'``.
+            Number of iterations in Newton method. Default: ``1``.
 
     Examples:
         Update demixing filters by IP:
@@ -1537,12 +1544,37 @@ class AuxIVA(AuxIVABase):
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
 
+        Update demixing filters by IPA:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="IPA",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
     .. [#ono2011stable]
         N. Ono,
         "Stable and fast update rules for independent vector analysis based on \
         auxiliary function technique,"
         in *Proc. WASPAA*, 2011, p.189-192.
     """
+    _ipa_default_kwargs = {"lqpqm_normalization": True, "newton_iter": 1}
+    _default_kwargs = _ipa_default_kwargs
 
     def __init__(
         self,
@@ -1582,7 +1614,7 @@ class AuxIVA(AuxIVABase):
             self.pair_selector = pair_selector
 
         if spatial_algorithm == "IPA":
-            valid_keys = {"lqpqm_normalization", "newton_iter"}
+            valid_keys = set(self.__class__._ipa_default_kwargs.keys())
         else:
             valid_keys = set()
 
@@ -1592,6 +1624,12 @@ class AuxIVA(AuxIVABase):
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        # set default values if necessary
+        for key in valid_keys:
+            if not hasattr(self, key):
+                value = self.__class__._default_kwargs[key]
+                setattr(self, key, value)
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
@@ -2026,6 +2064,9 @@ class AuxIVA(AuxIVABase):
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
     ) -> None:
+        self.lqpqm_normalization: bool
+        self.newton_iter: int
+
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         Y = self.output
@@ -2033,15 +2074,8 @@ class AuxIVA(AuxIVABase):
         denom = flooring_fn(2 * r)
         varphi = self.d_contrast_fn(r) / denom
 
-        if hasattr(self, "lqpqm_normalization"):
-            normalization = self.lqpqm_normalization
-        else:
-            normalization = True
-
-        if hasattr(self, "newton_iter"):
-            max_iter = self.newton_iter
-        else:
-            max_iter = 1
+        normalization = self.lqpqm_normalization
+        max_iter = self.newton_iter
 
         self.output = update_by_ipa(
             Y,
