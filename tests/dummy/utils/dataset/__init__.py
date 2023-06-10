@@ -1,6 +1,7 @@
 import hashlib
 import os
-from typing import Tuple
+import urllib.request
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -45,3 +46,26 @@ def download_sample_speech_data(
         np.savez(npz_path, waveform_src_img=waveform_src_img, sample_rate=sample_rate)
 
     return waveform_src_img, sample_rate
+
+
+def download_ssspy_data(path: str, filename: Optional[str] = None, branch : str = "main") -> None:
+    """Download file from https://github.com/tky823/ssspy-data.
+
+    Args:
+        path (str): Path to file in https://github.com/tky823/ssspy-data.
+        filename (str, optional): File name to save data. If ``None``,
+            base name of ``path`` is used.
+        branch (str, optional): Branch name of https://github.com/tky823/ssspy-data.
+
+    """
+    url = os.path.join("https://github.com/tky823/ssspy-data/raw", branch, path)
+
+    if filename is None:
+        filename = os.path.basename(url)
+
+    root = os.path.dirname(filename)
+
+    os.makedirs(root, exist_ok=True)
+
+    if not os.path.exists(filename):
+        urllib.request.urlretrieve(url, filename)
