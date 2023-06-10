@@ -72,7 +72,7 @@ sphinx-autobuild docs docs/_build/html
 - [21] [A. Ozerov and C. Fevotte, "Multichannel nonnegative matrix factorization in convolutive mixtures for audio source separation," *IEEE Trans. ASLP*, vol. 18, no. 3, pp. 550-563, 2010.](https://ieeexplore.ieee.org/document/5229304)
 - [22] [H. Sawada, H. Kameoka, S. Araki, and N. Ueda, "Multichannel extensions of non-negative matrix factorization with complex-valued data," *IEEE Trans. ASLP*, vol. 21, no. 5, pp. 971-982, 2013.](https://ieeexplore.ieee.org/document/6410389)
 - [23] [K. Yoshii, K. Itoyama, and M. Goto, "Student's T nonnegative matrix factorization and positive semidefinite tensor factorization for single-channel audio source separation," in *Proc. ICASSP*, 2016, pp. 51-55.](https://ieeexplore.ieee.org/document/7471635)
-- [24] [K. Sekiguchi, A. A. Nugraha, Y. Bando, and K. Yoshii, "Fast multichannel source separation based on jointly diagonalizable spatial covariance matrices," *arXiv:1903.03237*, 2019.](https://arxiv.org/abs/1903.03237)
+- [24] [K. Sekiguchi, A. A. Nugraha, Y. Bando, and K. Yoshii, "Fast multichannel source separation based on jointly diagonalizable spatial covariance matrices," in *Proc. EUSIPCO*, 2019, pp. 1-5.](https://arxiv.org/abs/1903.03237)
 - [25] [K. Yatabe and D. Kitamura, "Determined blind source separation via proximal splitting algorithm," in *Proc. ICASSP*, 2018, pp. 776-780.](https://ieeexplore.ieee.org/document/8462338)
 - [26] [N. Ito, S. Araki, and T. Nakatani. "Complex angular central Gaussian mixture model for directional statistics in mask-based microphone array signal processing," in *Proc. EUSIPCO*, 2016, pp. 1153-1157.](https://ieeexplore.ieee.org/document/7760429)
 
