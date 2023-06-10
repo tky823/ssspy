@@ -17,6 +17,7 @@ from ..utils.select_pair import sequential_pair_selector
 from ._update_spatial_model import (
     update_by_ip1,
     update_by_ip2_one_pair,
+    update_by_ipa,
     update_by_iss1,
     update_by_iss2,
 )
@@ -38,7 +39,7 @@ __all__ = [
     "AuxGaussIVA",
 ]
 
-spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+spatial_algorithms = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2", "IPA"]
 EPS = 1e-10
 
 
@@ -1403,7 +1404,7 @@ class AuxIVA(AuxIVABase):
     Args:
         spatial_algorithm (str):
             Algorithm for demixing filter updates.
-            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, or ``ISS2``.
+            Choose ``IP``, ``IP1``, ``IP2``, ``ISS``, ``ISS1``, ``ISS2``, or ``IPA``.
             Default: ``IP``.
         contrast_fn (callable):
             A contrast function which corresponds to :math:`-\log p(\vec{\boldsymbol{y}}_{jn})`.
@@ -1435,6 +1436,13 @@ class AuxIVA(AuxIVABase):
             Default: ``True``.
         reference_id (int):
             Reference channel for projection back and minimal distortion principle. Default: ``0``.
+        lqpqm_normalization (bool):
+            This keyword argument can be specified when ``spatial_algorithm='IPA'``.
+            If ``True``, normalization by trace is applied to positive semi-definite matrix
+            in LQPQM. Default: ``True``.
+        newton_iter (int):
+            This keyword argument can be specified when ``spatial_algorithm='IPA'``.
+            Number of iterations in Newton method. Default: ``1``.
 
     Examples:
         Update demixing filters by IP:
@@ -1536,12 +1544,37 @@ class AuxIVA(AuxIVABase):
             >>> print(spectrogram_mix.shape, spectrogram_est.shape)
             (2, 2049, 128), (2, 2049, 128)
 
+        Update demixing filters by IPA:
+
+        .. code-block:: python
+
+            >>> def contrast_fn(y):
+            ...     return 2 * np.linalg.norm(y, axis=1)
+
+            >>> def d_contrast_fn(y):
+            ...     return 2 * np.ones_like(y)
+
+            >>> n_channels, n_bins, n_frames = 2, 2049, 128
+            >>> spectrogram_mix = np.random.randn(n_channels, n_bins, n_frames) \
+            ...     + 1j * np.random.randn(n_channels, n_bins, n_frames)
+
+            >>> iva = AuxIVA(
+            ...     spatial_algorithm="IPA",
+            ...     contrast_fn=contrast_fn,
+            ...     d_contrast_fn=d_contrast_fn,
+            ... )
+            >>> spectrogram_est = iva(spectrogram_mix, n_iter=100)
+            >>> print(spectrogram_mix.shape, spectrogram_est.shape)
+            (2, 2049, 128), (2, 2049, 128)
+
     .. [#ono2011stable]
         N. Ono,
         "Stable and fast update rules for independent vector analysis based on \
         auxiliary function technique,"
         in *Proc. WASPAA*, 2011, p.189-192.
     """
+    _ipa_default_kwargs = {"lqpqm_normalization": True, "newton_iter": 1}
+    _default_kwargs = _ipa_default_kwargs
 
     def __init__(
         self,
@@ -1558,6 +1591,7 @@ class AuxIVA(AuxIVABase):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         super().__init__(
             contrast_fn=contrast_fn,
@@ -1569,7 +1603,7 @@ class AuxIVA(AuxIVABase):
             reference_id=reference_id,
         )
 
-        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
+        assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithm)
 
         self.spatial_algorithm = spatial_algorithm
 
@@ -1578,6 +1612,24 @@ class AuxIVA(AuxIVABase):
                 self.pair_selector = sequential_pair_selector
         else:
             self.pair_selector = pair_selector
+
+        if spatial_algorithm == "IPA":
+            valid_keys = set(self.__class__._ipa_default_kwargs.keys())
+        else:
+            valid_keys = set()
+
+        invalid_keys = set(kwargs) - valid_keys
+
+        assert invalid_keys == set(), "Invalid keywords {} are given.".format(invalid_keys)
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+        # set default values if necessary
+        for key in valid_keys:
+            if not hasattr(self, key):
+                value = self.__class__._default_kwargs[key]
+                setattr(self, key, value)
 
     def __call__(
         self, input: np.ndarray, n_iter: int = 100, initial_call: bool = True, **kwargs
@@ -1636,7 +1688,7 @@ class AuxIVA(AuxIVABase):
         """
         super()._reset(**kwargs)
 
-        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2"]:
+        if self.spatial_algorithm in ["ISS", "ISS1", "ISS2", "IPA"]:
             self.demix_filter = None
 
     def update_once(
@@ -1649,6 +1701,7 @@ class AuxIVA(AuxIVABase):
         - If ``self.spatial_algorithm`` is ``IP2``, ``update_once_ip2`` is called.
         - If ``self.spatial_algorithm`` is ``ISS`` or ``ISS1``, ``update_once_iss1`` is called.
         - If ``self.spatial_algorithm`` is ``ISS2``, ``update_once_iss2`` is called.
+        - If ``self.spatial_algorithm`` is ``IPA``, ``update_once_ipa`` is called.
 
         Args:
             flooring_fn (callable or str, optional):
@@ -1670,6 +1723,8 @@ class AuxIVA(AuxIVABase):
             self.update_once_iss1(flooring_fn=flooring_fn)
         elif self.spatial_algorithm in ["ISS2"]:
             self.update_once_iss2(flooring_fn=flooring_fn)
+        elif self.spatial_algorithm in ["IPA"]:
+            self.update_once_ipa(flooring_fn=flooring_fn)
         else:
             raise NotImplementedError("Not support {}.".format(self.spatial_algorithm))
 
@@ -2003,6 +2058,115 @@ class AuxIVA(AuxIVABase):
             varphi[:, np.newaxis, :],
             flooring_fn=flooring_fn,
             pair_selector=self.pair_selector,
+        )
+
+    def update_once_ipa(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+    ) -> None:
+        r"""Update estimated spectrograms once using \
+        iterative projection with adjustment [#scheibler2021independent]_.
+
+        Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
+
+        First, we compute auxiliary variables:
+
+        .. math::
+            \bar{r}_{jn}
+            \leftarrow\|\vec{\boldsymbol{y}}_{jn}\|_{2},
+
+        where
+
+        .. math::
+            G(\vec{\boldsymbol{y}}_{jn})
+            &= -\log p(\vec{\boldsymbol{y}}_{jn}), \\
+            G_{\mathbb{R}}(\|\vec{\boldsymbol{y}}_{jn}\|_{2})
+            &= G(\vec{\boldsymbol{y}}_{jn}).
+
+        Then, by defining, :math:`\tilde{\boldsymbol{U}}_{in'}`,
+        :math:`\boldsymbol{A}_{in}\in\mathbb{R}^{(N-1)\times(N-1)}`,
+        :math:`\boldsymbol{b}_{in}\in\mathbb{C}^{N-1}`,
+        :math:`\boldsymbol{C}_{in}\in\mathbb{C}^{(N-1)\times(N-1)}`,
+        :math:`\boldsymbol{d}_{in}\in\mathbb{C}^{N-1}`,
+        and :math:`z_{in}\in\mathbb{R}_{\geq 0}` as follows:
+
+        .. math::
+
+            \tilde{\boldsymbol{U}}_{in'}
+            &= \frac{1}{J}\sum_{j}\frac{G'_{\mathbb{R}}(\bar{r}_{jn'})}{2\bar{r}_{jn'}}
+            \boldsymbol{y}_{ij}\boldsymbol{y}_{ij}^{\mathsf{H}}, \\
+            \boldsymbol{A}_{in}
+            &= \mathrm{diag}(\ldots,
+            \boldsymbol{e}_{n}^{\mathsf{T}}\tilde{\boldsymbol{U}}_{in'}\boldsymbol{e}_{n}
+            ,\ldots)~~(n'\neq n), \\
+            \boldsymbol{b}_{in}
+            &= (\ldots,
+            \boldsymbol{e}_{n}^{\mathsf{T}}\tilde{\boldsymbol{U}}_{in'}\boldsymbol{e}_{n'}
+            ,\ldots)^{\mathsf{T}}~~(n'\neq n), \\
+            \boldsymbol{C}_{in}
+            &= \bar{\boldsymbol{E}}_{n}^{\mathsf{T}}(\tilde{\boldsymbol{U}}_{in}^{-1})^{*}
+            \bar{\boldsymbol{E}}_{n}, \\
+            \boldsymbol{d}_{in}
+            &= \bar{\boldsymbol{E}}_{n}^{\mathsf{T}}(\tilde{\boldsymbol{U}}_{in}^{-1})^{*}
+            \boldsymbol{e}_{n}, \\
+            z_{in}
+            &= \boldsymbol{e}_{n}^{\mathsf{T}}\tilde{\boldsymbol{U}}_{in}^{-1}\boldsymbol{e}_{n}
+            - \boldsymbol{d}_{in}^{\mathsf{H}}\boldsymbol{C}_{in}^{-1}\boldsymbol{d}_{in},
+
+        :math:`\boldsymbol{y}_{ij}` is updated via log-quadratically penelized
+        quadratic minimization (LQPQM).
+
+        .. math::
+            \check{\boldsymbol{q}}_{in}
+            &\leftarrow \mathrm{LQPQM2}(\boldsymbol{H}_{in},\boldsymbol{v}_{in},z_{in}), \\
+            \boldsymbol{q}_{in}
+            &\leftarrow \boldsymbol{G}_{in}^{-1}\check{\boldsymbol{q}}_{in}
+            - \boldsymbol{A}_{in}^{-1}\boldsymbol{b}_{in}, \\
+            \tilde{\boldsymbol{q}}_{in}
+            &\leftarrow \boldsymbol{e}_{n} - \bar{\boldsymbol{E}}_{n}\boldsymbol{q}_{in}, \\
+            \boldsymbol{p}_{in}
+            &\leftarrow \frac{\tilde{\boldsymbol{U}}_{in}^{-1}\tilde{\boldsymbol{q}}_{in}^{*}}
+            {\sqrt{(\tilde{\boldsymbol{q}}_{in}^{*})^{\mathsf{H}}\tilde{\boldsymbol{U}}_{in}^{-1}
+            \tilde{\boldsymbol{q}}_{in}^{*}}}, \\
+            \boldsymbol{T}_{in}
+            &\leftarrow \boldsymbol{I}
+            + \boldsymbol{e}_{n}(\boldsymbol{p}_{in} - \boldsymbol{e}_{n})^{\mathsf{H}}
+            + \bar{\boldsymbol{E}}_{n}\boldsymbol{q}_{in}^{*}\boldsymbol{e}_{n}^{\mathsf{T}}, \\
+            \boldsymbol{y}_{ij}
+            &\leftarrow \boldsymbol{T}_{in}\boldsymbol{y}_{ij},
+
+        .. [#scheibler2021independent]
+            R. Scheibler,
+            "Independent vector analysis via log-quadratically penalized quadratic minimization,"
+            *IEEE Trans. Signal Processing*, vol. 69, pp. 2509-2524, 2021.
+
+        """
+        self.lqpqm_normalization: bool
+        self.newton_iter: int
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
+
+        Y = self.output
+        r = np.linalg.norm(Y, axis=1)
+        denom = flooring_fn(2 * r)
+        varphi = self.d_contrast_fn(r) / denom
+
+        normalization = self.lqpqm_normalization
+        max_iter = self.newton_iter
+
+        self.output = update_by_ipa(
+            Y,
+            varphi[:, np.newaxis, :],
+            normalization=normalization,
+            flooring_fn=flooring_fn,
+            max_iter=max_iter,
         )
 
     def compute_loss(self) -> float:
@@ -2856,6 +3020,7 @@ class AuxLaplaceIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         def contrast_fn(y) -> np.ndarray:
             r"""Contrast function.
@@ -2891,6 +3056,7 @@ class AuxLaplaceIVA(AuxIVA):
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
+            **kwargs,
         )
 
 
@@ -3017,6 +3183,7 @@ class AuxGaussIVA(AuxIVA):
         scale_restoration: Union[bool, str] = True,
         record_loss: bool = True,
         reference_id: int = 0,
+        **kwargs,
     ) -> None:
         def contrast_fn(y: np.ndarray) -> np.ndarray:
             r"""
@@ -3063,6 +3230,7 @@ class AuxGaussIVA(AuxIVA):
             scale_restoration=scale_restoration,
             record_loss=record_loss,
             reference_id=reference_id,
+            **kwargs,
         )
 
     def _reset(self, **kwargs) -> None:

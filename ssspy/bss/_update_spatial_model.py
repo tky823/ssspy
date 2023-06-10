@@ -4,7 +4,9 @@ from typing import Callable, Iterable, Optional, Tuple
 import numpy as np
 
 from ..linalg import eigh2, inv2
+from ..linalg.lqpqm import lqpqm2
 from ..special.flooring import identity, max_flooring
+from ..special.psd import to_psd
 from ..utils.select_pair import sequential_pair_selector
 
 EPS = 1e-10
@@ -389,6 +391,126 @@ def update_by_ip2_one_pair(
     W_mn = W_mn_conj.transpose(0, 2, 1).conj()
 
     return W_mn
+
+
+def update_by_ipa(
+    separated: np.ndarray,
+    weight: np.ndarray,
+    normalization: bool = True,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+    max_iter: int = 1,
+) -> np.ndarray:
+    r"""Update estimated spectrogram by iterative projection with adjustment (IPA).
+
+    Args:
+        separated (numpy.ndarray):
+            Estimated spectrograms to be updated.
+            The shape is (n_sources, n_bins, n_frames).
+        weight (numpy.ndarray):
+            Weights for estimated spectrogram.
+            The shape is (n_sources, n_bins, n_frames).
+        normalization (bool):
+            If ``normalization=True``, normalization is applied to LQPQM.
+            Default: ``True``.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+        max_iter (int):
+            Maximum number of Newton-Raphson method. Default: ``1``.
+
+    Returns:
+        numpy.ndarray of estimated spectrograms of shape (n_sources, n_bins, n_frames).
+
+    """
+    if flooring_fn is None:
+        flooring_fn = identity
+
+    Y = separated
+    varphi = weight
+
+    n_sources = Y.shape[0]
+
+    E = np.eye(n_sources)
+
+    for source_idx in range(n_sources):
+        YY_conj = Y[:, np.newaxis] * Y[np.newaxis, :].conj()
+        U_tilde = np.mean(varphi[:, np.newaxis, np.newaxis] * YY_conj, axis=-1)
+        U_tilde = U_tilde.transpose(3, 0, 1, 2)
+        U_tilde = to_psd(U_tilde, axis1=-2, axis2=-1, flooring_fn=flooring_fn)
+
+        E_n_left, e_n, E_n_right = np.split(E, [source_idx, source_idx + 1], axis=-1)
+        E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
+
+        U_tilde_n = U_tilde[:, source_idx, :, :]
+        U_cholesky = np.linalg.cholesky(U_tilde_n)
+        U_cholesky_inverse = np.linalg.inv(U_cholesky)
+        U_tilde_n_inverse = U_cholesky_inverse.transpose(0, 2, 1).conj() @ U_cholesky_inverse
+        a_n = U_tilde[:, :, source_idx, source_idx]
+        a_n = np.real(a_n)
+        a_n = a_n @ E_n
+        b_n = np.diagonal(U_tilde[:, :, source_idx, :], axis1=-2, axis2=-1)
+        b_n = b_n @ E_n
+        d_n = E_n.transpose(1, 0) @ U_tilde_n_inverse.conj()
+        C_n = d_n @ E_n
+        d_n = d_n[:, :, source_idx]
+
+        Cd_n = np.linalg.solve(C_n, d_n)
+        dCd_n = np.sum(d_n.conj() * Cd_n, axis=-1)
+        dCd_n = np.real(dCd_n)
+        eUe_n = U_tilde_n_inverse[:, source_idx, source_idx]
+        eUe_n = np.real(eUe_n)
+        z_n = eUe_n - dCd_n
+
+        a_sqrt_n = np.sqrt(a_n)
+        aa_n = a_sqrt_n[:, :, np.newaxis] * a_sqrt_n[:, np.newaxis, :]
+        H_n = C_n / aa_n
+        v_n = -b_n / a_sqrt_n - a_sqrt_n * Cd_n
+
+        if normalization:
+            trace = np.trace(H_n, axis1=-2, axis2=-1)
+            trace = np.real(trace)
+
+            H_n = H_n / trace[..., np.newaxis, np.newaxis]
+            z_n = z_n / trace
+
+        q_check_n = lqpqm2(
+            H_n,
+            v_n,
+            z_n,
+            flooring_fn=flooring_fn,
+            singular_fn=lambda x: x < flooring_fn(0),
+            max_iter=max_iter,
+        )
+
+        q_n = q_check_n / a_sqrt_n - b_n / a_n
+
+        Eq_n = q_n.conj() @ E_n.transpose(1, 0)
+        q_tilde_n = e_n.transpose(1, 0) - Eq_n
+
+        Uq_n = np.linalg.solve(U_tilde_n, q_tilde_n)
+        qUq_n = np.sum(q_tilde_n.conj() * Uq_n, axis=-1, keepdims=True)
+
+        qUq_n = np.real(qUq_n)
+        qUq_n = np.maximum(qUq_n, 0)
+        denom = np.sqrt(qUq_n)
+        denom = flooring_fn(denom)
+        p_n = Uq_n / denom
+
+        Y_n = Y[source_idx]
+        p_n_conj = p_n.transpose(1, 0).conj()
+        PY_n = np.sum(p_n_conj[..., np.newaxis] * Y, axis=0)
+        PY_n = e_n[:, np.newaxis] * (PY_n - Y_n)
+        Eq_n = Eq_n.transpose(1, 0)
+        QY_n = Eq_n[:, :, np.newaxis] * Y_n
+
+        Y = Y + PY_n + QY_n
+
+    return Y
 
 
 def update_by_block_decomposition_vcd(
