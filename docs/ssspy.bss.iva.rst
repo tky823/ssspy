@@ -91,7 +91,7 @@ Algorithms
 
 .. autoclass:: ssspy.bss.iva.AuxIVA
    :special-members: __call__
-   :members: update_once, update_once_ip1, update_once_ip2, update_once_iss1, update_once_iss2
+   :members: update_once, update_once_ip1, update_once_ip2, update_once_iss1, update_once_iss2, update_once_ipa
 
 .. autoclass:: ssspy.bss.iva.GradLaplaceIVA
    :members: update_once, compute_loss
