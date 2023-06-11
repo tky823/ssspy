@@ -65,7 +65,8 @@ def download_ssspy_data(path: str, filename: Optional[str] = None, branch : str 
 
     root = os.path.dirname(filename)
 
-    os.makedirs(root, exist_ok=True)
+    if root:
+        os.makedirs(root, exist_ok=True)
 
     if not os.path.exists(filename):
         urllib.request.urlretrieve(url, filename)
