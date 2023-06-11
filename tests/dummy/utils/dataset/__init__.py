@@ -108,9 +108,11 @@ def load_regression_data(root: str, filenames: Optional[List[str]] = None) -> Tu
         if filename not in filenames:
             continue
 
-        download_ssspy_data(location, filename)
+        path = os.path.join(root, filename)
 
-        npz[filename] = np.load(filename)
+        download_ssspy_data(location, path)
+
+        npz[filename] = np.load(path)
 
     sorted_npz = []
 
