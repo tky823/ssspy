@@ -60,7 +60,7 @@ def download_ssspy_data(path: str, filename: Optional[str] = None, branch : str 
         branch (str, optional): Branch name of https://github.com/tky823/ssspy-data.
 
     """
-    url = os.path.join("https://github.com/tky823/ssspy-data/raw", branch, path)
+    url = f"https://github.com/tky823/ssspy-data/raw/{branch}/{path}"
 
     if filename is None:
         filename = os.path.basename(url)
