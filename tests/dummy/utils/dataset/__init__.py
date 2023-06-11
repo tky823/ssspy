@@ -1,7 +1,9 @@
 import hashlib
+import json
 import os
 import urllib.request
-from typing import Optional, Tuple
+import warnings
+from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -70,3 +72,49 @@ def download_ssspy_data(path: str, filename: Optional[str] = None, branch : str 
 
     if not os.path.exists(filename):
         urllib.request.urlretrieve(url, filename)
+
+
+def load_regression_data(root: str, filenames: Optional[List[str]] = None) -> Tuple:
+    """Load regression data.
+
+    Args:
+        root (str): Root to save regression data, where url.json is placed.
+        filenames (str, optional): Filenames to download.
+
+    Returns:
+        tuple: Tuple containing data of specified filenames.
+
+    """
+    url_json_path = os.path.join(root, "url.json")
+
+    with open(url_json_path) as f:
+        urls = json.load(f)
+
+    if filenames is None:
+        warnings.warn("It is recommended to specify filenames to ensure order.", UserWarning)
+
+        filenames = []
+
+        for file in urls["files"]:
+            filename = file["filename"]
+            filenames.append(filename)
+
+    npz = {}
+
+    for file in urls["files"]:
+        filename = file["filename"]
+        location = file["location"]
+
+        if filename not in filenames:
+            continue
+
+        download_ssspy_data(location, filename)
+
+        npz[filename] = np.load(filename)
+
+    sorted_npz = []
+
+    for filename in filenames:
+        sorted_npz.append(npz[filename])
+
+    return tuple(sorted_npz)
