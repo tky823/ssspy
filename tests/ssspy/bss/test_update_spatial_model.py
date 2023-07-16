@@ -54,7 +54,7 @@ def test_update_by_ip1(
 
     rng = np.random.default_rng(42)
 
-    varphi = 1 / rng.random((n_bins, n_frames))
+    varphi = 1 / rng.random((n_sources, n_frames))
     X = rng.standard_normal((n_channels, n_bins, n_frames))
     real = rng.standard_normal((n_bins, n_sources, n_sources))
     imag = rng.standard_normal((n_bins, n_sources, n_sources))
@@ -84,7 +84,7 @@ def test_update_by_ip2(
 
     rng = np.random.default_rng(42)
 
-    varphi = 1 / rng.random((n_bins, n_frames))
+    varphi = 1 / rng.random((n_sources, n_frames))
     X = rng.standard_normal((n_channels, n_bins, n_frames))
     real = rng.standard_normal((n_bins, n_sources, n_sources))
     imag = rng.standard_normal((n_bins, n_sources, n_sources))
