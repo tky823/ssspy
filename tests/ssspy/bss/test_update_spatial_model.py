@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from ssspy.bss._update_spatial_model import (
+    _psd_inv,
     update_by_block_decomposition_vcd,
     update_by_ip1,
     update_by_ip2,
@@ -206,3 +207,23 @@ def test_update_by_block_decomposition_vcd(
     )
 
     assert W_updated.shape == W.shape
+
+
+def test_psd_inv() -> None:
+    rng = np.random.default_rng(42)
+
+    n_bins, n_frames = 129, 100
+    n_sources = n_channels = 4
+
+    varphi = 1 / rng.random((n_sources, n_frames))
+    X = rng.standard_normal((n_channels, n_bins, n_frames))
+
+    XX_Hermite = X[:, np.newaxis, :, :] * X[np.newaxis, :, :, :].conj()
+    XX_Hermite = XX_Hermite.transpose(2, 0, 1, 3)
+    GXX = varphi[:, np.newaxis, np.newaxis, :] * XX_Hermite[:, np.newaxis, :, :, :]
+    U = np.mean(GXX, axis=-1)
+
+    U_inv = _psd_inv(U)
+    eye = np.eye(n_sources)
+
+    assert np.allclose(U @ U_inv, eye)
