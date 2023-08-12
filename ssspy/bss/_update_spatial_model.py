@@ -447,9 +447,7 @@ def update_by_ipa(
         E_n = np.concatenate([E_n_left, E_n_right], axis=-1)
 
         U_tilde_n = U_tilde[:, source_idx, :, :]
-        U_cholesky = np.linalg.cholesky(U_tilde_n)
-        U_cholesky_inverse = np.linalg.inv(U_cholesky)
-        U_tilde_n_inverse = U_cholesky_inverse.transpose(0, 2, 1).conj() @ U_cholesky_inverse
+        U_tilde_n_inverse = _psd_inv(U_tilde_n, flooring_fn=flooring_fn)
         a_n = U_tilde[:, :, source_idx, source_idx]
         a_n = np.real(a_n)
         a_n = a_n @ E_n
@@ -606,3 +604,40 @@ def update_by_block_decomposition_vcd(
             W[:, neighbor_idx, source_idx, :] = w_in.conj()
 
     return W
+
+
+def _psd_inv(
+    X: np.ndarray,
+    flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+        max_flooring, eps=EPS
+    ),
+) -> np.ndarray:
+    """Compute inversion of positive semidefinite matrix.
+
+    Args:
+        X (np.ndarray): Positive semidefinite matrix of shape (*, N, N).
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
+
+    Returns:
+        np.ndarray: Inversion of input matrix.
+
+    """
+    if flooring_fn is None:
+        flooring_fn = identity
+
+    Lamb, P = np.linalg.eigh(X)
+
+    P_Hermite = P.swapaxes(-2, -1)
+
+    if np.iscomplexobj(X):
+        P_Hermite = P_Hermite.conj()
+
+    Lamb_inv = 1 / flooring_fn(Lamb)
+    Lamb_inv = Lamb_inv[..., np.newaxis] * np.eye(Lamb.shape[-1])
+
+    return P @ Lamb_inv @ P_Hermite

@@ -99,15 +99,14 @@ def lqpqm2(
     v_tilde_non_singular = np.sum(
         sigma_non_singular.conj() * v_non_singular[:, :, np.newaxis], axis=-2
     )
-    phi_max_non_singular = phi_non_singular[:, -1]
     lamb_non_singular = solve_equation(
-        phi_non_singular / phi_max_non_singular[:, np.newaxis],
-        v_tilde_non_singular / phi_max_non_singular[:, np.newaxis],
-        z_non_singular / phi_max_non_singular,
+        phi_non_singular,
+        v_tilde_non_singular,
+        z_non_singular,
         flooring_fn=flooring_fn,
         max_iter=max_iter,
+        normalization=True,
     )
-    lamb_non_singular = lamb_non_singular * phi_max_non_singular
 
     num = phi_non_singular * v_tilde_non_singular
     denom = lamb_non_singular[..., np.newaxis] - phi_non_singular
@@ -129,6 +128,7 @@ def solve_equation(
         max_flooring, eps=EPS
     ),
     max_iter: int = 10,
+    normalization: bool = True,
 ):
     r"""Find largest root of :math:`f(\lambda_{in})`, where
 
@@ -150,6 +150,7 @@ def solve_equation(
             the identity function (``lambda x: x``) is used.
             Default: ``functools.partial(max_flooring, eps=1e-10)``.
         max_iter (int): Maximum iteration of Newton-Raphson method. Default: ``10``.
+        normalization (bool): If ``True``, coefficients are normalized by ``phi_max``.
 
     Returns:
         numpy.ndarray of largest root of :math:`f(\lambda_{in})`.
@@ -159,8 +160,28 @@ def solve_equation(
     if flooring_fn is None:
         flooring_fn = identity
 
-    phi_max = phi[..., -1]
-    v_max = v[..., -1]
+    n_bins, n_sources = phi.shape
+
+    non_zero_mask = phi * np.abs(v) ** 2 >= flooring_fn(0)
+    phi = non_zero_mask * phi
+    v = non_zero_mask * v
+
+    max_index = np.argmax(phi, axis=-1) + np.arange(0, n_bins * n_sources, n_sources)
+    phi_flatten = phi.flatten()
+    v_flatten = v.flatten()
+    phi_max = phi_flatten[max_index]
+    v_max = v_flatten[max_index]
+    phi_max = flooring_fn(phi_max)
+
+    if normalization:
+        phi_max_original = phi_max
+        phi = phi / phi_max[:, np.newaxis]
+        v = v / phi_max[:, np.newaxis]
+        v_max = v_max / phi_max
+        z = z / phi_max
+        phi_max = phi_max / phi_max  # i.e. phi_max = 1
+    else:
+        phi_max_original = None
 
     # Find largest root of cubic polynomial for initialization
     A = -(phi_max * np.abs(v_max) ** 2 + 2 * phi_max + z)
@@ -191,6 +212,9 @@ def solve_equation(
             warnings.warn(
                 f"Newton-Raphson method did not converge in {max_iter} iterations.", UserWarning
             )
+
+    if normalization:
+        lamb = lamb * phi_max_original
 
     return lamb
 

@@ -58,7 +58,6 @@ def to_psd(
     if np.iscomplexobj(X):
         P_Hermite = P_Hermite.conj()
 
-    Lamb = np.real(Lamb)
     Lamb = flooring_fn(Lamb)
     Lamb = Lamb[..., np.newaxis] * np.eye(Lamb.shape[-1])
 

@@ -4,7 +4,8 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from ..special.flooring import identity, max_flooring
+from ..special.flooring import max_flooring
+from ..special.psd import to_psd as _to_psd
 
 EPS = 1e-10
 
@@ -38,38 +39,4 @@ def to_psd(
     """
     warnings.warn("Use ssspy.special.to_psd instead.", FutureWarning)
 
-    if flooring_fn is None:
-        flooring_fn = identity
-
-    shape = X.shape
-    n_dims = len(shape)
-
-    axis1 = n_dims + axis1 if axis1 < 0 else axis1
-    axis2 = n_dims + axis2 if axis2 < 0 else axis2
-
-    assert axis1 == n_dims - 2 and axis2 == n_dims - 1, "axis1 == -2 and axis2 == -1"
-
-    if np.iscomplexobj(X):
-        X = (X + X.swapaxes(axis1, axis2).conj()) / 2
-    else:
-        X = (X + X.swapaxes(axis1, axis2)) / 2
-
-    Lamb, P = np.linalg.eigh(X)
-
-    P_Hermite = P.swapaxes(-2, -1)
-
-    if np.iscomplexobj(X):
-        P_Hermite = P_Hermite.conj()
-
-    Lamb = np.real(Lamb)
-    Lamb = flooring_fn(Lamb)
-    Lamb = Lamb[..., np.newaxis] * np.eye(Lamb.shape[-1])
-
-    X = P @ Lamb @ P_Hermite
-
-    if np.iscomplexobj(X):
-        X = (X + X.swapaxes(axis1, axis2).conj()) / 2
-    else:
-        X = (X + X.swapaxes(axis1, axis2)) / 2
-
-    return X
+    return _to_psd(X, axis1=axis1, axis2=axis2, flooring_fn=flooring_fn)
