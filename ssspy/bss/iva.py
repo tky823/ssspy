@@ -2135,12 +2135,12 @@ class AuxIVA(AuxIVABase):
             &\leftarrow \frac{\tilde{\boldsymbol{U}}_{in}^{-1}\tilde{\boldsymbol{q}}_{in}^{*}}
             {\sqrt{(\tilde{\boldsymbol{q}}_{in}^{*})^{\mathsf{H}}\tilde{\boldsymbol{U}}_{in}^{-1}
             \tilde{\boldsymbol{q}}_{in}^{*}}}, \\
-            \boldsymbol{T}_{in}
+            \boldsymbol{\Upsilon}_{i}^{(n)}
             &\leftarrow \boldsymbol{I}
             + \boldsymbol{e}_{n}(\boldsymbol{p}_{in} - \boldsymbol{e}_{n})^{\mathsf{H}}
             + \bar{\boldsymbol{E}}_{n}\boldsymbol{q}_{in}^{*}\boldsymbol{e}_{n}^{\mathsf{T}}, \\
             \boldsymbol{y}_{ij}
-            &\leftarrow \boldsymbol{T}_{in}\boldsymbol{y}_{ij},
+            &\leftarrow \boldsymbol{\Upsilon}_{i}^{(n)}\boldsymbol{y}_{ij},
 
         .. [#scheibler2021independent]
             R. Scheibler,
