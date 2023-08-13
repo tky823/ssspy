@@ -1,0 +1,16 @@
+changelog:
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+    - title: New Features 🎉
+      labels:
+        - new feature
+    - title: Bug Fixes 🐛
+      labels:
+        - bug
+        - bug fix
+    - title: Notebooks
+        - notebooks
+    - title: Other Changes
+      labels:
+        - "*"
