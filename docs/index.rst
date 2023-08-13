@@ -117,6 +117,7 @@ Quick Example of Blind Source Separation
    :maxdepth: 1
    :caption: Contents:
 
+   changelog
    api
 
 
