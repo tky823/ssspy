@@ -23,7 +23,7 @@ rng = np.random.default_rng(42)
 
 parameters_dof = [100]
 parameters_beta = [0.5, 1.5]
-parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2"]
+parameters_spatial_algorithm = ["IP", "IP1", "IP2", "ISS", "ISS1", "ISS2", "IPA"]
 parameters_source_algorithm = ["MM", "ME"]
 parameters_callbacks = [None, dummy_function, [DummyCallback(), dummy_function]]
 parameters_scale_restoration = [True, False, "projection_back", "minimal_distortion_principle"]
@@ -282,7 +282,12 @@ def test_t_ilrma_latent(
         "rng": np.random.default_rng(42),
     }
 
-    if source_algorithm == "ME" and domain != 2:
+    if spatial_algorithm == "IPA":
+        with pytest.raises(ValueError) as e:
+            ilrma = TILRMA(n_basis, **kwargs)
+
+        assert str(e.value) == "IPA is not supported for t-ILRMA."
+    elif source_algorithm == "ME" and domain != 2:
         with pytest.raises(AssertionError) as e:
             ilrma = TILRMA(n_basis, **kwargs)
 
@@ -356,7 +361,12 @@ def test_t_ilrma_wo_latent(
         "rng": np.random.default_rng(42),
     }
 
-    if source_algorithm == "ME" and domain != 2:
+    if spatial_algorithm == "IPA":
+        with pytest.raises(ValueError) as e:
+            ilrma = TILRMA(n_basis, **kwargs)
+
+        assert str(e.value) == "IPA is not supported for t-ILRMA."
+    elif source_algorithm == "ME" and domain != 2:
         with pytest.raises(AssertionError) as e:
             ilrma = TILRMA(n_basis, **kwargs)
 
@@ -435,6 +445,11 @@ def test_ggd_ilrma_latent(
             ilrma = GGDILRMA(n_basis, **kwargs)
 
         assert str(e.value) == "Not support {}.".format(source_algorithm)
+    elif spatial_algorithm == "IPA":
+        with pytest.raises(ValueError) as e:
+            ilrma = GGDILRMA(n_basis, **kwargs)
+
+        assert str(e.value) == "IPA is not supported for GGD-ILRMA."
     else:
         ilrma = GGDILRMA(n_basis, **kwargs)
         spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
@@ -509,6 +524,11 @@ def test_ggd_ilrma_wo_latent(
             ilrma = GGDILRMA(n_basis, **kwargs)
 
         assert str(e.value) == "Not support {}.".format(source_algorithm)
+    elif spatial_algorithm == "IPA":
+        with pytest.raises(ValueError) as e:
+            ilrma = GGDILRMA(n_basis, **kwargs)
+
+        assert str(e.value) == "IPA is not supported for GGD-ILRMA."
     else:
         ilrma = GGDILRMA(n_basis, **kwargs)
         spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter, **reset_kwargs)
