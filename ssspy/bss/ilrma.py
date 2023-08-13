@@ -2175,6 +2175,9 @@ class TILRMA(ILRMABase):
         assert source_algorithm in source_algorithms, "Not support {}.".format(source_algorithm)
         assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
 
+        if spatial_algorithm == "IPA":
+            raise ValueError("IPA is not supported for t-ILRMA.")
+
         if source_algorithm == "ME":
             assert domain == 2, "domain parameter should be 2 when you specify ME algorithm."
 
@@ -3515,6 +3518,9 @@ class GGDILRMA(ILRMABase):
         assert spatial_algorithm in spatial_algorithms, "Not support {}.".format(spatial_algorithms)
         assert source_algorithm == "MM", "Not support {}.".format(source_algorithm)
         assert 0 < domain <= 2, "domain parameter should be chosen from [0, 2]."
+
+        if spatial_algorithm == "IPA":
+            raise ValueError("IPA is not supported for GGD-ILRMA.")
 
         self.beta = beta
         self.spatial_algorithm = spatial_algorithm
