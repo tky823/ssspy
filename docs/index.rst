@@ -53,6 +53,12 @@ To build the documentation locally, you have to include ``docs`` when installing
 
    pip install -e ".[docs]"
 
+You need to convert some notebooks to `.rst` by the following command:
+
+.. code-block:: shell
+
+   jupyter nbconvert notebooks/Examples/Getting-Started.ipynb --to rst --output-dir docs/_notebooks/
+
 When you build the documentation, run the following command.
 
 .. code-block:: shell
@@ -71,6 +77,7 @@ Or, you can build the documentation automatically using ``sphinx-autobuild``.
    :maxdepth: 1
    :caption: Contents:
 
+   _notebooks/Getting-Started.rst
    changelog
    api
 
