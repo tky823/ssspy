@@ -24,6 +24,12 @@ To build the documentation locally, you have to include ``docs`` when installing
 pip install -e ".[docs]"
 ```
 
+You need to convert some notebooks to `.rst` by the following command:
+```shell
+# in ssspy/
+jupyter nbconvert notebooks/Examples/Getting-Started.ipynb --to rst --output-dir docs/_notebooks/
+```
+
 When you build the documentation, run the following command.
 ```shell
 cd docs/
