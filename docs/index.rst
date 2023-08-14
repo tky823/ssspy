@@ -27,9 +27,15 @@ You can install ``ssspy`` by pip.
 
 .. code-block:: shell
 
+   pip install ssspy
+
+To install latest version,
+
+.. code-block:: shell
+
    pip install git+https://github.com/tky823/ssspy.git
 
-or clone the repository.
+Instead, you can build package from source.
 
 .. code-block:: shell
 
