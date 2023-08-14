@@ -47,11 +47,11 @@ or clone the repository.
    
 Build Documentation Locally (optional)
 --------------------------------------
-To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
+To build the documentation locally, you have to include ``docs`` and ``notebooks`` when installing ``ssspy``.
 
 .. code-block:: shell
 
-   pip install -e ".[docs]"
+   pip install -e ".[docs,notebooks]"
 
 You need to convert some notebooks to `.rst` by the following command:
 
