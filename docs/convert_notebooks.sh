@@ -1,3 +1,3 @@
 #!/bin/bash
 
-jupyter nbconvert notebooks/Examples/Getting-Started.ipynb --to rst --output-dir docs/_notebooks/
+jupyter nbconvert --execute notebooks/Examples/Getting-Started.ipynb --to notebook --output-dir docs/_notebooks/
