@@ -9,13 +9,19 @@ A Python toolkit for sound source separation.
 ## Installation
 You can install by pip.
 ```shell
+pip install ssspy
+```
+
+To install latest version,
+```shell
 pip install git+https://github.com/tky823/ssspy.git
 ```
-or clone this repository.
+
+Instead, you can build package from source.
 ```shell
 git clone https://github.com/tky823/ssspy.git
 cd ssspy
-pip install -e .
+pip install .
 ```
 
 ## Build Documentation Locally (optional)
