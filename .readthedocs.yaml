@@ -17,7 +17,7 @@ build:
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-   configuration: docs/conf.py
+  configuration: docs/conf.py
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:
@@ -25,9 +25,9 @@ sphinx:
 
 # Optionally declare the Python requirements required to build your docs
 python:
-   install:
-   - method: pip
-     path: .
-     extra_requirements:
-     - dev
-     - docs
+  install:
+  - method: pip
+    path: .
+    extra_requirements:
+    - dev
+    - docs
