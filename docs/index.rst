@@ -67,52 +67,6 @@ Or, you can build the documentation automatically using ``sphinx-autobuild``.
    # in ssspy/
    sphinx-autobuild docs docs/_build/html
 
-Quick Example of Blind Source Separation
-----------------------------------------
-
-.. code-block:: python
-
-   import numpy as np
-   import scipy.signal as ss
-   import IPython.display as ipd
-   import matplotlib.pyplot as plt
-
-   from ssspy.utils.dataset import download_sample_speech_data
-   from ssspy.bss.iva import AuxLaplaceIVA
-
-
-   n_fft, hop_length = 4096, 2048
-   window = "hann"
-
-   waveform_src_img, sample_rate = download_sample_speech_data(n_sources=3)
-   waveform_mix = np.sum(waveform_src_img, axis=1)
-   _, _, spectrogram_mix = ss.stft(
-      waveform_mix,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
-
-   iva = AuxLaplaceIVA()
-   spectrogram_est = iva(spectrogram_mix)
-
-   _, waveform_est = ss.istft(
-      spectrogram_est,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
-
-   for idx, waveform in enumerate(waveform_est):
-      print("Estimated source: {}".format(idx + 1))
-      ipd.display(ipd.Audio(waveform, rate=sample_rate))
-      print()
-
-   plt.figure()
-   plt.plot(iva.loss)
-   plt.show()
-
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
