@@ -21,8 +21,6 @@ dynamic = [
 
 [project.optional-dependencies]
 dev = [
-    "scipy",
-    "soundfile",
     "flake8",
     "black",
     "isort"
@@ -37,11 +35,13 @@ docs = [
 notebooks = [
     "ipykernel",
     "matplotlib",
+    "scipy",  # for STFT in notebooks
 ]
 tests = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
+    "scipy",
 ]
 
 [tool.setuptools.dynamic]
