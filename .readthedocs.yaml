@@ -35,3 +35,4 @@ python:
     extra_requirements:
     - dev
     - docs
+    - notebooks
