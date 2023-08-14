@@ -30,7 +30,7 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-autobuild",
     "nbsphinx",
-    "pandoc",  # to convert notebooks
+    "pypandoc",  # to convert notebooks
     "furo",
 ]
 notebooks = [
