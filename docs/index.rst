@@ -57,7 +57,7 @@ You need to convert some notebooks to `.rst` by the following command:
 
 .. code-block:: shell
 
-   jupyter nbconvert notebooks/Examples/Getting-Started.ipynb --to rst --output-dir docs/_notebooks/
+   . ./docs/convert_notebooks.sh
 
 When you build the documentation, run the following command.
 
