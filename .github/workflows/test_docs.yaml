@@ -23,5 +23,6 @@ jobs:
           pip install -e ".[docs,notebooks]"
       - name: Build docs
         run: |
+          . ./docs/convert_notebooks.sh
           cd docs/
           sphinx-build -W ./ ./_build/html/
