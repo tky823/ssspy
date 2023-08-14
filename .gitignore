@@ -1,3 +1,6 @@
+# For building docs
+docs/_notebooks/
+
 # For local data
 .data/
 
