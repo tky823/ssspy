@@ -19,9 +19,15 @@ pip install -e .
 ```
 
 ## Build Documentation Locally (optional)
-To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
+To build the documentation locally, you have to include `docs` and `notebooks` when installing `ssspy`.
 ```shell
-pip install -e ".[docs]"
+pip install -e ".[docs,notebooks]"
+```
+
+You need to convert some notebooks to `.rst` by the following command:
+```shell
+# in ssspy/
+. ./docs/convert_notebooks.sh
 ```
 
 When you build the documentation, run the following command.

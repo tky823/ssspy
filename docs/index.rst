@@ -47,11 +47,17 @@ or clone the repository.
    
 Build Documentation Locally (optional)
 --------------------------------------
-To build the documentation locally, you have to include ``docs`` when installing ``ssspy``.
+To build the documentation locally, you have to include ``docs`` and ``notebooks`` when installing ``ssspy``.
 
 .. code-block:: shell
 
-   pip install -e ".[docs]"
+   pip install -e ".[docs,notebooks]"
+
+You need to convert some notebooks to `.rst` by the following command:
+
+.. code-block:: shell
+
+   . ./docs/convert_notebooks.sh
 
 When you build the documentation, run the following command.
 
@@ -67,56 +73,11 @@ Or, you can build the documentation automatically using ``sphinx-autobuild``.
    # in ssspy/
    sphinx-autobuild docs docs/_build/html
 
-Quick Example of Blind Source Separation
-----------------------------------------
-
-.. code-block:: python
-
-   import numpy as np
-   import scipy.signal as ss
-   import IPython.display as ipd
-   import matplotlib.pyplot as plt
-
-   from ssspy.utils.dataset import download_sample_speech_data
-   from ssspy.bss.iva import AuxLaplaceIVA
-
-
-   n_fft, hop_length = 4096, 2048
-   window = "hann"
-
-   waveform_src_img, sample_rate = download_sample_speech_data(n_sources=3)
-   waveform_mix = np.sum(waveform_src_img, axis=1)
-   _, _, spectrogram_mix = ss.stft(
-      waveform_mix,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
-
-   iva = AuxLaplaceIVA()
-   spectrogram_est = iva(spectrogram_mix)
-
-   _, waveform_est = ss.istft(
-      spectrogram_est,
-      window=window,
-      nperseg=n_fft,
-      noverlap=n_fft-hop_length
-   )
-
-   for idx, waveform in enumerate(waveform_est):
-      print("Estimated source: {}".format(idx + 1))
-      ipd.display(ipd.Audio(waveform, rate=sample_rate))
-      print()
-
-   plt.figure()
-   plt.plot(iva.loss)
-   plt.show()
-
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
+   _notebooks/Getting-Started.rst
    changelog
    api
 
