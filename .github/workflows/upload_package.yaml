@@ -32,7 +32,6 @@ jobs:
         run: |
           python -m build
       - name: Publish distribution to TestPyPI
-        if: startsWith(github.head_ref, 'dummy-release/')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
