@@ -27,9 +27,15 @@ You can install ``ssspy`` by pip.
 
 .. code-block:: shell
 
+   pip install ssspy
+
+To install latest version,
+
+.. code-block:: shell
+
    pip install git+https://github.com/tky823/ssspy.git
 
-or clone the repository.
+Instead, you can build package from source.
 
 .. code-block:: shell
 
@@ -53,7 +59,7 @@ To build the documentation locally, you have to include ``docs`` and ``notebooks
 
    pip install -e ".[docs,notebooks]"
 
-You need to convert some notebooks to `.rst` by the following command:
+You need to convert some notebooks by the following command:
 
 .. code-block:: shell
 
