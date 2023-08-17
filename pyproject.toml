@@ -48,6 +48,9 @@ tests = [
 version = {attr = "ssspy.__version__"}
 
 [tool.setuptools.packages.find]
+include = [
+    "ssspy",
+]
 exclude = [
     ".github",
     "docs",
