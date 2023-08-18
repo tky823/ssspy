@@ -51,12 +51,6 @@ version = {attr = "ssspy.__version__"}
 include = [
     "ssspy",
 ]
-exclude = [
-    ".github",
-    "docs",
-    "notebooks",
-    "tests",
-]
 
 [tool.black]
 line-length = 100
