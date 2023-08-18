@@ -1,17 +1,12 @@
 import os
-import sys
 import tempfile
 
 import numpy as np
 import pytest
+from dummy.io import save_invalid_wavfile
 from scipy.io import wavfile
 
 from ssspy import wavread, wavwrite
-
-ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(ssspy_tests_dir)
-
-from dummy.io import save_invalid_wavfile  # noqa: E402
 
 parameters_frame_offset = [0, 10]
 parameters_num_frames = [None, 100]

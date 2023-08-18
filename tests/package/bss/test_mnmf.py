@@ -1,18 +1,12 @@
-import os
-import sys
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import pytest
 import scipy.signal as ss
+from dummy.callback import DummyCallback, dummy_function
+from dummy.utils.dataset import download_sample_speech_data
 
 from ssspy.bss.mnmf import FastGaussMNMF, FastMNMFBase, GaussMNMF, MNMFBase
-
-ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(ssspy_tests_dir)
-
-from dummy.callback import DummyCallback, dummy_function  # noqa: E402
-from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 max_duration = 0.1
 n_fft = 256

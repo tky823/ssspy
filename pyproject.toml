@@ -48,11 +48,8 @@ tests = [
 version = {attr = "ssspy.__version__"}
 
 [tool.setuptools.packages.find]
-exclude = [
-    ".github",
-    "docs",
-    "notebooks",
-    "tests",
+include = [
+    "ssspy",
 ]
 
 [tool.black]
@@ -68,5 +65,5 @@ line_length = 100
 [tool.pytest.ini_options]
 # to import relative paths
 pythonpath = [
-    "."
+    "tests",
 ]

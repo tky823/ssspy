@@ -37,11 +37,11 @@ jobs:
         id: run_redundant
         if: startsWith(github.head_ref, 'release/')
         run: |
-          pytest --run-redundant -vvv -n 16 --cov=./ssspy --cov-report=xml tests/ssspy/
+          pytest --run-redundant -vvv -n 16 --cov=./ssspy --cov-report=xml tests/package/
       - name: Pytest (skip redundant tests)
         if: steps.run_redundant.conclusion == 'skipped'
         run: |
-          pytest -vvv -n 16 --cov=./ssspy --cov-report=xml tests/ssspy/
+          pytest -vvv -n 16 --cov=./ssspy --cov-report=xml tests/package/
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v3
         with:
