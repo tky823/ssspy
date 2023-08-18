@@ -1,15 +1,9 @@
-import os
-import sys
 from typing import Callable, List, Optional, Union
 
 import pytest
+from dummy.callback import DummyCallback, dummy_function
 
 from ssspy.bss.base import IterativeMethodBase
-
-ssspy_tests_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(ssspy_tests_dir)
-
-from dummy.callback import DummyCallback, dummy_function  # noqa: E402
 
 n_iter = 3
 
