@@ -1,5 +1,11 @@
 # It is expected to run from root ssspy directory
-from tests.dummy.utils.dataset import download_sample_speech_data
+import sys
+from os.path import dirname, realpath
+
+tests_dir = dirname(dirname(realpath(__file__)))
+sys.path.append(tests_dir)
+
+from dummy.utils.dataset import download_sample_speech_data  # noqa: E402
 
 
 def download_all() -> None:
