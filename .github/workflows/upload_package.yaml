@@ -31,7 +31,7 @@ jobs:
           pip install build wheel twine
       - name: Build
         run: |
-          python -m build
+          python -m build --sdist --wheel
       - name: Publish distribution to TestPyPI
         env:
           TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
