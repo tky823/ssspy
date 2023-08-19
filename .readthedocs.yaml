@@ -27,10 +27,10 @@ sphinx:
 #    - pdf
 
 # Optionally declare the Python requirements required to build your docs
-python:
-  install:
-  - method: pip
-    path: .
-    extra_requirements:
-    - docs
-    - notebooks
+# python:
+#   install:
+#   - method: pip
+#     path: .
+#     extra_requirements:
+#     - docs
+#     - notebooks
