@@ -59,6 +59,7 @@ include = [
 [tool.setuptools_scm]
 write_to = "ssspy/_version.py"
 version_scheme = "post-release"
+local_scheme = "no-local-version"
 
 [tool.black]
 line-length = 100
