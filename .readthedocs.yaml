@@ -16,8 +16,7 @@ build:
     # golang: "1.17"
   jobs:
     pre_build:
-      # convert .ipynb to .rst format.
-      - . ./docs/convert_notebooks.sh
+      - . ./docs/pre_build.sh
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
