@@ -63,7 +63,7 @@ You need to convert some notebooks by the following command:
 
 .. code-block:: shell
 
-   . ./docs/convert_notebooks.sh
+   . ./docs/pre_build.sh
 
 When you build the documentation, run the following command.
 

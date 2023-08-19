@@ -33,7 +33,7 @@ pip install -e ".[docs,notebooks]"
 You need to convert some notebooks by the following command:
 ```shell
 # in ssspy/
-. ./docs/convert_notebooks.sh
+. ./docs/pre_build.sh
 ```
 
 When you build the documentation, run the following command.
