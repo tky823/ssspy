@@ -25,6 +25,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      - name: Show git tags
+        run: |
+          git tag
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
