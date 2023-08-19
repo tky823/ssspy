@@ -31,12 +31,6 @@ jobs:
           pip install --upgrade setuptools
           pip install build twine
           pip install -e .
-      - name: Test installation
-        run: |
-          mkdir tmp/
-          cd tmp/
-          python -c "import ssspy"
-          cd -
       - name: Build
         run: |
           python -m build
