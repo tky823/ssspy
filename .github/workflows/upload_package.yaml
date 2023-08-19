@@ -6,9 +6,11 @@
 
 name: Upload package to PyPI
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows:
+      - test_package
+    types:
+      - completed
 jobs:
   build:
     name: Build and upload package
@@ -18,6 +20,7 @@ jobs:
       url: https://test.pypi.org/project/ssspy
     permissions:
       id-token: write
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
