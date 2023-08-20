@@ -49,7 +49,7 @@ def download(root: str = ".data/SiSEC2010", n_sources: int = 3, tag: str = "dev1
             sample_rate=sample_rate,
             n_sources=n_sources,
             n_channels=n_channels,
-            **dry_sources
+            **dry_sources,
         )
 
     return npz_path
