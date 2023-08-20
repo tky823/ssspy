@@ -1,8 +1,9 @@
 # For building docs
 docs/_notebooks/
 
-# For local data
+# For local
 .data/
+_version.py
 
 # For Mac
 .DS_Store

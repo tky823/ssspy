@@ -1,0 +1,7 @@
+exclude .gitignore
+exclude *.yaml
+recursive-include ssspy *.py
+prune .github
+prune tests
+prune docs
+prune notebooks

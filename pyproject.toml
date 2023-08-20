@@ -48,6 +48,8 @@ tests = [
 version = {attr = "ssspy.__version__"}
 
 [tool.setuptools.packages.find]
+# TODO: redundancy with MANIFEST.in
+#       see https://github.com/tky823/ssspy/issues/256
 include = [
     "ssspy",
 ]
