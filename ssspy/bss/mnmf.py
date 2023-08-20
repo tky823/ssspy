@@ -498,7 +498,7 @@ class FastMNMFBase(MNMFBase):
     def _reset(
         self,
         flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
-        **kwargs
+        **kwargs,
     ) -> None:
         r"""Reset attributes by given keyword arguments.
 
