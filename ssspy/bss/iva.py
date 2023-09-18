@@ -1661,7 +1661,9 @@ class AuxIVA(AuxIVABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            pass
+        else:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -2171,9 +2173,7 @@ class AuxIVA(AuxIVABase):
 
     def compute_loss(self) -> float:
         r"""Compute loss."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            return super().compute_loss()
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             G = self.contrast_fn(Y)  # (n_sources, n_frames)
             X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
@@ -2185,28 +2185,30 @@ class AuxIVA(AuxIVABase):
             loss = loss.item()
 
             return loss
+        else:
+            return super().compute_loss()
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_projection_back()
-        else:
+        if self.demix_filter is None:
             assert self.scale_restoration, "Set self.scale_restoration=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_projection_back()
 
     def apply_minimal_distortion_principle(self) -> None:
         r"""Apply minimal distortion principle to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_minimal_distortion_principle()
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_minimal_distortion_principle()
 
 
 class PDSIVA(PDSBSS):
@@ -3396,10 +3398,10 @@ class AuxGaussIVA(AuxIVA):
 
     def update_source_model(self) -> None:
         r"""Update variance of Gaussian distribution."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         self.variance = np.mean(np.abs(Y) ** 2, axis=1)
