@@ -409,11 +409,11 @@ class ILRMABase(IterativeMethodBase):
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.mean(np.abs(Y) ** 2, axis=(-2, -1))
         psi = np.sqrt(Y2)
@@ -435,13 +435,13 @@ class ILRMABase(IterativeMethodBase):
 
             self.basis = T
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = Y / psi[:, np.newaxis, np.newaxis]
+            self.output = Y
+        else:
             W = self.demix_filter
             W = W / psi[np.newaxis, :, np.newaxis]
             self.demix_filter = W
-        else:
-            Y = Y / psi[:, np.newaxis, np.newaxis]
-            self.output = Y
 
     def normalize_by_projection_back(self) -> None:
         r"""Normalize demixing filters and NMF parameters by projection back.
@@ -484,15 +484,7 @@ class ILRMABase(IterativeMethodBase):
         else:
             T = self.basis
 
-            if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-                W = self.demix_filter
-
-                scale = np.linalg.inv(W)
-                scale = scale[:, reference_id, :]
-                W = W * scale[:, :, np.newaxis]
-
-                self.demix_filter = W
-            else:
+            if self.demix_filter is None:
                 Y = self.output
 
                 Y = Y.transpose(1, 0, 2)  # (n_bins, n_sources, n_frames)
@@ -506,6 +498,14 @@ class ILRMABase(IterativeMethodBase):
                 Y = Y_scaled.swapaxes(-3, -2)  # (n_sources, n_bins, n_frames)
 
                 self.output = Y
+            else:
+                W = self.demix_filter
+
+                scale = np.linalg.inv(W)
+                scale = scale[:, reference_id, :]
+                W = W * scale[:, :, np.newaxis]
+
+                self.demix_filter = W
 
             scale = scale.transpose(1, 0)
             scale = np.abs(scale) ** p
@@ -846,7 +846,9 @@ class GaussILRMA(ILRMABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            pass
+        else:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -1017,11 +1019,11 @@ class GaussILRMA(ILRMABase):
         """
         p = self.domain
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p2_p = (p + 2) / p
@@ -1084,11 +1086,11 @@ class GaussILRMA(ILRMABase):
 
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p2_p = (p + 2) / p
@@ -1160,11 +1162,11 @@ class GaussILRMA(ILRMABase):
         p = self.domain
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p2_p = (p + 2) / p
@@ -1217,11 +1219,11 @@ class GaussILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
 
@@ -1283,11 +1285,11 @@ class GaussILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
 
@@ -1359,11 +1361,11 @@ class GaussILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
 
@@ -1932,17 +1934,17 @@ class GaussILRMA(ILRMABase):
         """
         p = self.domain
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-            Y2 = np.abs(Y) ** 2
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y2 = np.abs(Y) ** 2
             X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
             X_Hermite = X.transpose(0, 2, 1).conj()
             XX_Hermite = X @ X_Hermite
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+        else:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Y2 = np.abs(Y) ** 2
 
         if self.partitioning:
             Z = self.latent
@@ -1965,25 +1967,25 @@ class GaussILRMA(ILRMABase):
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_projection_back()
-        else:
+        if self.demix_filter is None:
             assert self.scale_restoration, "Set self.scale_restoration=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_projection_back()
 
     def apply_minimal_distortion_principle(self) -> None:
         r"""Apply minimal distortion principle to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_minimal_distortion_principle()
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_minimal_distortion_principle()
 
 
 class TILRMA(ILRMABase):
@@ -2223,7 +2225,9 @@ class TILRMA(ILRMABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            pass
+        else:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -2396,11 +2400,11 @@ class TILRMA(ILRMABase):
         p = self.domain
         nu = self.dof
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p_p2 = p / (p + 2)
@@ -2471,11 +2475,11 @@ class TILRMA(ILRMABase):
         nu = self.dof
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p_p2 = p / (p + 2)
@@ -2558,11 +2562,11 @@ class TILRMA(ILRMABase):
         nu = self.dof
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         p_p2 = p / (p + 2)
@@ -2623,11 +2627,11 @@ class TILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
@@ -2696,11 +2700,11 @@ class TILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
@@ -2780,11 +2784,11 @@ class TILRMA(ILRMABase):
         if self.domain != 2:
             raise ValueError("Domain parameter is expected 2, but given {}.".format(self.domain))
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Y2 = np.abs(Y) ** 2
         nu_nu2 = nu / (nu + 2)
@@ -3275,17 +3279,17 @@ class TILRMA(ILRMABase):
         nu = self.dof
         p = self.domain
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-            Y2 = np.abs(Y) ** 2
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y2 = np.abs(Y) ** 2
             X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
             X_Hermite = X.transpose(0, 2, 1).conj()
             XX_Hermite = X @ X_Hermite
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+        else:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Y2 = np.abs(Y) ** 2
 
         if self.partitioning:
             Z = self.latent
@@ -3308,25 +3312,25 @@ class TILRMA(ILRMABase):
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_projection_back()
-        else:
+        if self.demix_filter is None:
             assert self.scale_restoration, "Set self.scale_restoration=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_projection_back()
 
     def apply_minimal_distortion_principle(self) -> None:
         r"""Apply minimal distortion principle to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_minimal_distortion_principle()
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_minimal_distortion_principle()
 
 
 class GGDILRMA(ILRMABase):
@@ -3564,7 +3568,9 @@ class GGDILRMA(ILRMABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            pass
+        else:
             self.output = self.separate(self.input, demix_filter=self.demix_filter)
 
         return self.output
@@ -3707,11 +3713,11 @@ class GGDILRMA(ILRMABase):
         p = self.domain
         beta = self.beta
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Yb = np.abs(Y) ** beta
         p_bp = p / (beta + p)
@@ -3776,11 +3782,11 @@ class GGDILRMA(ILRMABase):
         beta = self.beta
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Yb = np.abs(Y) ** beta
         p_bp = p / (beta + p)
@@ -3857,11 +3863,11 @@ class GGDILRMA(ILRMABase):
         beta = self.beta
         flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
+        if self.demix_filter is None:
+            Y = self.output
+        else:
             X, W = self.input, self.demix_filter
             Y = self.separate(X, demix_filter=W)
-        else:
-            Y = self.output
 
         Yb = np.abs(Y) ** beta
         p_bp = p / (beta + p)
@@ -4349,17 +4355,17 @@ class GGDILRMA(ILRMABase):
         beta = self.beta
         p = self.domain
 
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            X, W = self.input, self.demix_filter
-            Y = self.separate(X, demix_filter=W)
-            Yb = np.abs(Y) ** beta
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Yb = np.abs(Y) ** beta
             X, Y = X.transpose(1, 0, 2), Y.transpose(1, 0, 2)
             X_Hermite = X.transpose(0, 2, 1).conj()
             XX_Hermite = X @ X_Hermite
             W = Y @ X_Hermite @ np.linalg.inv(XX_Hermite)
+        else:
+            X, W = self.input, self.demix_filter
+            Y = self.separate(X, demix_filter=W)
+            Yb = np.abs(Y) ** beta
 
         if self.partitioning:
             Z = self.latent
@@ -4382,22 +4388,22 @@ class GGDILRMA(ILRMABase):
 
     def apply_projection_back(self) -> None:
         r"""Apply projection back technique to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_projection_back()
-        else:
+        if self.demix_filter is None:
             assert self.scale_restoration, "Set self.scale_restoration=True."
 
             X, Y = self.input, self.output
             Y_scaled = projection_back(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_projection_back()
 
     def apply_minimal_distortion_principle(self) -> None:
         r"""Apply minimal distortion principle to estimated spectrograms."""
-        if self.spatial_algorithm in ["IP", "IP1", "IP2"]:
-            super().apply_minimal_distortion_principle()
-        else:
+        if self.demix_filter is None:
             X, Y = self.input, self.output
             Y_scaled = minimal_distortion_principle(Y, reference=X, reference_id=self.reference_id)
 
             self.output = Y_scaled
+        else:
+            super().apply_minimal_distortion_principle()
