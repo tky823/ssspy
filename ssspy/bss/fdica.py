@@ -1013,7 +1013,11 @@ class AuxFDICA(FDICABase):
         if self.scale_restoration:
             self.restore_scale()
 
-        self.output = self.separate(self.input, demix_filter=self.demix_filter)
+        if self.demix_filter is not None:
+            self.output = self.separate(self.input, demix_filter=self.demix_filter)
+        else:
+            # TODO: implement demixing-filter-free algorithms (e.g. ISS, IPA, etc.)
+            pass
 
         return self.output
 
