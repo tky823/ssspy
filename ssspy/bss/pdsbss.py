@@ -316,7 +316,7 @@ class PDSBSS(PDSBSSBase):
         self.mu1, self.mu2 = mu1, mu2
         self.alpha = alpha
 
-    def __call__(self, input, n_iter=100, **kwargs) -> np.ndarray:
+    def __call__(self, input, n_iter=100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -326,6 +326,9 @@ class PDSBSS(PDSBSSBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -335,24 +338,8 @@ class PDSBSS(PDSBSSBase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of PDSBSSBase's parent, i.e. __call__ of IterativeMethodBase
+        super(PDSBSSBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
