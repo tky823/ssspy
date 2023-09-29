@@ -9,11 +9,12 @@ from ..algorithm import (
     projection_back,
 )
 from ..linalg import prox
+from .base import IterativeMethodBase
 
 EPS = 1e-10
 
 
-class PDSBSSBase:
+class PDSBSSBase(IterativeMethodBase):
     r"""Base class of blind source separation \
     via proximal splitting algorithm [#yatabe2018determined]_.
 
@@ -54,6 +55,11 @@ class PDSBSSBase:
         record_loss: bool = True,
         reference_id: int = 0,
     ) -> None:
+        super().__init__(
+            callbacks=callbacks,
+            record_loss=record_loss,
+        )
+
         if penalty_fn is None:
             raise ValueError("Specify penalty function.")
         else:
@@ -72,13 +78,6 @@ class PDSBSSBase:
             self.prox_penalty
         ), "Length of penalty_fn and prox_penalty are different."
 
-        if callbacks is not None:
-            if callable(callbacks):
-                callbacks = [callbacks]
-            self.callbacks = callbacks
-        else:
-            self.callbacks = None
-
         self.input = None
         self.scale_restoration = scale_restoration
 
@@ -86,34 +85,6 @@ class PDSBSSBase:
             raise ValueError("Specify 'reference_id' if scale_restoration=True.")
         else:
             self.reference_id = reference_id
-
-        self.record_loss = record_loss
-
-        if self.record_loss:
-            self.loss = []
-        else:
-            self.loss = None
-
-    def __call__(self, input: np.ndarray, n_iter: int = 100, **kwargs) -> np.ndarray:
-        r"""Separate a frequency-domain multichannel signal.
-
-        Args:
-            input (numpy.ndarray):
-                Mixture signal in frequency-domain.
-                The shape is (n_channels, n_bins, n_frames).
-            n_iter (int):
-                Number of iterations of demixing filter updates.
-                Default: ``100``.
-
-        Returns:
-            numpy.ndarray of the separated signal in frequency-domain.
-            The shape is (n_channels, n_bins, n_frames).
-        """
-        self.input = input.copy()
-
-        self._reset(**kwargs)
-
-        raise NotImplementedError("Implement '__call__' method.")
 
     def __repr__(self) -> str:
         s = "PDSBSS("
@@ -345,7 +316,7 @@ class PDSBSS(PDSBSSBase):
         self.mu1, self.mu2 = mu1, mu2
         self.alpha = alpha
 
-    def __call__(self, input, n_iter=100, **kwargs) -> np.ndarray:
+    def __call__(self, input, n_iter=100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
         Args:
@@ -355,6 +326,9 @@ class PDSBSS(PDSBSSBase):
             n_iter (int):
                 Number of iterations of demixing filter updates.
                 Default: ``100``.
+            initial_call (bool):
+                If ``True``, perform callbacks (and computation of loss if necessary)
+                before iterations.
 
         Returns:
             numpy.ndarray of the separated signal in frequency-domain.
@@ -364,24 +338,8 @@ class PDSBSS(PDSBSSBase):
 
         self._reset(**kwargs)
 
-        if self.record_loss:
-            loss = self.compute_loss()
-            self.loss.append(loss)
-
-        if self.callbacks is not None:
-            for callback in self.callbacks:
-                callback(self)
-
-        for _ in range(n_iter):
-            self.update_once()
-
-            if self.record_loss:
-                loss = self.compute_loss()
-                self.loss.append(loss)
-
-            if self.callbacks is not None:
-                for callback in self.callbacks:
-                    callback(self)
+        # Call __call__ of PDSBSSBase's parent, i.e. __call__ of IterativeMethodBase
+        super(PDSBSSBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()

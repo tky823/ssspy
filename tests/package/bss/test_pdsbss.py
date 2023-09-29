@@ -61,31 +61,7 @@ def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
 
 
 def test_pds_base():
-    class DummyPDSBSS(PDSBSSBase):
-        pass
-
-    np.random.seed(111)
-
-    waveform_src_img, _ = download_sample_speech_data(
-        sisec2010_root="./tests/.data/SiSEC2010",
-        mird_root="./tests/.data/MIRD",
-        n_sources=2,
-        sisec2010_tag="dev1_female3",
-        max_duration=max_duration,
-        conv=True,
-    )
-    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
-
-    _, _, spectrogram_mix = ss.stft(
-        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
-    )
-
-    pdsbss = DummyPDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty)
-
-    with pytest.raises(NotImplementedError) as e:
-        _ = pdsbss(spectrogram_mix, n_iter=n_iter)
-
-    assert str(e.value) == "Implement '__call__' method."
+    pdsbss = PDSBSSBase(penalty_fn=penalty_fn, prox_penalty=prox_penalty)
 
     print(pdsbss)
 
