@@ -22,6 +22,17 @@ parameters_admmbss = [
         {"demix_filter": np.tile(-np.eye(3, dtype=np.complex128), reps=(n_bins, 1, 1))},
     ),
     (2, [DummyCallback(), dummy_function], {}),
+    (
+        2,
+        None,
+        {
+            # n_frames=9
+            "aux1": np.ones((n_bins, 2, 2), dtype=np.complex128),
+            "aux2": np.zeros((2, n_bins, 9), dtype=np.complex128),
+            "dual1": np.ones((n_bins, 2, 2), dtype=np.complex128),
+            "dual2": np.zeros((2, n_bins, 9), dtype=np.complex128),
+        },
+    ),
 ]
 
 
@@ -57,6 +68,10 @@ def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
         np.ndarray of the shape is (n_sources, n_bins, n_frames).
     """
     norm = np.linalg.norm(y, axis=1, keepdims=True)
+
+    # to suppress warning RuntimeWarning
+    norm = np.where(norm < step_size, step_size, norm)
+
     return y * np.maximum(1 - step_size / norm, 0)
 
 
