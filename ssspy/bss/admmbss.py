@@ -115,8 +115,6 @@ class ADMMBSS(ADMMBSSBase):
 
             self.relaxation = alpha
 
-        assert self.n_penalties == 1, "Multiple penalty functions are not supported."
-
     def __call__(self, input, n_iter=100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
 
@@ -173,10 +171,9 @@ class ADMMBSS(ADMMBSSBase):
         """
         super()._reset(**kwargs)
 
+        n_penalties = self.n_penalties
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins, n_frames = self.n_bins, self.n_frames
-
-        assert self.n_penalties == 1
 
         if not hasattr(self, "aux1"):
             aux1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
@@ -188,7 +185,7 @@ class ADMMBSS(ADMMBSSBase):
                 aux1 = self.aux1.copy()
 
         if not hasattr(self, "aux2"):
-            aux2 = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+            aux2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
             if self.aux2 is None:
                 aux2 = None
@@ -206,7 +203,7 @@ class ADMMBSS(ADMMBSSBase):
                 dual1 = self.dual1.copy()
 
         if not hasattr(self, "dual2"):
-            dual2 = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+            dual2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
             if self.dual2 is None:
                 dual2 = None
@@ -231,7 +228,7 @@ class ADMMBSS(ADMMBSSBase):
         XX = X.transpose(1, 0, 2).conj() @ X.transpose(1, 2, 0)
         E = np.eye(n_channels)
         VY = V - Y
-        VY_tilde = V_tilde - Y_tilde
+        VY_tilde = np.sum(V_tilde - Y_tilde, axis=0)
         XVY_tilde = X.transpose(1, 0, 2).conj() @ VY_tilde.transpose(1, 2, 0)
 
         W = np.linalg.solve(XX + E, VY + XVY_tilde.transpose(0, 2, 1))
@@ -242,11 +239,13 @@ class ADMMBSS(ADMMBSSBase):
 
         V = prox.neg_logdet(U + Y, step_size=1 / rho)
 
-        # TODO: mulit-penalty
-        assert self.n_penalties == 1
+        V_tilde = []
 
-        prox_penalty = self.prox_penalty[0]
-        V_tilde = prox_penalty(U_tilde + Y_tilde, step_size=1 / rho)
+        for U_tilde_q, Y_tilde_q, prox_penalty in zip(U_tilde, Y_tilde, self.prox_penalty):
+            V_tilde_q = prox_penalty(U_tilde_q + Y_tilde_q, step_size=1 / rho)
+            V_tilde.append(V_tilde_q)
+
+        V_tilde = np.stack(V_tilde, axis=0)
 
         Y = Y + U - V
         Y_tilde = Y_tilde + U_tilde - V_tilde
