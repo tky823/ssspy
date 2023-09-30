@@ -218,6 +218,7 @@ class ADMMBSS(ADMMBSSBase):
 
     def update_once(self) -> None:
         r"""Update demixing filters, auxiliary parameters, and dual parameters once."""
+        n_penalties = self.n_penalties
         n_channels = self.n_channels
         rho, alpha = self.rho, self.relaxation
 
@@ -231,7 +232,7 @@ class ADMMBSS(ADMMBSSBase):
         VY_tilde = np.sum(V_tilde - Y_tilde, axis=0)
         XVY_tilde = X.transpose(1, 0, 2).conj() @ VY_tilde.transpose(1, 2, 0)
 
-        W = np.linalg.solve(XX + E, VY + XVY_tilde.transpose(0, 2, 1))
+        W = np.linalg.solve(n_penalties * XX + E, VY + XVY_tilde.transpose(0, 2, 1))
         XW = self.separate(X, demix_filter=W)
 
         U = alpha * W + (1 - alpha) * V
