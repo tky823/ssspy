@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, List, Optional, Union
 
 import numpy as np
@@ -61,7 +62,9 @@ class PDSBSS(PDSBSSBase):
         mu2 (float):
             Step size. Default: ``1``.
         alpha (float):
-            Step size. Default: ``1``.
+            Relaxation parameter (deprecated). Set ``relaxation`` instead.
+        relaxation (float):
+            Relaxation parameter. Default: ``1``.
         penalty_fn (callable):
             Penalty function that determines source model.
         prox_penalty (callable):
@@ -87,7 +90,8 @@ class PDSBSS(PDSBSSBase):
         self,
         mu1: float = 1,
         mu2: float = 1,
-        alpha: float = 1,
+        alpha: float = None,
+        relaxation: float = 1,
         penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
@@ -107,7 +111,15 @@ class PDSBSS(PDSBSSBase):
         )
 
         self.mu1, self.mu2 = mu1, mu2
-        self.alpha = alpha
+
+        if alpha is None:
+            self.relaxation = relaxation
+        else:
+            assert relaxation == 1, "You cannot specify relaxation and alpha simultaneously."
+
+            warnings.warn("alpha is deprecated. Set relaxation instead.", DeprecationWarning)
+
+            self.relaxation = alpha
 
     def __call__(self, input, n_iter=100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -144,7 +156,7 @@ class PDSBSS(PDSBSSBase):
     def __repr__(self) -> str:
         s = "PDSBSS("
         s += "mu1={mu1}, mu2={mu2}"
-        s += ", alpha={alpha}"
+        s += ", relaxation={relaxation}"
         s += ", n_penalties={n_penalties}".format(n_penalties=self.n_penalties)
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
@@ -183,7 +195,7 @@ class PDSBSS(PDSBSSBase):
     def update_once(self) -> None:
         r"""Update demixing filters and dual parameters once."""
         mu1, mu2 = self.mu1, self.mu2
-        alpha = self.alpha
+        alpha = self.relaxation
 
         Y = self.dual
         X, W = self.input, self.demix_filter

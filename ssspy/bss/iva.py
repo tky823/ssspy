@@ -2216,7 +2216,8 @@ class PDSIVA(PDSBSS):
         self,
         mu1: float = 1,
         mu2: float = 1,
-        alpha: float = 1,
+        alpha: float = None,
+        relaxation: float = 1,
         contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
@@ -2261,6 +2262,7 @@ class PDSIVA(PDSBSS):
             mu1=mu1,
             mu2=mu2,
             alpha=alpha,
+            relaxation=relaxation,
             penalty_fn=penalty_fn,
             prox_penalty=prox_penalty,
             callbacks=callbacks,
