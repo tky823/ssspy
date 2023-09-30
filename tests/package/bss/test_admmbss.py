@@ -28,9 +28,9 @@ parameters_admmbss = [
         {
             # n_frames=9
             "aux1": np.ones((n_bins, 2, 2), dtype=np.complex128),
-            "aux2": np.zeros((2, n_bins, 9), dtype=np.complex128),
+            "aux2": np.zeros((1, 2, n_bins, 9), dtype=np.complex128),
             "dual1": np.ones((n_bins, 2, 2), dtype=np.complex128),
-            "dual2": np.zeros((2, n_bins, 9), dtype=np.complex128),
+            "dual2": np.zeros((1, 2, n_bins, 9), dtype=np.complex128),
         },
     ),
 ]
