@@ -6,6 +6,9 @@ __all__ = ["l21", "neg_log", "neg_logdet"]
 def l1(x, step_size: float = 1) -> np.ndarray:
     norm = np.abs(x)
 
+    # to suppress warning RuntimeWarning
+    norm = np.where(norm < step_size, step_size, norm)
+
     return np.maximum(1 - step_size / norm, 0) * x
 
 
@@ -23,6 +26,9 @@ def l21(x: np.ndarray, step_size: float = 1, axis1: int = -2, axis2: int = -1):
             Output tensor. The shape is same as input.
     """
     norm = np.linalg.norm(x, axis=axis2, keepdims=True)
+
+    # to suppress warning RuntimeWarning
+    norm = np.where(norm < step_size, step_size, norm)
 
     return np.maximum(1 - step_size / norm, 0) * x
 

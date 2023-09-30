@@ -9,9 +9,8 @@ from .proxbss import ProxBSSBase
 EPS = 1e-10
 
 
-class PDSBSSBase(ProxBSSBase):
-    r"""Base class of blind source separation \
-    via proximal splitting algorithm [#yatabe2018determined]_.
+class ADMMBSSBase(ProxBSSBase):
+    """Base class of blind source separation via alternative direction method of multiplier.
 
     Args:
         penalty_fn (callable):
@@ -34,13 +33,10 @@ class PDSBSSBase(ProxBSSBase):
             Reference channel for projection back.
             Default: ``0``.
 
-    .. [#yatabe2018determined] K. Yatabe and D. Kitamura,
-        "Determined blind source separation via proximal splitting algorithm,"
-        in *Proc of ICASSP*, pp. 776-780, 2018.
     """
 
     def __repr__(self) -> str:
-        s = "PDSBSS("
+        s = "ADMMBSS("
         s += "n_penalties={n_penalties}".format(n_penalties=self.n_penalties)
         s += ", scale_restoration={scale_restoration}"
         s += ", record_loss={record_loss}"
@@ -53,14 +49,12 @@ class PDSBSSBase(ProxBSSBase):
         return s.format(**self.__dict__)
 
 
-class PDSBSS(PDSBSSBase):
-    r"""Blind source separation via proximal splitting algorithm [#yatabe2018determined]_.
+class ADMMBSS(ADMMBSSBase):
+    """Base class of blind source separation via alternative direction method of multiplier.
 
     Args:
-        mu1 (float):
-            Step size. Default: ``1``.
-        mu2 (float):
-            Step size. Default: ``1``.
+        rho (float):
+            Penalty parameter. Default: ``1``.
         alpha (float):
             Relaxation parameter (deprecated). Set ``relaxation`` instead.
         relaxation (float):
@@ -84,18 +78,18 @@ class PDSBSS(PDSBSSBase):
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
+
     """
 
     def __init__(
         self,
-        mu1: float = 1,
-        mu2: float = 1,
+        rho: float = 1,
         alpha: float = None,
         relaxation: float = 1,
         penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
-            Union[Callable[["PDSBSS"], None], List[Callable[["PDSBSS"], None]]]
+            Union[Callable[["ADMMBSS"], None], List[Callable[["ADMMBSS"], None]]]
         ] = None,
         scale_restoration: bool = True,
         record_loss: bool = True,
@@ -110,7 +104,7 @@ class PDSBSS(PDSBSSBase):
             reference_id=reference_id,
         )
 
-        self.mu1, self.mu2 = mu1, mu2
+        self.rho = rho
 
         if alpha is None:
             self.relaxation = relaxation
@@ -120,6 +114,8 @@ class PDSBSS(PDSBSSBase):
             warnings.warn("alpha is deprecated. Set relaxation instead.", DeprecationWarning)
 
             self.relaxation = alpha
+
+        assert self.n_penalties == 1, "Multiple penalty functions are not supported."
 
     def __call__(self, input, n_iter=100, initial_call: bool = True, **kwargs) -> np.ndarray:
         r"""Separate a frequency-domain multichannel signal.
@@ -143,8 +139,8 @@ class PDSBSS(PDSBSSBase):
 
         self._reset(**kwargs)
 
-        # Call __call__ of PDSBSSBase's parent, i.e. __call__ of IterativeMethodBase
-        super(PDSBSSBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
+        # Call __call__ of ADMMBSSBase's parent, i.e. __call__ of IterativeMethodBase
+        super(ADMMBSSBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
 
         if self.scale_restoration:
             self.restore_scale()
@@ -154,8 +150,8 @@ class PDSBSS(PDSBSSBase):
         return self.output
 
     def __repr__(self) -> str:
-        s = "PDSBSS("
-        s += "mu1={mu1}, mu2={mu2}"
+        s = "ADMMBSS("
+        s += "rho={rho}"
         s += ", relaxation={relaxation}"
         s += ", n_penalties={n_penalties}".format(n_penalties=self.n_penalties)
         s += ", scale_restoration={scale_restoration}"
@@ -173,45 +169,88 @@ class PDSBSS(PDSBSSBase):
 
         Args:
             kwargs:
-                Keyword arguments to set as attributes of PDSBSS.
+                Keyword arguments to set as attributes of ADMMBSS.
         """
         super()._reset(**kwargs)
 
-        n_penalties = self.n_penalties
-        n_sources = self.n_sources
+        n_sources, n_channels = self.n_sources, self.n_channels
         n_bins, n_frames = self.n_bins, self.n_frames
 
-        if not hasattr(self, "dual"):
-            dual = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
-        else:
-            if self.dual is None:
-                dual = None
-            else:
-                # To avoid overwriting ``dual`` given by keyword arguments.
-                dual = self.dual.copy()
+        assert self.n_penalties == 1
 
-        self.dual = dual
+        if not hasattr(self, "aux1"):
+            aux1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
+        else:
+            if self.aux1 is None:
+                aux1 = None
+            else:
+                # To avoid overwriting ``aux1`` given by keyword arguments.
+                aux1 = self.aux1.copy()
+
+        if not hasattr(self, "aux2"):
+            aux2 = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+        else:
+            if self.aux2 is None:
+                aux2 = None
+            else:
+                # To avoid overwriting ``aux2`` given by keyword arguments.
+                aux2 = self.aux2.copy()
+
+        if not hasattr(self, "dual1"):
+            dual1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
+        else:
+            if self.dual1 is None:
+                dual1 = None
+            else:
+                # To avoid overwriting ``dual1`` given by keyword arguments.
+                dual1 = self.dual1.copy()
+
+        if not hasattr(self, "dual2"):
+            dual2 = np.zeros((n_sources, n_bins, n_frames), dtype=np.complex128)
+        else:
+            if self.dual2 is None:
+                dual2 = None
+            else:
+                # To avoid overwriting ``dual2`` given by keyword arguments.
+                dual2 = self.dual2.copy()
+
+        self.aux1 = aux1
+        self.aux2 = aux2
+        self.dual1 = dual1
+        self.dual2 = dual2
 
     def update_once(self) -> None:
-        r"""Update demixing filters and dual parameters once."""
-        mu1, mu2 = self.mu1, self.mu2
-        alpha = self.relaxation
+        r"""Update demixing filters, auxiliary parameters, and dual parameters once."""
+        n_channels = self.n_channels
+        rho, alpha = self.rho, self.relaxation
 
-        Y = self.dual
+        V, V_tilde = self.aux1, self.aux2
+        Y, Y_tilde = self.dual1, self.dual2
         X, W = self.input, self.demix_filter
 
-        Y_sum = Y.sum(axis=0)
-        XY = Y_sum.transpose(1, 0, 2) @ X.transpose(1, 2, 0).conj()
-        W_tilde = prox.neg_logdet(W - mu1 * mu2 * XY, step_size=mu1)
-        XW = self.separate(X, demix_filter=2 * W_tilde - W)
-        Y_tilde = []
+        XX = X.transpose(1, 0, 2).conj() @ X.transpose(1, 2, 0)
+        E = np.eye(n_channels)
+        VY = V - Y
+        VY_tilde = V_tilde - Y_tilde
+        XVY_tilde = X.transpose(1, 0, 2).conj() @ VY_tilde.transpose(1, 2, 0)
 
-        for Y_q, prox_penalty in zip(Y, self.prox_penalty):
-            Z_q = Y_q + XW
-            Y_tilde_q = Z_q - prox_penalty(Z_q, step_size=1 / mu2)
-            Y_tilde.append(Y_tilde_q)
+        W = np.linalg.solve(XX + E, VY + XVY_tilde.transpose(0, 2, 1))
+        XW = self.separate(X, demix_filter=W)
 
-        Y_tilde = np.stack(Y_tilde, axis=0)
+        U = alpha * W + (1 - alpha) * V
+        U_tilde = alpha * XW + (1 - alpha) * V_tilde
 
-        self.demix_filter = alpha * W_tilde + (1 - alpha) * W
-        self.dual = alpha * Y_tilde + (1 - alpha) * Y
+        V = prox.neg_logdet(U + Y, step_size=1 / rho)
+
+        # TODO: mulit-penalty
+        assert self.n_penalties == 1
+
+        prox_penalty = self.prox_penalty[0]
+        V_tilde = prox_penalty(U_tilde + Y_tilde, step_size=1 / rho)
+
+        Y = Y + U - V
+        Y_tilde = Y_tilde + U_tilde - V_tilde
+
+        self.aux1, self.aux2 = V, V_tilde
+        self.dual1, self.dual2 = Y, Y_tilde
+        self.demix_filter = W
