@@ -21,6 +21,7 @@ from ._update_spatial_model import (
     update_by_iss1,
     update_by_iss2,
 )
+from .admmbss import ADMMBSS
 from .base import IterativeMethodBase
 from .pdsbss import PDSBSS
 
@@ -31,6 +32,7 @@ __all__ = [
     "FasterIVA",
     "AuxIVA",
     "PDSIVA",
+    "ADMMIVA",
     "GradLaplaceIVA",
     "GradGaussIVA",
     "NaturalGradLaplaceIVA",
@@ -2261,6 +2263,67 @@ class PDSIVA(PDSBSS):
         super().__init__(
             mu1=mu1,
             mu2=mu2,
+            alpha=alpha,
+            relaxation=relaxation,
+            penalty_fn=penalty_fn,
+            prox_penalty=prox_penalty,
+            callbacks=callbacks,
+            scale_restoration=scale_restoration,
+            record_loss=record_loss,
+            reference_id=reference_id,
+        )
+
+        self.contrast_fn = contrast_fn
+
+
+class ADMMIVA(ADMMBSS):
+    def __init__(
+        self,
+        rho: float = 1,
+        alpha: float = None,
+        relaxation: float = 1,
+        contrast_fn: Callable[[np.ndarray], np.ndarray] = None,
+        prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
+        callbacks: Optional[
+            Union[Callable[["ADMMIVA"], None], List[Callable[["ADMMIVA"], None]]]
+        ] = None,
+        scale_restoration: bool = True,
+        record_loss: bool = True,
+        reference_id: int = 0,
+    ) -> None:
+        if contrast_fn is not None and prox_penalty is None:
+            raise ValueError("Set prox_penalty.")
+        elif contrast_fn is None and prox_penalty is not None:
+            raise ValueError("Set contrast_fn.")
+        elif contrast_fn is None and prox_penalty is None:
+
+            def _contrast_fn(y: np.ndarray) -> np.ndarray:
+                return np.linalg.norm(y, axis=1)
+
+            def _prox_penalty(x: np.ndarray, step_size: float = 1) -> np.ndarray:
+                return prox.l21(x, step_size=step_size, axis2=1)
+
+            contrast_fn = _contrast_fn
+            prox_penalty = _prox_penalty
+
+        def penalty_fn(y: np.ndarray) -> float:
+            r"""Sum of contrast function.
+
+            Args:
+                y (numpy.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                Computed loss.
+            """
+            G = contrast_fn(y)  # (n_sources, n_frames)
+            loss = np.sum(G, axis=(0, 1))
+            loss = loss.item()
+
+            return loss
+
+        super().__init__(
+            rho=rho,
             alpha=alpha,
             relaxation=relaxation,
             penalty_fn=penalty_fn,
