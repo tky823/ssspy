@@ -1,0 +1,48 @@
+# based on 
+# https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# https://github.com/pypa/gh-action-pypi-publish
+
+# TODO: update this config for practical use
+
+name: Upload package to PyPI
+on:
+  workflow_run:
+    workflows:
+      - test_package
+    types:
+      - completed
+jobs:
+  build:
+    name: Build and upload package
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://test.pypi.org/project/ssspy
+    permissions:
+      id-token: write
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # to retrive tags
+          fetch-depth: 0
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Show git tags
+        run: |
+          git tag
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel twine
+      - name: Build
+        run: |
+          python -m build
+      - name: Publish distribution to TestPyPI
+        env:
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload --repository testpypi --username __token__ --password ${TEST_PYPI_API_TOKEN} dist/*
