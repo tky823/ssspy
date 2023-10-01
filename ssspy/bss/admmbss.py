@@ -178,38 +178,26 @@ class ADMMBSS(ADMMBSSBase):
         if not hasattr(self, "auxiliary1"):
             auxiliary1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
         else:
-            if self.auxiliary1 is None:
-                auxiliary1 = None
-            else:
-                # To avoid overwriting ``auxiliary1`` given by keyword arguments.
-                auxiliary1 = self.auxiliary1.copy()
+            # To avoid overwriting ``auxiliary1`` given by keyword arguments.
+            auxiliary1 = self.auxiliary1.copy()
 
         if not hasattr(self, "auxiliary2"):
             auxiliary2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
-            if self.auxiliary2 is None:
-                auxiliary2 = None
-            else:
-                # To avoid overwriting ``auxiliary2`` given by keyword arguments.
-                auxiliary2 = self.auxiliary2.copy()
+            # To avoid overwriting ``auxiliary2`` given by keyword arguments.
+            auxiliary2 = self.auxiliary2.copy()
 
         if not hasattr(self, "dual1"):
             dual1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
         else:
-            if self.dual1 is None:
-                dual1 = None
-            else:
-                # To avoid overwriting ``dual1`` given by keyword arguments.
-                dual1 = self.dual1.copy()
+            # To avoid overwriting ``dual1`` given by keyword arguments.
+            dual1 = self.dual1.copy()
 
         if not hasattr(self, "dual2"):
             dual2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
-            if self.dual2 is None:
-                dual2 = None
-            else:
-                # To avoid overwriting ``dual2`` given by keyword arguments.
-                dual2 = self.dual2.copy()
+            # To avoid overwriting ``dual2`` given by keyword arguments.
+            dual2 = self.dual2.copy()
 
         self.auxiliary1 = auxiliary1
         self.auxiliary2 = auxiliary2
