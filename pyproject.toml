@@ -69,6 +69,7 @@ exclude = "ssspy/_version.py"
 
 [tools.flake8]
 max-line-length = 100
+exclude = "ssspy/_version.py"
 
 [tool.isort]
 profile = "black"
