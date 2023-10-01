@@ -169,6 +169,16 @@ class ADMMBSS(ADMMBSSBase):
             kwargs:
                 Keyword arguments to set as attributes of ADMMBSS.
         """
+        if "aux1" in kwargs.keys():
+            warnings.warn("aux1 is deprecated. Use auxiliary1 instead.", DeprecationWarning)
+
+            kwargs["auxiliary1"] = kwargs.pop("aux1")
+
+        if "aux2" in kwargs.keys():
+            warnings.warn("aux2 is deprecated. Use auxiliary2 instead.", DeprecationWarning)
+
+            kwargs["auxiliary2"] = kwargs.pop("aux2")
+
         super()._reset(**kwargs)
 
         n_penalties = self.n_penalties
