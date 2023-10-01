@@ -65,6 +65,7 @@ local_scheme = "no-local-version"
 
 [tool.black]
 line-length = 100
+exclude = "ssspy/_version.py"
 
 [tools.flake8]
 max-line-length = 100
