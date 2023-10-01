@@ -24,6 +24,8 @@ cd ssspy
 pip install .
 ```
 
+If you cannot install `ssspy` due to failure in building wheel for numpy, please install numpy in advance.
+
 ## Build Documentation Locally (optional)
 To build the documentation locally, you have to include `docs` and `notebooks` when installing `ssspy`.
 ```shell
