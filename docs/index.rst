@@ -50,6 +50,10 @@ Instead, you can build package from source.
    .. code-block:: shell
 
       python -m pip install --upgrade setuptools
+
+.. note::
+
+   If you cannot install `ssspy` due to failure in building wheel for numpy, please install numpy in advance.
    
 Build Documentation Locally (optional)
 --------------------------------------

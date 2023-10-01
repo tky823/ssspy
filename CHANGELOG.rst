@@ -1,11 +1,49 @@
 Changelog
-=========
+#########
 
-v0.1.6
-~~~~~~
+v0.1.7
+******
 
 Summary
--------
+=======
+In this version, we improve the management of the package.
+As a new BSS method, ADMM-BSS is newly added.
+
+What's Changed
+==============
+
+Breaking Changes 🛠
+-------------------
+* Include ssspy only as package by @tky823 in https://github.com/tky823/ssspy/pull/253
+* Add ``MANIFEST.in`` by @tky823 in https://github.com/tky823/ssspy/pull/257
+
+New Features 🎉
+---------------
+* Implementation of ADMM-IVA by @tky823 in https://github.com/tky823/ssspy/pull/263
+* Support ADMM-BSS_multi-penalty by @tky823 in https://github.com/tky823/ssspy/pull/265
+
+Bug Fixes 🐛
+------------
+* Fix document deployment by @tky823 in https://github.com/tky823/ssspy/pull/255
+* Update some variables depending on ``demix_filter`` instead of ``self.algorithm``. by @tky823 in https://github.com/tky823/ssspy/pull/260
+
+Other Changes
+-------------
+* Release notes by @tky823 in https://github.com/tky823/ssspy/pull/246
+* Add label for breaking changes by @tky823 in https://github.com/tky823/ssspy/pull/247
+* Notebooks/getting started by @tky823 in https://github.com/tky823/ssspy/pull/248
+* Update docs and notebooks to install ``ssspy`` from pypi by @tky823 in https://github.com/tky823/ssspy/pull/251
+* Detect reformatting by @tky823 in https://github.com/tky823/ssspy/pull/258
+* Make PDSBSSBase inherit IterativeMethodBase by @tky823 in https://github.com/tky823/ssspy/pull/262
+
+
+**Full Changelog**: `v0.1.6...v0.1.7 <https://github.com/tky823/ssspy/compare/v0.1.6...v0.1.7>`_
+
+v0.1.6
+******
+
+Summary
+=======
 In this version, the following BSS methods are newly added 🚀
 
 - Fast MNMF
@@ -13,7 +51,7 @@ In this version, the following BSS methods are newly added 🚀
 - ILRMA-IPA
 
 What's Changed
---------------
+==============
 * Bump up version to v0.1.5 by @tky823 in https://github.com/tky823/ssspy/pull/222
 * Rename "XXXbase" to "XXXBase" by @tky823 in https://github.com/tky823/ssspy/pull/224
 * Move default pair_selector by @tky823 in https://github.com/tky823/ssspy/pull/225

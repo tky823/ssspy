@@ -113,3 +113,11 @@ the updates by the proximal operator can be written as
 .. math::
    y_{ijn}
    \leftarrow\left(1 - \frac{\mu}{\sqrt{\sum_{i}|y_{ijn}|^{2}}}\right)_{+}y_{ijn}.
+
+Algorithms
+~~~~~~~~~~
+.. autoclass:: ssspy.bss.pdsbss.PDSBSSBase
+
+.. autoclass:: ssspy.bss.pdsbss.PDSBSS
+   :special-members: __call__
+   :members: update_once
