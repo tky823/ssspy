@@ -8,7 +8,7 @@ name: Upload package to PyPI
 on:
   workflow_run:
     workflows:
-      - test_package
+      - test package
     types:
       - completed
 jobs:
