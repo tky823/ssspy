@@ -169,50 +169,48 @@ class ADMMBSS(ADMMBSSBase):
             kwargs:
                 Keyword arguments to set as attributes of ADMMBSS.
         """
+        if "aux1" in kwargs.keys():
+            warnings.warn("aux1 is deprecated. Use auxiliary1 instead.", DeprecationWarning)
+
+            kwargs["auxiliary1"] = kwargs.pop("aux1")
+
+        if "aux2" in kwargs.keys():
+            warnings.warn("aux2 is deprecated. Use auxiliary2 instead.", DeprecationWarning)
+
+            kwargs["auxiliary2"] = kwargs.pop("aux2")
+
         super()._reset(**kwargs)
 
         n_penalties = self.n_penalties
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins, n_frames = self.n_bins, self.n_frames
 
-        if not hasattr(self, "aux1"):
-            aux1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
+        if not hasattr(self, "auxiliary1"):
+            auxiliary1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
         else:
-            if self.aux1 is None:
-                aux1 = None
-            else:
-                # To avoid overwriting ``aux1`` given by keyword arguments.
-                aux1 = self.aux1.copy()
+            # To avoid overwriting ``auxiliary1`` given by keyword arguments.
+            auxiliary1 = self.auxiliary1.copy()
 
-        if not hasattr(self, "aux2"):
-            aux2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
+        if not hasattr(self, "auxiliary2"):
+            auxiliary2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
-            if self.aux2 is None:
-                aux2 = None
-            else:
-                # To avoid overwriting ``aux2`` given by keyword arguments.
-                aux2 = self.aux2.copy()
+            # To avoid overwriting ``auxiliary2`` given by keyword arguments.
+            auxiliary2 = self.auxiliary2.copy()
 
         if not hasattr(self, "dual1"):
             dual1 = np.zeros((n_bins, n_sources, n_channels), dtype=np.complex128)
         else:
-            if self.dual1 is None:
-                dual1 = None
-            else:
-                # To avoid overwriting ``dual1`` given by keyword arguments.
-                dual1 = self.dual1.copy()
+            # To avoid overwriting ``dual1`` given by keyword arguments.
+            dual1 = self.dual1.copy()
 
         if not hasattr(self, "dual2"):
             dual2 = np.zeros((n_penalties, n_sources, n_bins, n_frames), dtype=np.complex128)
         else:
-            if self.dual2 is None:
-                dual2 = None
-            else:
-                # To avoid overwriting ``dual2`` given by keyword arguments.
-                dual2 = self.dual2.copy()
+            # To avoid overwriting ``dual2`` given by keyword arguments.
+            dual2 = self.dual2.copy()
 
-        self.aux1 = aux1
-        self.aux2 = aux2
+        self.auxiliary1 = auxiliary1
+        self.auxiliary2 = auxiliary2
         self.dual1 = dual1
         self.dual2 = dual2
 
@@ -222,7 +220,7 @@ class ADMMBSS(ADMMBSSBase):
         n_channels = self.n_channels
         rho, alpha = self.rho, self.relaxation
 
-        V, V_tilde = self.aux1, self.aux2
+        V, V_tilde = self.auxiliary1, self.auxiliary2
         Y, Y_tilde = self.dual1, self.dual2
         X, W = self.input, self.demix_filter
 
@@ -251,6 +249,6 @@ class ADMMBSS(ADMMBSSBase):
         Y = Y + U - V
         Y_tilde = Y_tilde + U_tilde - V_tilde
 
-        self.aux1, self.aux2 = V, V_tilde
+        self.auxiliary1, self.auxiliary2 = V, V_tilde
         self.dual1, self.dual2 = Y, Y_tilde
         self.demix_filter = W
