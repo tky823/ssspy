@@ -16,7 +16,7 @@ EPS = 1e-10
 
 
 class MaskingPDSHVA(MaskingPDSBSS):
-    r"""Harmonic vector analysis.
+    r"""Harmonic vector analysis proposed in [#yatabe2021determined]_.
 
     Args:
         mu1 (float):
@@ -52,9 +52,9 @@ class MaskingPDSHVA(MaskingPDSBSS):
             Reference channel for projection back.
             Default: ``0``.
 
-    .. [#yatabe2019time] K. Yatabe and D. Kitamura,
-        "Time-frequency-masking-based determined BSS with application to sparse IVA,"
-        in *Proc of ICASSP*, pp. 715-719, 2019.
+    .. [#yatabe2021determined] K. Yatabe and D. Kitamura,
+        "Determined BSS based on time-frequency masking and its application to \
+        harmonic vector analysis," *IEEE/ACM Trans. ASLP*, vol. 29, pp. 1609-1625, 2021.
 
     """
 
