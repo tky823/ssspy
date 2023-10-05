@@ -38,7 +38,7 @@ class PDSBSSBase(ProxBSSBase):
 
     .. [#yatabe2018determined] K. Yatabe and D. Kitamura,
         "Determined blind source separation via proximal splitting algorithm,"
-        in *Proc of ICASSP*, pp. 776-780, 2018.
+        in *Proc. ICASSP*, 2018, pp. 776-780.
     """
 
     def __repr__(self) -> str:
@@ -253,7 +253,7 @@ class MaskingPDSBSS(PDSBSSBase):
 
     .. [#yatabe2019time] K. Yatabe and D. Kitamura,
         "Time-frequency-masking-based determined BSS with application to sparse IVA,"
-        in *Proc of ICASSP*, pp. 715-719, 2019.
+        in *Proc. ICASSP*, pp. 715-719, 2019.
 
     """
 
