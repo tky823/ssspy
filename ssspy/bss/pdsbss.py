@@ -8,6 +8,8 @@ from .proxbss import ProxBSSBase
 
 EPS = 1e-10
 
+__all__ = ["PDSBSS", "MaskingPDSBSS"]
+
 
 class PDSBSSBase(ProxBSSBase):
     r"""Base class of blind source separation \
