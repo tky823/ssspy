@@ -76,10 +76,11 @@ class MaskingPDSHVA(MaskingPDSBSS):
                 np.ndarray of mask. The shape is (n_sources, n_bins, n_frames).
             """
             n_sources, n_bins, _ = y.shape
-            gamma = attenuation
 
-            if gamma is None:
-                gamma = 1 / n_sources
+            if self.attenuation is None:
+                self.attenuation = 1 / n_sources
+
+            gamma = self.attenuation
 
             # TODO: custom flooring function
             zeta = np.log(np.abs(y) + EPS)
@@ -113,6 +114,47 @@ class MaskingPDSHVA(MaskingPDSBSS):
             reference_id=reference_id,
         )
 
+        self.attenuation = attenuation
+        self.mask_iter = mask_iter
+
+    def __repr__(self) -> str:
+        s = "MaskingPDSHVA("
+        s += "mu1={mu1}, mu2={mu2}"
+        s += ", relaxation={relaxation}"
+
+        if self.attenuation is not None:
+            s += ", attenuation={attenuation}"
+
+        s += ", mask_iter={mask_iter}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
 
 class HVA(MaskingPDSHVA):
     """Alias of MaskingPDSHVA."""
+
+    def __repr__(self) -> str:
+        s = "HVA("
+        s += "mu1={mu1}, mu2={mu2}"
+        s += ", relaxation={relaxation}"
+
+        if self.attenuation is not None:
+            s += ", attenuation={attenuation}"
+
+        s += ", mask_iter={mask_iter}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
