@@ -6,7 +6,7 @@ import scipy.signal as ss
 from dummy.callback import DummyCallback, dummy_function
 from dummy.utils.dataset import download_sample_speech_data
 
-from ssspy.bss.pdsbss import PDSBSS, PDSBSSBase
+from ssspy.bss.pdsbss import PDSBSS, MaskingPDSBSS, PDSBSSBase
 
 max_duration = 0.5
 n_fft = 2048
@@ -61,6 +61,25 @@ def prox_penalty(y: np.ndarray, step_size: float = 1) -> np.ndarray:
     return y * np.maximum(1 - step_size / norm, 0)
 
 
+def mask_fn(y: np.ndarray, step_size: float = 1) -> np.ndarray:
+    r"""Masking function.
+
+    Args:
+        y (np.ndarray):
+            The shape is (n_sources, n_bins, n_frames).
+        step_size (float):
+            Step size. Default: 1.
+
+    Returns:
+        np.ndarray of the shape is (n_sources, n_bins, n_frames).
+    """
+    norm = np.linalg.norm(y, axis=1, keepdims=True)
+    mask = np.maximum(1 - step_size / norm, 0)
+    mask = np.tile(mask, (1, y.shape[1], 1))
+
+    return mask
+
+
 def test_pds_base():
     pdsbss = PDSBSSBase(penalty_fn=penalty_fn, prox_penalty=prox_penalty)
 
@@ -95,6 +114,40 @@ def test_pdsbss(
         pdsbss = PDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty, callbacks=callbacks)
     else:
         pdsbss = PDSBSS(prox_penalty=prox_penalty, callbacks=callbacks)
+
+    spectrogram_mix_normalized = pdsbss.normalize_by_spectral_norm(spectrogram_mix)
+    spectrogram_est = pdsbss(spectrogram_mix_normalized, n_iter=n_iter, **reset_kwargs)
+
+    assert spectrogram_mix.shape == spectrogram_est.shape
+
+    print(pdsbss)
+
+
+@pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_pdsbss)
+def test_masking_pdsbss(
+    n_sources: int,
+    callbacks: Optional[
+        Union[Callable[[MaskingPDSBSS], None], List[Callable[[MaskingPDSBSS], None]]]
+    ],
+    reset_kwargs: Dict[Any, Any],
+):
+    np.random.seed(111)
+
+    waveform_src_img, _ = download_sample_speech_data(
+        sisec2010_root="./tests/.data/SiSEC2010",
+        mird_root="./tests/.data/MIRD",
+        n_sources=n_sources,
+        sisec2010_tag="dev1_female3",
+        max_duration=max_duration,
+        conv=True,
+    )
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
+    )
+
+    pdsbss = MaskingPDSBSS(mask_fn=mask_fn, callbacks=callbacks)
 
     spectrogram_mix_normalized = pdsbss.normalize_by_spectral_norm(spectrogram_mix)
     spectrogram_est = pdsbss(spectrogram_mix_normalized, n_iter=n_iter, **reset_kwargs)
