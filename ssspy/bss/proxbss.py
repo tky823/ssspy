@@ -17,7 +17,7 @@ class ProxBSSBase(IterativeMethodBase):
     """Base class of blind source separation via proximal gradient method.
 
     Args:
-        penalty_fn (callable):
+        penalty_fn (callable, optional):
             Penalty function that determines source model.
         prox_penalty (callable):
             Proximal operator of penalty function.
@@ -30,9 +30,9 @@ class ProxBSSBase(IterativeMethodBase):
             If ``scale_restoration=True``, the projection back technique is applied to
             estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
-        record_loss (bool):
+        record_loss (bool, optional):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
-            Default: ``True``.
+            Default: ``None``.
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
@@ -41,13 +41,13 @@ class ProxBSSBase(IterativeMethodBase):
 
     def __init__(
         self,
-        penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
+        penalty_fn: Optional[Callable[[np.ndarray, np.ndarray], float]] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["ProxBSSBase"], None], List[Callable[["ProxBSSBase"], None]]]
         ] = None,
         scale_restoration: bool = True,
-        record_loss: bool = True,
+        record_loss: Optional[bool] = None,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
@@ -56,12 +56,18 @@ class ProxBSSBase(IterativeMethodBase):
         )
 
         if penalty_fn is None:
-            raise ValueError("Specify penalty function.")
+            # Since penalty_fn is not necessarily written in closed form,
+            # None is acceptable.
+            if record_loss is None:
+                record_loss = False
+
+            assert not record_loss, "To record loss, set penalty_fn."
         else:
             if callable(penalty_fn):
                 penalty_fn = [penalty_fn]
 
-            self.penalty_fn = penalty_fn
+            if record_loss is None:
+                record_loss = True
 
         if prox_penalty is None:
             raise ValueError("Specify proximal operator of penalty function.")
@@ -69,11 +75,13 @@ class ProxBSSBase(IterativeMethodBase):
             if callable(prox_penalty):
                 prox_penalty = [prox_penalty]
 
-            self.prox_penalty = prox_penalty
+        self.penalty_fn = penalty_fn
+        self.prox_penalty = prox_penalty
 
-        assert len(self.penalty_fn) == len(
-            self.prox_penalty
-        ), "Length of penalty_fn and prox_penalty are different."
+        if self.penalty_fn is not None:
+            assert len(self.penalty_fn) == len(
+                self.prox_penalty
+            ), "Length of penalty_fn and prox_penalty are different."
 
         self.input = None
         self.scale_restoration = scale_restoration
@@ -133,7 +141,8 @@ class ProxBSSBase(IterativeMethodBase):
     @property
     def n_penalties(self):
         r"""Return number of penalty terms."""
-        return len(self.penalty_fn)
+        # asumption of len(self.penalty_fn) == len(self.prox_penalty)
+        return len(self.prox_penalty)
 
     def separate(self, input: np.ndarray, demix_filter: np.ndarray) -> np.ndarray:
         r"""Separate ``input`` using ``demixing_filter``.
