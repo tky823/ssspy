@@ -65,7 +65,7 @@ class PDSBSS(PDSBSSBase):
             Relaxation parameter (deprecated). Set ``relaxation`` instead.
         relaxation (float):
             Relaxation parameter. Default: ``1``.
-        penalty_fn (callable):
+        penalty_fn (callable, optional):
             Penalty function that determines source model.
         prox_penalty (callable):
             Proximal operator of penalty function.
@@ -78,9 +78,9 @@ class PDSBSS(PDSBSSBase):
             If ``scale_restoration=True``, the projection back technique is applied to
             estimated spectrograms. You can also specify ``projection_back`` explicitly.
             Default: ``True``.
-        record_loss (bool):
+        record_loss (bool, optional):
             Record the loss at each iteration of the update algorithm if ``record_loss=True``.
-            Default: ``True``.
+            Default: ``None``.
         reference_id (int):
             Reference channel for projection back.
             Default: ``0``.
@@ -92,13 +92,13 @@ class PDSBSS(PDSBSSBase):
         mu2: float = 1,
         alpha: float = None,
         relaxation: float = 1,
-        penalty_fn: Callable[[np.ndarray, np.ndarray], float] = None,
+        penalty_fn: Optional[Callable[[np.ndarray, np.ndarray], float]] = None,
         prox_penalty: Callable[[np.ndarray, float], np.ndarray] = None,
         callbacks: Optional[
             Union[Callable[["PDSBSS"], None], List[Callable[["PDSBSS"], None]]]
         ] = None,
         scale_restoration: bool = True,
-        record_loss: bool = True,
+        record_loss: Optional[bool] = None,
         reference_id: int = 0,
     ) -> None:
         super().__init__(
