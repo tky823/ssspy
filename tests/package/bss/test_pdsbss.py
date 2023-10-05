@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -147,7 +148,7 @@ def test_masking_pdsbss(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    pdsbss = MaskingPDSBSS(mask_fn=mask_fn, callbacks=callbacks)
+    pdsbss = MaskingPDSBSS(mask_fn=functools.partial(mask_fn, step_size=1), callbacks=callbacks)
 
     spectrogram_mix_normalized = pdsbss.normalize_by_spectral_norm(spectrogram_mix)
     spectrogram_est = pdsbss(spectrogram_mix_normalized, n_iter=n_iter, **reset_kwargs)
