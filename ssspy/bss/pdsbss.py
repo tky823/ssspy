@@ -406,7 +406,7 @@ class MaskingPDSBSS(PDSBSSBase):
         XW = self.separate(X, demix_filter=2 * W_tilde - W)
 
         Z = Y + XW
-        Y_tilde = Z - self.mask_fn(Z)
+        Y_tilde = Z - self.mask_fn(Z) * Z
 
         self.demix_filter = alpha * W_tilde + (1 - alpha) * W
         self.dual = alpha * Y_tilde + (1 - alpha) * Y
