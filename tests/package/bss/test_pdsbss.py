@@ -23,6 +23,7 @@ parameters_pdsbss = [
     ),
     (2, [DummyCallback(), dummy_function], {}),
 ]
+parameters_set_panalty_fn = [True, False]
 
 
 def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -67,10 +68,12 @@ def test_pds_base():
 
 
 @pytest.mark.parametrize("n_sources, callbacks, reset_kwargs", parameters_pdsbss)
+@pytest.mark.parametrize("set_panalty_fn", parameters_set_panalty_fn)
 def test_pdsbss(
     n_sources: int,
     callbacks: Optional[Union[Callable[[PDSBSS], None], List[Callable[[PDSBSS], None]]]],
     reset_kwargs: Dict[Any, Any],
+    set_panalty_fn: bool,
 ):
     np.random.seed(111)
 
@@ -88,7 +91,11 @@ def test_pdsbss(
         waveform_mix, window="hann", nperseg=n_fft, noverlap=n_fft - hop_length
     )
 
-    pdsbss = PDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty, callbacks=callbacks)
+    if set_panalty_fn:
+        pdsbss = PDSBSS(penalty_fn=penalty_fn, prox_penalty=prox_penalty, callbacks=callbacks)
+    else:
+        pdsbss = PDSBSS(prox_penalty=prox_penalty, callbacks=callbacks)
+
     spectrogram_mix_normalized = pdsbss.normalize_by_spectral_norm(spectrogram_mix)
     spectrogram_est = pdsbss(spectrogram_mix_normalized, n_iter=n_iter, **reset_kwargs)
 
