@@ -85,9 +85,7 @@ class MaskingPDSHVA(MaskingPDSBSS):
             zeta = np.log(np.abs(y) + EPS)
             zeta_mean = zeta.mean(axis=1, keepdims=True)
             rho = zeta - zeta_mean
-            nu = np.fft.irfft(
-                rho, axis=1, norm="backward"
-            )  # (n_sources, 2 * (n_bins - 1), n_frames).
+            nu = np.fft.irfft(rho, axis=1, norm="backward")
             nu = nu[:, :n_bins]
             varsigma = np.minimum(1, nu)
 
