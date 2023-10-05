@@ -1,8 +1,10 @@
+import functools
 import math
 from typing import Callable, List, Optional, Union
 
 import numpy as np
 
+from ..special.flooring import identity, max_flooring
 from .pdsbss import MaskingPDSBSS
 
 __all__ = [
@@ -29,6 +31,12 @@ class MaskingPDSHVA(MaskingPDSBSS):
             Attenuation parameter in masking. Default: ``1 / n_sources``.
         mask_iter (int):
             Number of iterations in application of cosine shrinkage operator.
+        flooring_fn (callable, optional):
+            A flooring function for numerical stability.
+            This function is expected to return the same shape tensor as the input.
+            If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``functools.partial(max_flooring, eps=1e-10)``.
         callbacks (callable or list[callable], optional):
             Callback functions. Each function is called before separation and at each iteration.
             Default: ``None``.
@@ -58,6 +66,9 @@ class MaskingPDSHVA(MaskingPDSBSS):
         relaxation: float = 1,
         attenuation: Optional[float] = None,
         mask_iter: int = 1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
         callbacks: Optional[
             Union[Callable[["MaskingPDSHVA"], None], List[Callable[["MaskingPDSHVA"], None]]]
         ] = None,
@@ -82,8 +93,8 @@ class MaskingPDSHVA(MaskingPDSBSS):
 
             gamma = self.attenuation
 
-            # TODO: custom flooring function
-            zeta = np.log(np.abs(y) + EPS)
+            y = self.flooring_fn(np.abs(y))
+            zeta = np.log(y)
             zeta_mean = zeta.mean(axis=1, keepdims=True)
             rho = zeta - zeta_mean
             nu = np.fft.irfft(rho, axis=1, norm="backward")
@@ -116,6 +127,11 @@ class MaskingPDSHVA(MaskingPDSBSS):
 
         self.attenuation = attenuation
         self.mask_iter = mask_iter
+
+        if flooring_fn is None:
+            self.flooring_fn = identity
+        else:
+            self.flooring_fn = flooring_fn
 
     def __repr__(self) -> str:
         s = "MaskingPDSHVA("
