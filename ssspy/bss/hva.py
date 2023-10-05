@@ -7,6 +7,7 @@ from .pdsbss import MaskingPDSBSS
 
 __all__ = [
     "MaskingPDSHVA",
+    "HVA",
 ]
 
 EPS = 1e-10
