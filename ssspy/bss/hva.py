@@ -113,3 +113,7 @@ class MaskingPDSHVA(MaskingPDSBSS):
             record_loss=record_loss,
             reference_id=reference_id,
         )
+
+
+class HVA(MaskingPDSHVA):
+    """Alias of MaskingPDSHVA."""
