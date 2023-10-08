@@ -228,6 +228,25 @@ class MaskingADMMHVA(MaskingADMMBSS):
         else:
             self.flooring_fn = flooring_fn
 
+    def __repr__(self) -> str:
+        s = "MaskingADMMHVA("
+        s += "rho={rho}"
+        s += ", relaxation={relaxation}"
+
+        if self.attenuation is not None:
+            s += ", attenuation={attenuation}"
+
+        s += ", mask_iter={mask_iter}"
+        s += ", scale_restoration={scale_restoration}"
+        s += ", record_loss={record_loss}"
+
+        if self.scale_restoration:
+            s += ", reference_id={reference_id}"
+
+        s += ")"
+
+        return s.format(**self.__dict__)
+
 
 class HVA(MaskingPDSHVA):
     """Alias of MaskingPDSHVA."""
