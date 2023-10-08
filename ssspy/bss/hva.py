@@ -5,6 +5,7 @@ from typing import Callable, List, Optional, Union
 import numpy as np
 
 from ..special.flooring import identity, max_flooring
+from .admmbss import MaskingADMMBSS
 from .pdsbss import MaskingPDSBSS
 
 __all__ = [
@@ -151,6 +152,81 @@ class MaskingPDSHVA(MaskingPDSBSS):
         s += ")"
 
         return s.format(**self.__dict__)
+
+
+class MaskingADMMHVA(MaskingADMMBSS):
+    def __init__(
+        self,
+        rho: float = 1,
+        alpha: float = None,
+        relaxation: float = 1,
+        attenuation: Optional[float] = None,
+        mask_iter: int = 1,
+        flooring_fn: Optional[Callable[[np.ndarray], np.ndarray]] = functools.partial(
+            max_flooring, eps=EPS
+        ),
+        callbacks: Optional[
+            Union[Callable[["MaskingADMMHVA"], None], List[Callable[["MaskingADMMHVA"], None]]]
+        ] = None,
+        scale_restoration: bool = True,
+        record_loss: Optional[bool] = None,
+        reference_id: int = 0,
+    ) -> None:
+        def mask_fn(y: np.ndarray) -> np.ndarray:
+            """Masking function to emphasize harmonic components.
+
+            Args:
+                y (np.ndarray):
+                    The shape is (n_sources, n_bins, n_frames).
+
+            Returns:
+                np.ndarray of mask. The shape is (n_sources, n_bins, n_frames).
+            """
+            n_sources, n_bins, _ = y.shape
+
+            if self.attenuation is None:
+                self.attenuation = 1 / n_sources
+
+            gamma = self.attenuation
+
+            y = self.flooring_fn(np.abs(y))
+            zeta = np.log(y)
+            zeta_mean = zeta.mean(axis=1, keepdims=True)
+            rho = zeta - zeta_mean
+            nu = np.fft.irfft(rho, axis=1, norm="backward")
+            nu = nu[:, :n_bins]
+            varsigma = np.minimum(1, nu)
+
+            for _ in range(mask_iter):
+                varsigma = (1 - np.cos(math.pi * varsigma)) / 2
+
+            xi = np.fft.irfft(varsigma * nu, axis=1, norm="forward")
+            xi = xi[:, :n_bins]
+            varrho = xi + zeta_mean
+            v = np.exp(2 * varrho)
+            mask = (v / v.sum(axis=0)) ** gamma
+
+            return mask
+
+        super().__init__(
+            rho=rho,
+            alpha=alpha,
+            relaxation=relaxation,
+            penalty_fn=None,
+            mask_fn=mask_fn,
+            callbacks=callbacks,
+            scale_restoration=scale_restoration,
+            record_loss=record_loss,
+            reference_id=reference_id,
+        )
+
+        self.attenuation = attenuation
+        self.mask_iter = mask_iter
+
+        if flooring_fn is None:
+            self.flooring_fn = identity
+        else:
+            self.flooring_fn = flooring_fn
 
 
 class HVA(MaskingPDSHVA):
