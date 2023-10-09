@@ -43,4 +43,4 @@ jobs:
         with:
           fail_ci_if_error: true
   upload_package:
-    uses: ./.github/workflows/dummy_workflow_call.yaml
+    uses: ./.github/workflows/upload_package.yaml
