@@ -39,6 +39,7 @@ jobs:
         run: |
           pytest -vvv -n 16 --cov=./ssspy --cov-report=xml tests/package/
       - name: Upload coverage to codecov
+        if: matrix.python-version == '3.8' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
