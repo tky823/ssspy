@@ -43,4 +43,6 @@ jobs:
         with:
           fail_ci_if_error: true
   upload_package:
+    permissions:
+      id-token: write
     uses: ./.github/workflows/upload_package.yaml
