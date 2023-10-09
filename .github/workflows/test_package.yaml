@@ -42,7 +42,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
-  upload package:
+  upload_package:
     secrets:
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
     uses: ./.github/workflows/upload_package.yaml
