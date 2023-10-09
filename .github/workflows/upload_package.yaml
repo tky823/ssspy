@@ -7,6 +7,9 @@
 name: Upload package to PyPI
 on:
   workflow_call:
+    secrets:
+      TEST_PYPI_API_TOKEN:
+        required: true
 jobs:
   build:
     name: Build and upload package
