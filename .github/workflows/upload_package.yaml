@@ -14,9 +14,6 @@ jobs:
   build:
     name: Build and upload package
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://test.pypi.org/project/ssspy
     permissions:
       id-token: write
     steps:
