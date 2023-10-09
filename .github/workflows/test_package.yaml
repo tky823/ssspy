@@ -45,4 +45,6 @@ jobs:
   upload_package:
     permissions:
       id-token: write
+    secrets:
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
     uses: ./.github/workflows/upload_package.yaml
