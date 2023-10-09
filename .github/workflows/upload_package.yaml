@@ -6,21 +6,16 @@
 
 name: Upload package to PyPI
 on:
-  workflow_run:
-    workflows:
-      - test package
-    types:
-      - completed
+  workflow_call:
+    secrets:
+      TEST_PYPI_API_TOKEN:
+        required: true
 jobs:
   build:
     name: Build and upload package
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://test.pypi.org/project/ssspy
     permissions:
       id-token: write
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
