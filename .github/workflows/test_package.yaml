@@ -42,7 +42,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
-      - name: Check version of python
-        if: ${{ matrix.python-version == '3.8' && matrix.os == 'ubuntu-latest' }}
-        run: |
-          python --version
+  upload_package:
+    name: Call dummy workflow
+    uses: ./.github/workflows/dummy_workflow_call.yml
