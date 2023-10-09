@@ -33,7 +33,16 @@ jobs:
           python-version: '3.x'
       - name: Show git tags
         run: |
-          echo ${{ github.event.workflow_run.number }}
-          echo ${{ github.event.workflow_run.id }}
-          echo ${{ github.event.workflow_run.run_number }}
-          echo ${{ github.event.workflow_run.workflow_id }}
+          git tag
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel twine
+      - name: Build
+        run: |
+          python -m build
+      - name: Publish distribution to TestPyPI
+        env:
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          python -m twine upload --repository testpypi --username __token__ --password ${TEST_PYPI_API_TOKEN} dist/*
