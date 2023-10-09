@@ -6,11 +6,7 @@
 
 name: Upload package to PyPI
 on:
-  workflow_run:
-    workflows:
-      - test package
-    types:
-      - completed
+  workflow_call:
 jobs:
   build:
     name: Build and upload package
