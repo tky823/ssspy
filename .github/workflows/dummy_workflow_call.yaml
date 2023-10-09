@@ -1,0 +1,25 @@
+# dummy workflow for workflow_call
+
+name: Dummy workflow
+on:
+  workflow_call:
+jobs:
+  build:
+    name: Build and upload package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # to retrive tags
+          fetch-depth: 0
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Show git tags
+        run: |
+          git tag
+      - name: Show dependencies
+        run: |
+          pip list
