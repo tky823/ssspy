@@ -3,8 +3,8 @@ import tempfile
 
 import numpy as np
 import pytest
-from dummy.io import save_invalid_wavfile  # noqa: E402
-from dummy.utils.dataset import download_ssspy_data  # noqa: E402
+from dummy.io import save_invalid_wavfile
+from dummy.utils.dataset import download_ssspy_data
 from scipy.io import wavfile
 
 from ssspy import wavread, wavwrite
