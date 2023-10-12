@@ -47,9 +47,7 @@ def test_aux_iva():
         """
         return 2 * np.ones_like(y)
 
-    iva = AuxIVA(
-        contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn
-    )
+    iva = AuxIVA(contrast_fn=contrast_fn, d_contrast_fn=d_contrast_fn)
     spectrogram_est = iva(spectrogram_mix, n_iter=n_iter)
 
     assert np.allclose(spectrogram_est, spectrogram_tgt)
