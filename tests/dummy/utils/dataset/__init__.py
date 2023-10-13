@@ -50,7 +50,7 @@ def download_sample_speech_data(
     return waveform_src_img, sample_rate
 
 
-def download_ssspy_data(path: str, filename: Optional[str] = None, branch : str = "main") -> None:
+def download_ssspy_data(path: str, filename: Optional[str] = None, branch: str = "main") -> None:
     """Download file from https://github.com/tky823/ssspy-data.
 
     Args:
