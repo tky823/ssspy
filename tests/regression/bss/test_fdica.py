@@ -53,7 +53,9 @@ def test_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = False):
             is_holonomic=is_holonomic,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt)
+        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+            np.abs(spectrogram_est - spectrogram_tgt)
+        )
 
 
 @pytest.mark.parametrize("is_holonomic", parameters_is_holonomic)
@@ -90,7 +92,9 @@ def test_natural_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = Fal
             is_holonomic=is_holonomic,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt)
+        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+            np.abs(spectrogram_est - spectrogram_tgt)
+        )
 
 
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
@@ -124,7 +128,9 @@ def test_aux_laplace_fdica(spatial_algorithm: str, save_feature: bool = False):
             spatial_algorithm=spatial_algorithm,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt)
+        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+            np.abs(spectrogram_est - spectrogram_tgt)
+        )
 
 
 def save_all_features() -> None:

@@ -76,7 +76,9 @@ def test_aux_iva(spatial_algorithm: str, save_feature: bool = False):
             spatial_algorithm=spatial_algorithm,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt)
+        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+            np.abs(spectrogram_est - spectrogram_tgt)
+        )
 
 
 def save_all_features() -> None:
