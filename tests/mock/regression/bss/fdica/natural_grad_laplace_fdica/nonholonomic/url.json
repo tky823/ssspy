@@ -6,7 +6,7 @@
         },
         {
             "filename": "target.npz",
-            "location": "npz/bss/fdica/natural_grad_laplace_fdica/holonomic/target.npz"
+            "location": "npz/bss/fdica/natural_grad_laplace_fdica/nonholonomic/target.npz"
         }
     ]
 }
