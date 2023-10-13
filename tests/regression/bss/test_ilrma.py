@@ -60,6 +60,9 @@ def test_gauss_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 def test_t_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bool = False):
+    if spatial_algorithm == "IPA":
+        pytest.skip(reason="IPA is not supported for TILRMA.")
+
     root = join(ilrma_root, "t_ilrma", spatial_algorithm, source_algorithm)
 
     if save_feature:
@@ -103,6 +106,12 @@ def test_t_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bo
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 def test_ggd_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bool = False):
+    if spatial_algorithm == "IPA":
+        pytest.skip(reason="IPA is not supported for GGDILRMA.")
+
+    if source_algorithm == "ME":
+        pytest.skip(reason="ME is not supported for GGDILRMA.")
+
     root = join(ilrma_root, "ggd_ilrma", spatial_algorithm, source_algorithm)
 
     if save_feature:
