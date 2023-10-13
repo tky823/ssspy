@@ -21,6 +21,7 @@ parameters_source_algorithm = ["MM", "ME"]
 @pytest.mark.parametrize("spatial_algorithm", parameters_spatial_algorithm)
 @pytest.mark.parametrize("source_algorithm", parameters_source_algorithm)
 def test_gauss_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bool = False):
+    rng = np.random.default_rng(0)
     root = join(ilrma_root, "gauss_ilrma", spatial_algorithm, source_algorithm)
 
     if save_feature:
@@ -36,18 +37,35 @@ def test_gauss_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature
 
     spectrogram_mix = npz_input["spectrogram"]
 
+    if save_feature:
+        n_sources, n_bins, n_frames = spectrogram_mix.shape
+
+        basis = rng.random((n_sources, n_bins, n_basis))
+        activation = rng.random((n_sources, n_basis, n_frames))
+    else:
+        basis = npz_target["basis"]
+        activation = npz_target["activation"]
+
     ilrma = GaussILRMA(
         n_basis=n_basis,
         spatial_algorithm=spatial_algorithm,
         source_algorithm=source_algorithm,
+        rng=rng,
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(
+        spectrogram_mix,
+        n_iter=n_iter,
+        basis=basis,
+        activation=activation,
+    )
 
     if save_feature:
         makedirs(root, exist_ok=True)
         np.savez(
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
+            basis=basis,
+            activation=activation,
             n_basis=n_basis,
             n_iter=n_iter,
         )
@@ -63,6 +81,7 @@ def test_t_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bo
     if spatial_algorithm == "IPA":
         pytest.skip(reason="IPA is not supported for TILRMA.")
 
+    rng = np.random.default_rng(0)
     root = join(ilrma_root, "t_ilrma", spatial_algorithm, source_algorithm)
 
     if save_feature:
@@ -80,19 +99,36 @@ def test_t_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: bo
 
     spectrogram_mix = npz_input["spectrogram"]
 
+    if save_feature:
+        n_sources, n_bins, n_frames = spectrogram_mix.shape
+
+        basis = rng.random((n_sources, n_bins, n_basis))
+        activation = rng.random((n_sources, n_basis, n_frames))
+    else:
+        basis = npz_target["basis"]
+        activation = npz_target["activation"]
+
     ilrma = TILRMA(
         n_basis=n_basis,
         dof=dof,
         spatial_algorithm=spatial_algorithm,
         source_algorithm=source_algorithm,
+        rng=rng,
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(
+        spectrogram_mix,
+        n_iter=n_iter,
+        basis=basis,
+        activation=activation,
+    )
 
     if save_feature:
         makedirs(root, exist_ok=True)
         np.savez(
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
+            basis=basis,
+            activation=activation,
             n_basis=n_basis,
             dof=dof,
             n_iter=n_iter,
@@ -112,6 +148,7 @@ def test_ggd_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: 
     if source_algorithm == "ME":
         pytest.skip(reason="ME is not supported for GGDILRMA.")
 
+    rng = np.random.default_rng(0)
     root = join(ilrma_root, "ggd_ilrma", spatial_algorithm, source_algorithm)
 
     if save_feature:
@@ -129,19 +166,36 @@ def test_ggd_ilrma(spatial_algorithm: str, source_algorithm: str, save_feature: 
 
     spectrogram_mix = npz_input["spectrogram"]
 
+    if save_feature:
+        n_sources, n_bins, n_frames = spectrogram_mix.shape
+
+        basis = rng.random((n_sources, n_bins, n_basis))
+        activation = rng.random((n_sources, n_basis, n_frames))
+    else:
+        basis = npz_target["basis"]
+        activation = npz_target["activation"]
+
     ilrma = GGDILRMA(
         n_basis=n_basis,
         beta=beta,
         spatial_algorithm=spatial_algorithm,
         source_algorithm=source_algorithm,
+        rng=rng,
     )
-    spectrogram_est = ilrma(spectrogram_mix, n_iter=n_iter)
+    spectrogram_est = ilrma(
+        spectrogram_mix,
+        n_iter=n_iter,
+        basis=basis,
+        activation=activation,
+    )
 
     if save_feature:
         makedirs(root, exist_ok=True)
         np.savez(
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
+            basis=basis,
+            activation=activation,
             n_basis=n_basis,
             beta=beta,
             n_iter=n_iter,
