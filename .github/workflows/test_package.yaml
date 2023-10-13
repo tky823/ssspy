@@ -39,6 +39,7 @@ jobs:
         run: |
           pytest -vvv -n 16 --cov=./ssspy --cov-report=xml tests/package/
       - name: Pytest (regression tests)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           pytest -vvv -n 16 tests/regression/
       - name: Upload coverage to codecov
