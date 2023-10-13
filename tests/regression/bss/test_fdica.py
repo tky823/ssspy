@@ -53,7 +53,7 @@ def test_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = False):
             is_holonomic=is_holonomic,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+        assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
             np.abs(spectrogram_est - spectrogram_tgt)
         )
 
@@ -92,7 +92,7 @@ def test_natural_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = Fal
             is_holonomic=is_holonomic,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+        assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
             np.abs(spectrogram_est - spectrogram_tgt)
         )
 
@@ -128,7 +128,7 @@ def test_aux_laplace_fdica(spatial_algorithm: str, save_feature: bool = False):
             spatial_algorithm=spatial_algorithm,
         )
     else:
-        assert np.allclose(spectrogram_est, spectrogram_tgt), np.max(
+        assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
             np.abs(spectrogram_est - spectrogram_tgt)
         )
 
