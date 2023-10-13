@@ -38,8 +38,6 @@ def test_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = False):
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
-        assert npz_target["is_holonomic"].item() == is_holonomic
-
     spectrogram_mix = npz_input["spectrogram"]
 
     fdica = GradLaplaceFDICA(is_holonomic=is_holonomic)
@@ -50,7 +48,6 @@ def test_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = False):
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
             n_iter=n_iter,
-            is_holonomic=is_holonomic,
         )
     else:
         assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
@@ -76,8 +73,6 @@ def test_natural_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = Fal
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
-        assert npz_target["is_holonomic"].item() == is_holonomic
-
     spectrogram_mix = npz_input["spectrogram"]
 
     fdica = NaturalGradLaplaceFDICA(is_holonomic=is_holonomic)
@@ -89,7 +84,6 @@ def test_natural_grad_laplace_fdica(is_holonomic: bool, save_feature: bool = Fal
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
             n_iter=n_iter,
-            is_holonomic=is_holonomic,
         )
     else:
         assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
@@ -112,8 +106,6 @@ def test_aux_laplace_fdica(spatial_algorithm: str, save_feature: bool = False):
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
-        assert npz_target["spatial_algorithm"].item() == spatial_algorithm
-
     spectrogram_mix = npz_input["spectrogram"]
 
     fdica = AuxLaplaceFDICA(spatial_algorithm=spatial_algorithm)
@@ -125,7 +117,6 @@ def test_aux_laplace_fdica(spatial_algorithm: str, save_feature: bool = False):
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
             n_iter=n_iter,
-            spatial_algorithm=spatial_algorithm,
         )
     else:
         assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(

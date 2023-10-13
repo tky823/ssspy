@@ -30,8 +30,6 @@ def test_aux_iva(spatial_algorithm: str, save_feature: bool = False):
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
-        assert npz_target["spatial_algorithm"].item() == spatial_algorithm
-
     spectrogram_mix = npz_input["spectrogram"]
 
     def contrast_fn(y: np.ndarray) -> np.ndarray:
@@ -73,7 +71,6 @@ def test_aux_iva(spatial_algorithm: str, save_feature: bool = False):
             join(root, "target.npz"),
             spectrogram=spectrogram_est,
             n_iter=n_iter,
-            spatial_algorithm=spatial_algorithm,
         )
     else:
         assert np.allclose(spectrogram_est, spectrogram_tgt, atol=1e-7), np.max(
