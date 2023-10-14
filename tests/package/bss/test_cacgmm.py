@@ -28,7 +28,7 @@ parameters_cacgmm = [(2, 2, {}), (3, 2, {})]
 @pytest.mark.parametrize("n_sources, n_channels, reset_kwargs", parameters_cacgmm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("permutation_alignment", parameters_permutation_alignment)
-def test_CACGMM(
+def test_cacgmm(
     n_sources: int,
     n_channels: int,
     callbacks: Optional[Union[Callable[[CACGMM], None], List[Callable[[CACGMM], None]]]],
@@ -73,3 +73,30 @@ def test_CACGMM(
     assert np.allclose(_spectrogram_est, spectrogram_est)
 
     print(cacgmm)
+
+
+def test_cacgmm_zero_norm() -> None:
+    """Test input with zero norm."""
+    n_channels, n_sources, n_samples = 2, 3, 10 * 8000
+    waveform_src_img = rng.standard_normal((n_channels, n_sources, n_samples))
+    waveform_mix = np.sum(waveform_src_img, axis=1)  # (n_channels, n_samples)
+    waveform_mix = waveform_mix[:n_channels]
+
+    _, _, spectrogram_mix = ss.stft(
+        waveform_mix, window=window, nperseg=n_fft, noverlap=n_fft - hop_length
+    )
+    # set 0 at most grids in 0th frequency bin
+    spectrogram_mix[:, 0, 1:-1] = 0
+
+    assert np.linalg.norm(spectrogram_mix, axis=0).any()
+
+    cacgmm = CACGMM(n_sources=n_sources, rng=rng)
+    spectrogram_est = cacgmm(spectrogram_mix, n_iter=n_iter)
+
+    assert spectrogram_est.shape == (n_sources,) + spectrogram_mix.shape[-2:]
+    assert type(cacgmm.loss[-1]) is float
+
+    # when posterior is not given
+    _spectrogram_est = cacgmm.separate(spectrogram_mix)
+
+    assert np.allclose(_spectrogram_est, spectrogram_est)
