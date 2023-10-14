@@ -163,6 +163,11 @@ class CACGMMBase(IterativeMethodBase):
                 Random number generator. If ``None`` is given,
                 ``np.random.default_rng()`` is used.
                 Default: ``None``.
+
+        .. note::
+
+            Custom initialization is not supported now.
+
         """
         n_sources, n_channels = self.n_sources, self.n_channels
         n_bins = self.n_bins

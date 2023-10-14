@@ -4,6 +4,7 @@ import tempfile
 import numpy as np
 import pytest
 from dummy.io import save_invalid_wavfile
+from dummy.utils.dataset import download_ssspy_data
 from scipy.io import wavfile
 
 from ssspy import wavread, wavwrite
@@ -19,7 +20,10 @@ parameters_channels = [1, 2]
 @pytest.mark.parametrize("num_frames", parameters_num_frames)
 @pytest.mark.parametrize("channels_first", parameters_channels_first)
 def test_wavread_monoral(frame_offset: int, num_frames: int, channels_first: bool):
-    filename = "./tests/mock/audio/monoral_16k_5sec.wav"
+    path = "audio/monoral_16k_5sec.wav"
+    filename = "./tests/mock/{}".format(path)
+
+    download_ssspy_data(path, filename=filename)
 
     if channels_first is not None:
         return_2d = True
@@ -57,7 +61,10 @@ def test_wavread_monoral(frame_offset: int, num_frames: int, channels_first: boo
 @pytest.mark.parametrize("num_frames", parameters_num_frames)
 @pytest.mark.parametrize("channels_first", parameters_channels_first)
 def test_wavread_stereo(frame_offset: int, num_frames: int, channels_first: bool):
-    filename = "./tests/mock/audio/stereo_16k_5sec.wav"
+    path = "audio/stereo_16k_5sec.wav"
+    filename = "./tests/mock/{}".format(path)
+
+    download_ssspy_data(path, filename=filename)
 
     # load file using scipy
     sample_rate_scipy, waveform_scipy = wavfile.read(filename)
@@ -82,7 +89,11 @@ def test_wavread_stereo(frame_offset: int, num_frames: int, channels_first: bool
 
 @pytest.mark.parametrize("frame_offset", parameters_frame_offset)
 def test_wavread_invalid_monoral(frame_offset: int):
-    filename = "./tests/mock/audio/monoral_16k_5sec.wav"
+    path = "audio/monoral_16k_5sec.wav"
+    filename = "./tests/mock/{}".format(path)
+
+    download_ssspy_data(path, filename=filename)
+
     max_frame = 5 * 16000
     valid_num_frames = max_frame - frame_offset
 
@@ -100,7 +111,11 @@ def test_wavread_invalid_monoral(frame_offset: int):
 
 @pytest.mark.parametrize("frame_offset", parameters_frame_offset)
 def test_wavread_invalid_stereo(frame_offset: int):
-    filename = "./tests/mock/audio/stereo_16k_5sec.wav"
+    path = "audio/stereo_16k_5sec.wav"
+    filename = "./tests/mock/{}".format(path)
+
+    download_ssspy_data(path, filename=filename)
+
     max_frame = 5 * 16000
     valid_num_frames = max_frame - frame_offset
 

@@ -1,0 +1,12 @@
+{
+    "files": [
+        {
+            "filename": "input.npz",
+            "location": "npz/canon_8k_reverbed.npz"
+        },
+        {
+            "filename": "target.npz",
+            "location": "npz/bss/ilrma/t_ilrma/ISS1/MM/target.npz"
+        }
+    ]
+}
