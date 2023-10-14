@@ -28,7 +28,7 @@ parameters_cacgmm = [(2, 2, {}), (3, 2, {})]
 @pytest.mark.parametrize("n_sources, n_channels, reset_kwargs", parameters_cacgmm)
 @pytest.mark.parametrize("callbacks", parameters_callbacks)
 @pytest.mark.parametrize("permutation_alignment", parameters_permutation_alignment)
-def test_CACGMM(
+def test_cacgmm(
     n_sources: int,
     n_channels: int,
     callbacks: Optional[Union[Callable[[CACGMM], None], List[Callable[[CACGMM], None]]]],
