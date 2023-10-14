@@ -30,7 +30,9 @@ def test_grad_iva(is_holonomic: bool, save_feature: bool = False):
         spectrogram_tgt = None
         n_iter = 10
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
@@ -96,7 +98,9 @@ def test_natural_grad_iva(is_holonomic: bool, save_feature: bool = False):
         spectrogram_tgt = None
         n_iter = 10
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
@@ -159,7 +163,9 @@ def test_aux_iva(spatial_algorithm: str, save_feature: bool = False):
         spectrogram_tgt = None
         n_iter = 10
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 
@@ -219,7 +225,9 @@ def test_fast_iva(save_feature: bool = False):
         spectrogram_tgt = None
         n_iter = 5
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_iter = npz_target["n_iter"].item()
 

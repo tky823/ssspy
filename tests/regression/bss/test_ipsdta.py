@@ -33,7 +33,9 @@ def test_gauss_ipsdta(spatial_algorithm: str, source_algorithm: str, save_featur
         n_basis = 2
         n_iter = 10
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_basis = npz_target["n_basis"].item()
         n_iter = npz_target["n_iter"].item()
@@ -132,7 +134,9 @@ def test_t_ipsdta(spatial_algorithm: str, source_algorithm: str, save_feature: b
         dof = 1000
         n_iter = 10
     else:
-        npz_input, npz_target = load_regression_data(root, filenames=["input.npz", "target.npz"])
+        npz_input, npz_target = load_regression_data(
+            root=root, filenames=["input.npz", "target.npz"]
+        )
         spectrogram_tgt = npz_target["spectrogram"]
         n_basis = npz_target["n_basis"].item()
         dof = npz_target["dof"].item()
