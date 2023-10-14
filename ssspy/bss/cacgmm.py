@@ -113,14 +113,27 @@ class CACGMMBase(IterativeMethodBase):
 
         return s.format(**self.__dict__)
 
-    def _reset(self, **kwargs) -> None:
+    def _reset(
+        self,
+        flooring_fn: Optional[Union[str, Callable[[np.ndarray], np.ndarray]]] = "self",
+        **kwargs,
+    ) -> None:
         r"""Reset attributes by given keyword arguments.
 
         Args:
+            flooring_fn (callable or str, optional):
+                A flooring function for numerical stability.
+                This function is expected to return the same shape tensor as the input.
+                If you explicitly set ``flooring_fn=None``,
+                the identity function (``lambda x: x``) is used.
+                If ``self`` is given as str, ``self.flooring_fn`` is used.
+                Default: ``self``.
             kwargs:
                 Keyword arguments to set as attributes of CACGMM.
         """
         assert self.input is not None, "Specify data!"
+
+        flooring_fn = choose_flooring_fn(flooring_fn, method=self)
 
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -128,7 +141,7 @@ class CACGMMBase(IterativeMethodBase):
         X = self.input
 
         norm = np.linalg.norm(X, axis=0)
-        Z = X / norm
+        Z = X / flooring_fn(norm)
         self.unit_input = Z
 
         n_sources = self.n_sources
@@ -509,7 +522,7 @@ class CACGMM(CACGMMBase):
         """
         self.input = input.copy()
 
-        self._reset(**kwargs)
+        self._reset(flooring_fn=self.flooring_fn, **kwargs)
 
         # Call __call__ of CACGMMBase's parent, i.e. __call__ of IterativeMethodBase
         super(CACGMMBase, self).__call__(n_iter=n_iter, initial_call=initial_call)
