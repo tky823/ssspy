@@ -1575,6 +1575,7 @@ class AuxIVA(AuxIVABase):
         auxiliary function technique,"
         in *Proc. WASPAA*, 2011, p.189-192.
     """
+
     _ipa_default_kwargs = {"lqpqm_normalization": True, "newton_iter": 1}
     _default_kwargs = _ipa_default_kwargs
 
