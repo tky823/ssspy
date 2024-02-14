@@ -64,7 +64,7 @@ jobs:
         run: |
           # See pyproject.toml
           isort --line-length 100 ssspy tests
-          flake8 --max-line-length=100 --ignore=E203,W503,W504,E704 --exclude ssspy/_version.py ssspy tests
+          flake8 --max-line-length=100 --ignore=E203,W503,W504 --exclude ssspy/_version.py ssspy tests
       - name: Run formatters
         run: |
           python -m black --config pyproject.toml --check ssspy tests
