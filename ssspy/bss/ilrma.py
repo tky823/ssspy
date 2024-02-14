@@ -745,6 +745,7 @@ class GaussILRMA(ILRMABase):
         nonnegative matrix factorization," \
         *IEEE/ACM Trans. ASLP*, vol. 24, no. 9, pp. 1626-1641, 2016.
     """
+
     _ipa_default_kwargs = {"lqpqm_normalization": True, "newton_iter": 1}
     _default_kwargs = _ipa_default_kwargs
 
