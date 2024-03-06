@@ -155,7 +155,31 @@ class MaskingPDSHVA(MaskingPDSBSS):
 
 
 class MaskingADMMHVA(MaskingADMMBSS):
-    """Harmonic vector analysis using ADMM."""
+    """Harmonic vector analysis using ADMM with masking.
+
+    Args:
+        rho (float): Penalty parameter. Default: ``1``.
+        alpha (float): Relaxation parameter (deprecated). Set ``relaxation`` instead.
+        relaxation (float): Relaxation parameter. Default: ``1``.
+        attenuation (float, optional): Attenuation parameter.
+        mask_iter (int): Number of iterations in application of cosine shrinkage operator.
+        flooring_fn (callable, optional): A flooring function for numerical stability.
+            This function is expected to receive (n_channels, n_bins, n_frames)
+            and return (n_channels, n_bins, n_frames). If you explicitly set ``flooring_fn=None``,
+            the identity function (``lambda x: x``) is used.
+            Default: ``partial(max_flooring, eps=1e-10)``.
+        callbacks (callable or list[callable], optional):
+            Callback functions. Each function is called before separation and at each iteration.
+            Default: ``None``.
+        scale_restoration (bool or str): Technique to restore scale ambiguity.
+            If ``scale_restoration=True``, the projection back technique is applied to
+            estimated spectrograms. You can also specify ``projection_back`` explicitly.
+            Default: ``True``.
+        record_loss (bool, optional): Record the loss at each iteration of the update algorithm if
+            ``record_loss=True``. Default: ``None``.
+        reference_id (int): Reference channel for projection back. Default: ``0``.
+
+    """
     def __init__(
         self,
         rho: float = 1,
