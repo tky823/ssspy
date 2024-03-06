@@ -276,6 +276,7 @@ class MaskingADMMBSS(ADMMBSSBase):
         reference_id (int): Reference channel for projection back. Default: ``0``.
 
     """
+
     def __init__(
         self,
         rho: float = 1,
