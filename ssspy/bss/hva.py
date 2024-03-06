@@ -10,6 +10,7 @@ from .pdsbss import MaskingPDSBSS
 
 __all__ = [
     "MaskingPDSHVA",
+    "MaskingADMMHVA",
     "HVA",
 ]
 
