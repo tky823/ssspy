@@ -155,6 +155,7 @@ class MaskingPDSHVA(MaskingPDSBSS):
 
 
 class MaskingADMMHVA(MaskingADMMBSS):
+    """Harmonic vector analysis using ADMM."""
     def __init__(
         self,
         rho: float = 1,
