@@ -18,4 +18,5 @@ Submodules
    ssspy.bss.proxbss
    ssspy.bss.pdsbss
    ssspy.bss.admmbss
+   ssspy.bss.hva
    ssspy.bss.cacgmm
