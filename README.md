@@ -49,9 +49,7 @@ Or, you can build the documentation automatically using `sphinx-autobuild`.
 sphinx-autobuild docs docs/_build/html
 ```
 
-## Blind Source Separation Methods
-
-Hugging Face Demo: [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
+## Blind Source Separation Methods [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
 
 | Method | Notebooks |
 |:-:|:-:|
