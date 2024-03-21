@@ -51,6 +51,8 @@ sphinx-autobuild docs docs/_build/html
 
 ## Blind Source Separation Methods
 
+Hugging Face Demo: [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
+
 | Method | Notebooks |
 |:-:|:-:|
 | Independent Component Analysis (ICA) [1-3] | Gradient-descent-based ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/GradICA.ipynb) <br> Natural-gradient-descent-based ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/NaturalGradICA.ipynb) <br> Fast ICA: [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/tky823/ssspy/blob/main/notebooks/BSS/ICA/FastICA.ipynb) |
