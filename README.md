@@ -2,6 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/sound-source-separation-python/badge/?version=latest)](https://sound-source-separation-python.readthedocs.io/en/latest/?badge=latest)
 [![tests](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
 [![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G)](https://codecov.io/gh/tky823/ssspy)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
 
 A Python toolkit for sound source separation.
 
@@ -49,7 +50,7 @@ Or, you can build the documentation automatically using `sphinx-autobuild`.
 sphinx-autobuild docs docs/_build/html
 ```
 
-## Blind Source Separation Methods [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
+## Blind Source Separation Methods
 
 | Method | Notebooks |
 |:-:|:-:|
