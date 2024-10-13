@@ -1,3 +1,4 @@
+from ._solve import solve
 from .cubic import cbrt
 from .eigh import eigh, eigh2
 from .inv import inv2
@@ -18,4 +19,5 @@ __all__ = [
     "gmeanmh",
     "solve_cubic",
     "lqpqm2",
+    "solve",
 ]

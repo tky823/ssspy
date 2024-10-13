@@ -3,6 +3,7 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 
+from ..linalg._solve import solve
 from ..linalg.mean import gmeanmh
 from ..special.flooring import identity, max_flooring
 from ..special.psd import to_psd
@@ -753,7 +754,7 @@ class GaussMNMF(MNMF):
         R = np.sum(R_n, axis=0)
         R = to_psd(R, flooring_fn=self.flooring_fn)
         R = np.tile(R, reps=(n_sources, 1, 1, 1, 1))
-        W_Hermite = np.linalg.solve(R, R_n)
+        W_Hermite = solve(R, R_n)
         W = W_Hermite.transpose(0, 1, 2, 4, 3).conj()
         W_ref = W[:, :, :, reference_id, :]
         W_ref = W_ref.transpose(0, 3, 1, 2)
@@ -777,7 +778,7 @@ class GaussMNMF(MNMF):
             R = self.reconstruct_mnmf(T, V, H)
 
         R = to_psd(R, flooring_fn=self.flooring_fn)
-        XXR_inv = np.linalg.solve(R, XX)  # Hermitian transpose of XX @ np.linalg.inv(R)
+        XXR_inv = solve(R, XX)  # Hermitian transpose of XX @ np.linalg.inv(R)
         trace = np.trace(XXR_inv, axis1=-2, axis2=-1)
         trace = np.real(trace)
         logdet = self.compute_logdet(R)
@@ -857,10 +858,10 @@ class GaussMNMF(MNMF):
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
         ) -> np.ndarray:
-            RXX = np.linalg.solve(reconstructed, target)
+            RXX = solve(reconstructed, target)
             R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
             H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(R, H)
+            RH = solve(R, H)
 
             trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
             trace_RXXRH = np.real(trace_RXXRH)
@@ -924,10 +925,10 @@ class GaussMNMF(MNMF):
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
         ) -> np.ndarray:
-            RXX = np.linalg.solve(reconstructed, target)
+            RXX = solve(reconstructed, target)
             R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
             H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(R, H)
+            RH = solve(R, H)
 
             trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
             trace_RXXRH = np.real(trace_RXXRH)
@@ -1039,10 +1040,10 @@ class GaussMNMF(MNMF):
         def _compute_traces(
             target: np.ndarray, reconstructed: np.ndarray, spatial: np.ndarray
         ) -> np.ndarray:
-            RXX = np.linalg.solve(reconstructed, target)
+            RXX = solve(reconstructed, target)
             R = np.tile(reconstructed, reps=(n_sources, 1, 1, 1, 1))
             H = np.tile(spatial[:, :, na, :, :], reps=(1, 1, n_frames, 1, 1))
-            RH = np.linalg.solve(R, H)
+            RH = solve(R, H)
 
             trace_RXXRH = np.trace(RXX @ RH, axis1=-2, axis2=-1)
             trace_RXXRH = np.real(trace_RXXRH)
@@ -1207,7 +1208,7 @@ class FastGaussMNMF(FastMNMFBase):
         R = np.sum(R_n, axis=0)
         R = to_psd(R, flooring_fn=self.flooring_fn)
         R = np.tile(R, reps=(n_sources, 1, 1, 1, 1))
-        W_Hermite = np.linalg.solve(R, R_n)
+        W_Hermite = solve(R, R_n)
         W = W_Hermite.transpose(0, 1, 2, 4, 3).conj()
         W_ref = W[:, :, :, reference_id, :]
         W_ref = W_ref.transpose(0, 3, 1, 2)
