@@ -1,10 +1,13 @@
 # ssspy
 [![Documentation Status](https://readthedocs.org/projects/sound-source-separation-python/badge/?version=latest)](https://sound-source-separation-python.readthedocs.io/en/latest/?badge=latest)
-[![tests](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
-[![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G)](https://codecov.io/gh/tky823/ssspy)
+[![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg)](https://codecov.io/gh/tky823/ssspy)
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
 
 A Python toolkit for sound source separation.
+
+## Build Status
+[![ubuntu-latest/3.9](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
+
 
 ## Installation
 You can install by pip.
