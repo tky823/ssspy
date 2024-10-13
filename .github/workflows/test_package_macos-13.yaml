@@ -1,0 +1,20 @@
+name: macos-13
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+    secrets:
+      TEST_PYPI_API_TOKEN:
+        required: true
+jobs:
+  package:
+    uses: ./.github/workflows/test_package_main.yaml
+    with:
+      # macos-13: x86_64, macos-latest: arm
+      # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners
+      os: macos-13
+      python-version: ${{ inputs.python-version }}
+    secrets:
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
