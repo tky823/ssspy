@@ -1,0 +1,15 @@
+name: windows-latest/3.10
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  package:
+    uses: ./.github/workflows/test_package_windows-latest.yaml
+    with:
+      python-version: "3.10"
+    secrets:
+      TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}

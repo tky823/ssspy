@@ -1,10 +1,20 @@
 # ssspy
 [![Documentation Status](https://readthedocs.org/projects/sound-source-separation-python/badge/?version=latest)](https://sound-source-separation-python.readthedocs.io/en/latest/?badge=latest)
-[![tests](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
-[![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg?token=IZ89MTV64G)](https://codecov.io/gh/tky823/ssspy)
+[![codecov](https://codecov.io/gh/tky823/ssspy/branch/main/graph/badge.svg)](https://codecov.io/gh/tky823/ssspy)
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://tky823-ssspy-demo.hf.space/)
 
 A Python toolkit for sound source separation.
+
+## Build Status
+[![ubuntu-latest/3.9](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml/badge.svg)](https://github.com/tky823/ssspy/actions/workflows/test_package.yaml)
+
+| Python | Ubuntu | MacOS (x86_64) | MacOS (arm64) | Windows |
+|:-:|:-:|:-:|:-:|:-:|
+| 3.9 | [![ubuntu-latest/3.9](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.9.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.9.yaml) | [![macos-13/3.9](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.9.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.9.yaml) |  | [![windows-latest/3.9](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.9.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.9.yaml) |
+| 3.10 | [![ubuntu-latest/3.10](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.10.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.10.yaml) | [![macos-13/3.10](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.10.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.10.yaml) |  | [![windows-latest/3.10](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.10.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.10.yaml) |
+| 3.11 | [![ubuntu-latest/3.11](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.11.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.11.yaml) | [![macos-13/3.11](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.11.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.11.yaml) |  | [![windows-latest/3.11](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.11.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.11.yaml) |
+| 3.12 | [![ubuntu-latest/3.12](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.12.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_ubuntu-latest_python-3.12.yaml) | [![macos-13/3.12](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.12.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_macos-13_python-3.12.yaml) |  | [![windows-latest/3.12](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.12.yaml/badge.svg?branch=main)](https://github.com/tky823/ssspy/actions/workflows/test_package_windows-latest_python-3.12.yaml) |
+
 
 ## Installation
 You can install by pip.
