@@ -6,6 +6,8 @@ on:
         required: true
         type: string
     secrets:
+      CODECOV_TOKEN:
+        required: true
       TEST_PYPI_API_TOKEN:
         required: true
 jobs:
@@ -15,6 +17,7 @@ jobs:
       os: windows-latest
       python-version: ${{ inputs.python-version }}
     secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
     permissions:
       id-token: write

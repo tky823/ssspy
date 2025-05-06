@@ -9,6 +9,8 @@ on:
         required: true
         type: string
     secrets:
+      CODECOV_TOKEN:
+        required: true
       TEST_PYPI_API_TOKEN:
         required: true
 jobs:
@@ -41,9 +43,11 @@ jobs:
       - name: Pytest (regression tests)
         run: |
           pytest -vvv -n 16 tests/regression/
-      - name: Upload coverage to codecov
+      - name: Upload coverage reports to Codecov
         if: inputs.python-version == '3.12' && inputs.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           fail_ci_if_error: true
   upload_package:

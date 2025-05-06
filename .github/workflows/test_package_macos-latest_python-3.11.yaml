@@ -12,6 +12,7 @@ jobs:
     with:
       python-version: "3.11"
     secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
     permissions:
       id-token: write
