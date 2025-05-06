@@ -1,4 +1,4 @@
-name: ubuntu-latest/3.11
+name: macos-latest/3.11
 on:
   push:
     branches:
@@ -8,7 +8,7 @@ on:
       - main
 jobs:
   package:
-    uses: ./.github/workflows/test_package_ubuntu-latest.yaml
+    uses: ./.github/workflows/test_package_macos-latest.yaml
     with:
       python-version: "3.11"
     secrets:

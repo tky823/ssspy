@@ -1,4 +1,4 @@
-name: ubuntu-latest
+name: macos-latest
 on:
   workflow_call:
     inputs:
@@ -14,7 +14,9 @@ jobs:
   package:
     uses: ./.github/workflows/test_package_main.yaml
     with:
-      os: ubuntu-latest
+      # macos-13: x86_64, macos-latest: arm
+      # See https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners
+      os: macos-latest
       python-version: ${{ inputs.python-version }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

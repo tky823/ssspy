@@ -1,4 +1,4 @@
-name: tests for docs
+name: lint
 on:
   push:
     branches:
@@ -7,8 +7,8 @@ on:
     branches:
       - main
 jobs:
-  build:
-    name: Build docs
+  lint:
+    name: Run linters
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,12 +19,13 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install pandoc
           python -m pip install --upgrade pip
-          pip install ".[docs,notebooks]"
-      - name: Build docs
+          pip install ".[dev]"
+      - name: Run linters
         run: |
-          . ./docs/pre_build.sh
-          cd docs/
-          sphinx-build -W ./ ./_build/html/
+          # See pyproject.toml
+          isort --line-length 100 ssspy tests
+          flake8 --max-line-length=100 --ignore=E203,W503,W504 --exclude ssspy/_version.py ssspy tests
+      - name: Run formatters
+        run: |
+          python -m black --config pyproject.toml --check ssspy tests

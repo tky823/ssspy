@@ -9,6 +9,8 @@ on:
         required: true
         type: string
     secrets:
+      CODECOV_TOKEN:
+        required: true
       TEST_PYPI_API_TOKEN:
         required: true
 jobs:
@@ -41,41 +43,19 @@ jobs:
       - name: Pytest (regression tests)
         run: |
           pytest -vvv -n 16 tests/regression/
-      - name: Upload coverage to codecov
-        if: inputs.python-version == '3.8' && inputs.os == 'ubuntu-latest'
+      - name: Upload coverage reports to Codecov
+        if: inputs.python-version == '3.12' && inputs.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         with:
           fail_ci_if_error: true
-  lint:
-    name: Run linters
-    runs-on: ubuntu-latest
-    if: inputs.python-version == '3.8' && inputs.os == 'ubuntu-latest'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ".[dev]"
-      - name: Run linters
-        run: |
-          # See pyproject.toml
-          isort --line-length 100 ssspy tests
-          flake8 --max-line-length=100 --ignore=E203,W503,W504 --exclude ssspy/_version.py ssspy tests
-      - name: Run formatters
-        run: |
-          python -m black --config pyproject.toml --check ssspy tests
   upload_package:
     needs:
       - build
-      - lint
     permissions:
       id-token: write
     secrets:
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
-    if: github.event_name == 'pull_request' && inputs.python-version == '3.9' && inputs.os == 'ubuntu-latest'
+    if: github.event_name == 'pull_request' && inputs.python-version == '3.12' && inputs.os == 'ubuntu-latest'
     uses: ./.github/workflows/upload_package.yaml

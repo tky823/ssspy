@@ -1,4 +1,4 @@
-name: ubuntu-latest/3.11
+name: macos-latest/3.9
 on:
   push:
     branches:
@@ -8,9 +8,9 @@ on:
       - main
 jobs:
   package:
-    uses: ./.github/workflows/test_package_ubuntu-latest.yaml
+    uses: ./.github/workflows/test_package_macos-latest.yaml
     with:
-      python-version: "3.11"
+      python-version: "3.9"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
