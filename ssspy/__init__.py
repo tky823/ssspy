@@ -8,6 +8,6 @@ except ModuleNotFoundError:
 try:
     from ._version import __version__
 except ModuleNotFoundError:
-    __version__ = "0.1.7"
+    __version__ = "0.2.0"
 
 __all__ = ["__version__", "wavread", "wavwrite"]
