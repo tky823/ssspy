@@ -49,7 +49,6 @@ jobs:
   upload_package:
     needs:
       - build
-      - lint
     permissions:
       id-token: write
     secrets:
