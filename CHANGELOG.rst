@@ -1,6 +1,45 @@
 Changelog
 #########
 
+<!-- Release notes generated using configuration in .github/release.yaml at main -->
+
+v0.2.0
+******
+
+What's Changed
+==============
+
+Breaking Changes 🛠
+-------------------
+* Rename `aux` to `auxiliary` by @tky823 in https://github.com/tky823/ssspy/pull/268
+* Detailed build status by @tky823 in https://github.com/tky823/ssspy/pull/288
+
+New Features 🎉
+---------------
+* Implementation of harmonic vector analysis by @tky823 in https://github.com/tky823/ssspy/pull/271
+* Implementation of ADMM-HVA by @tky823 in https://github.com/tky823/ssspy/pull/281
+
+Bug Fixes 🐛
+------------
+* Fix test coverage by @tky823 in https://github.com/tky823/ssspy/pull/269
+* Fix timing of uploading package by @tky823 in https://github.com/tky823/ssspy/pull/273
+* Remove status badge of lint by @tky823 in https://github.com/tky823/ssspy/pull/274
+
+Other Changes
+-------------
+* Upload package to TestPyPI by @tky823 in https://github.com/tky823/ssspy/pull/267
+* Remove duplicate uploads to TestPyPI by @tky823 in https://github.com/tky823/ssspy/pull/270
+* Use flooring function to compute norm. by @tky823 in https://github.com/tky823/ssspy/pull/276
+* Regression tests by @tky823 in https://github.com/tky823/ssspy/pull/238
+* Add `needs` to upload_package job in GHA. by @tky823 in https://github.com/tky823/ssspy/pull/277
+* Update actions/checkout in GitHub actions by @tky823 in https://github.com/tky823/ssspy/pull/279
+* Hugging Face demo by @tky823 in https://github.com/tky823/ssspy/pull/282
+* Set permissions in workflows by @tky823 in https://github.com/tky823/ssspy/pull/289
+* Bump up version to 0.2.0 by @tky823 in https://github.com/tky823/ssspy/pull/290
+
+
+**Full Changelog**: https://github.com/tky823/ssspy/compare/v0.1.7...v0.2.0
+
 v0.1.7
 ******
 
