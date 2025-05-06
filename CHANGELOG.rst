@@ -1,8 +1,6 @@
 Changelog
 #########
 
-<!-- Release notes generated using configuration in .github/release.yaml at main -->
-
 v0.2.0
 ******
 
