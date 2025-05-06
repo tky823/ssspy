@@ -18,3 +18,5 @@ jobs:
       python-version: ${{ inputs.python-version }}
     secrets:
       TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+    permissions:
+      id-token: write
