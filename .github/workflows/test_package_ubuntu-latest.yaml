@@ -1,4 +1,4 @@
-name: macos-13
+name: ubuntu-latest
 on:
   workflow_call:
     inputs:
